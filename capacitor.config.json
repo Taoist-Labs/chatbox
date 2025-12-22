@@ -1,0 +1,10 @@
+{
+  "appId": "xyz.chatboxapp.ce",
+  "appName": "Chatbox",
+  "webDir": "release/app/dist/renderer",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
