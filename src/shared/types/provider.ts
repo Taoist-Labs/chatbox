@@ -3,6 +3,7 @@
 
 export enum ModelProviderEnum {
   ChatboxAI = 'chatbox-ai',
+  Wanjie = 'wanjie',
   OpenAI = 'openai',
   OpenAIResponses = 'openai-responses',
   Azure = 'azure',

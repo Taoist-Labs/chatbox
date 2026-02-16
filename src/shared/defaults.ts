@@ -174,6 +174,20 @@ export const SystemProviders: ProviderBaseInfo[] = [
     type: ModelProviderType.ChatboxAI,
   },
   {
+    id: ModelProviderEnum.Wanjie,
+    name: 'Wanjie',
+    type: ModelProviderType.OpenAI,
+    description: 'wanjie',
+    urls: {
+      website: 'https://fangzhou.wanjiedata.com',
+      docs: 'https://fangzhou.wanjiedata.com',
+    },
+    defaultSettings: {
+      apiHost: 'https://fangzhou.wanjiedata.com',
+      models: [],
+    },
+  },
+  {
     id: ModelProviderEnum.OpenAI,
     name: 'OpenAI',
     type: ModelProviderType.OpenAI,

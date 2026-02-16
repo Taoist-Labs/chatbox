@@ -27,6 +27,7 @@ import OpenAISettingUtil from './openai-setting-util'
 import PerplexitySettingUtil from './perplexity-setting-util'
 import SiliconFlowSettingUtil from './siliconflow-setting-util'
 import VolcEngineSettingUtil from './volcengine-setting-util'
+import WanjieSettingUtil from './wanjie-setting-util'
 import XAISettingUtil from './xai-setting-util'
 
 export function getModelSettingUtil(
@@ -42,6 +43,7 @@ export function getModelSettingUtil(
     [ModelProviderEnum.Groq]: GroqSettingUtil,
     [ModelProviderEnum.Ollama]: OllamaSettingUtil,
     [ModelProviderEnum.OpenAI]: OpenAISettingUtil,
+    [ModelProviderEnum.Wanjie]: WanjieSettingUtil,
     [ModelProviderEnum.OpenAIResponses]: OpenAIResponsesSettingUtil,
     [ModelProviderEnum.DeepSeek]: DeepSeekSettingUtil,
     [ModelProviderEnum.SiliconFlow]: SiliconFlowSettingUtil,

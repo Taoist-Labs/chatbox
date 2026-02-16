@@ -27,6 +27,7 @@ import { RouteComponent as SettingsProviderProviderIdRouteComponent } from '@/ro
 import { RouteComponent as SettingsProviderChatboxAiRouteComponent } from '@/routes/settings/provider/chatbox-ai'
 import { RouteComponent as SettingsProviderIndexRouteComponent } from '@/routes/settings/provider/index'
 import { RouteComponent as SettingsProviderRouteRouteComponent } from '@/routes/settings/provider/route'
+import { RouteComponent as SettingsProviderWanjieRouteComponent } from '@/routes/settings/provider/wanjie'
 import { SettingsRoot } from '@/routes/settings/route'
 import { RouteComponent as SettingsWebSearchRouteComponent } from '@/routes/settings/web-search'
 
@@ -191,6 +192,12 @@ const SettingsProviderChatboxAiRoute = createRoute({
   getParentRoute: () => SettingsProviderRouteRoute,
 })
 
+const SettingsProviderWanjieRoute = createRoute({
+  component: SettingsProviderWanjieRouteComponent,
+  path: '/wanjie',
+  getParentRoute: () => SettingsProviderRouteRoute,
+})
+
 const SettingsProviderProviderIdRoute = createRoute({
   component: SettingsProviderProviderIdRouteComponent,
   path: '/$providerId',
@@ -200,6 +207,7 @@ const SettingsProviderProviderIdRoute = createRoute({
 SettingsProviderRouteRoute.addChildren([
   SettingsProviderIndexRoute,
   SettingsProviderChatboxAiRoute,
+  SettingsProviderWanjieRoute,
   SettingsProviderProviderIdRoute,
 ])
 

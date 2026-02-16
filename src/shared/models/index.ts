@@ -96,6 +96,7 @@ export function getModel(
         dependencies
       )
     case ModelProviderEnum.OpenAI:
+    case ModelProviderEnum.Wanjie:
       return new OpenAI(
         {
           apiKey: providerSetting.apiKey || '',
@@ -386,6 +387,7 @@ export function getModel(
 }
 
 export const aiProviderNameHash: Record<ModelProvider, string> = {
+  [ModelProviderEnum.Wanjie]: 'Wanjie API',
   [ModelProviderEnum.OpenAI]: 'OpenAI API',
   [ModelProviderEnum.OpenAIResponses]: 'OpenAI Responses API',
   [ModelProviderEnum.Azure]: 'Azure OpenAI API',
@@ -416,6 +418,11 @@ export const AIModelProviderMenuOptionList = [
   {
     value: ModelProviderEnum.OpenAI,
     label: aiProviderNameHash[ModelProviderEnum.OpenAI],
+    disabled: false,
+  },
+  {
+    value: ModelProviderEnum.Wanjie,
+    label: aiProviderNameHash[ModelProviderEnum.Wanjie],
     disabled: false,
   },
   {

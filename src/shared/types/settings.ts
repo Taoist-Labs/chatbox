@@ -25,6 +25,11 @@ export const ProviderSettingsSchema = z.object({
   models: z.array(ProviderModelInfoSchema).optional().catch(undefined),
   excludedModels: z.array(z.string()).optional().catch(undefined),
   useProxy: z.boolean().optional().catch(undefined),
+  wanjieWorkerHost: z.string().optional().catch(undefined),
+  wanjieEncryptionKey: z.string().optional().catch(undefined),
+  wanjiePhone: z.string().optional().catch(undefined),
+  wanjieSmsId: z.string().optional().catch(undefined),
+  wanjieAccountToken: z.string().optional().catch(undefined),
 
   // azure
   endpoint: z.string().optional().catch(undefined),

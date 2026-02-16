@@ -4,7 +4,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ProviderBaseInfo } from 'src/shared/types'
+import { ModelProviderEnum, type ProviderBaseInfo } from 'src/shared/types'
 import CustomProviderIcon from '@/components/CustomProviderIcon'
 import { ScalableIcon } from '@/components/ScalableIcon'
 import { useProviders } from '@/hooks/useProviders'
@@ -52,7 +52,13 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
           {providers.map((provider) => (
             <Link
               key={provider.id}
-              to={provider.id === 'chatbox-ai' ? `/settings/provider/chatbox-ai` : `/settings/provider/$providerId`}
+              to={
+                provider.id === ModelProviderEnum.ChatboxAI
+                  ? '/settings/provider/chatbox-ai'
+                  : provider.id === ModelProviderEnum.Wanjie
+                    ? '/settings/provider/wanjie'
+                    : '/settings/provider/$providerId'
+              }
               params={{ providerId: provider.id }}
               className={clsx(
                 'no-underline',
