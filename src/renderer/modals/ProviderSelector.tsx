@@ -2,7 +2,7 @@ import NiceModal, { muiDialogV5, useModal } from '@ebay/nice-modal-react'
 import { Box, Dialog, DialogContent, List, ListItem, ListItemButton, ListItemText } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { AIModelProviderMenuOptionList } from '../../shared/models'
-import { ModelProvider, ModelProviderEnum } from '../../shared/types'
+import { ModelProvider } from '../../shared/types'
 
 const ProviderSelector = NiceModal.create(() => {
   const { t } = useTranslation()
@@ -50,24 +50,6 @@ const ProviderSelector = NiceModal.create(() => {
               </ListItemButton>
             </ListItem>
           ))}
-          <ListItem key={'custom'} disablePadding>
-            <ListItemButton
-              onClick={() => onSetup(ModelProviderEnum.Custom)}
-              sx={{
-                borderRadius: '8px',
-                mb: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ListItemText
-                primary={t('Add Custom Provider')}
-                primaryTypographyProps={{
-                  fontWeight: 600,
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
         </List>
       </DialogContent>
     </Dialog>

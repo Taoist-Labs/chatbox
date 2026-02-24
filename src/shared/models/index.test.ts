@@ -3,8 +3,8 @@ import { ModelProviderEnum, type SessionSettings, type Settings } from 'src/shar
 import type { ModelDependencies } from 'src/shared/types/adapters'
 import type { SentryScope } from 'src/shared/utils/sentry_adapter'
 import { describe, expect, it, vi } from 'vitest'
-import CustomOpenAIResponses from './custom-openai-responses'
-import { getModel } from './index'
+import OpenAI from './openai'
+import { AIModelProviderMenuOptionList, getModel } from './index'
 
 const mockScope: SentryScope = {
   setTag: vi.fn(),
@@ -28,10 +28,10 @@ const mockDependencies: ModelDependencies = {
 }
 
 describe('getModel', () => {
-  it('returns CustomOpenAIResponses when provider is OpenAIResponses', () => {
+  it('returns OpenAI when provider is Wanjie', () => {
     const sessionSettings: SessionSettings = {
-      provider: ModelProviderEnum.OpenAIResponses,
-      modelId: 'gpt-5-pro',
+      provider: ModelProviderEnum.Wanjie,
+      modelId: 'deepseek-v3',
       temperature: 0.7,
       topP: 0.9,
       maxTokens: 2048,
@@ -43,16 +43,28 @@ describe('getModel', () => {
       ...defaultSettings,
       providers: {
         ...defaultSettings.providers,
-        [ModelProviderEnum.OpenAIResponses]: {
+        [ModelProviderEnum.Wanjie]: {
           apiKey: 'test-key',
-          apiHost: 'https://api.openai.com',
-          models: [{ modelId: 'gpt-5-pro' }],
+          apiHost: 'https://maas-openapi.wanjiedata.com/api',
+          models: [{ modelId: 'deepseek-v3' }],
         },
       },
     }
 
     const model = getModel(sessionSettings, globalSettings, newConfigs(), mockDependencies)
 
-    expect(model).toBeInstanceOf(CustomOpenAIResponses)
+    expect(model).toBeInstanceOf(OpenAI)
+  })
+})
+
+describe('AIModelProviderMenuOptionList', () => {
+  it('only keeps wanjie provider', () => {
+    expect(AIModelProviderMenuOptionList).toEqual([
+      {
+        value: ModelProviderEnum.Wanjie,
+        label: 'Wanjie API',
+        disabled: false,
+      },
+    ])
   })
 })

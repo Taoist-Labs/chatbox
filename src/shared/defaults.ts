@@ -153,22 +153,22 @@ export function getDefaultPrompt() {
 
 export function chatSessionSettings(): SessionSettings {
   return {
-    provider: ModelProviderEnum.ChatboxAI,
-    modelId: 'chatboxai-4',
+    provider: ModelProviderEnum.Wanjie,
+    modelId: '',
     maxContextMessageCount: 6,
   }
 }
 
 export function pictureSessionSettings(): SessionSettings {
   return {
-    provider: ModelProviderEnum.ChatboxAI,
-    modelId: 'DALL-E-3',
+    provider: ModelProviderEnum.Wanjie,
+    modelId: '',
     imageGenerateNum: 1,
     dalleStyle: 'vivid',
   }
 }
 
-export const SystemProviders: ProviderBaseInfo[] = [
+const ALL_SYSTEM_PROVIDERS: ProviderBaseInfo[] = [
   {
     id: ModelProviderEnum.ChatboxAI,
     name: 'Chatbox AI',
@@ -837,3 +837,7 @@ export const SystemProviders: ProviderBaseInfo[] = [
     },
   },
 ]
+
+export const SystemProviders: ProviderBaseInfo[] = ALL_SYSTEM_PROVIDERS.filter(
+  (provider) => provider.id === ModelProviderEnum.Wanjie
+)

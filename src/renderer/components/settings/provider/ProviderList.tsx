@@ -23,9 +23,16 @@ interface ProviderListProps {
   onAddProvider: () => void
   onImportProvider: () => void
   isImporting: boolean
+  showManageActions?: boolean
 }
 
-export function ProviderList({ providers, onAddProvider, onImportProvider, isImporting }: ProviderListProps) {
+export function ProviderList({
+  providers,
+  onAddProvider,
+  onImportProvider,
+  isImporting,
+  showManageActions = true,
+}: ProviderListProps) {
   const { t } = useTranslation()
   const isSmallScreen = useIsSmallScreen()
   const routerState = useRouterState()
@@ -115,21 +122,23 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
           ))}
         </Stack>
       </ScrollArea>
-      <Stack gap="xs" mx="md" my="sm">
-        <Button variant="outline" leftSection={<ScalableIcon icon={IconPlus} />} onClick={onAddProvider}>
-          {t('Add')}
-        </Button>
-        {platform.type !== 'mobile' && (
-          <Button
-            variant="light"
-            leftSection={<ScalableIcon icon={IconFileImport} />}
-            onClick={onImportProvider}
-            loading={isImporting}
-          >
-            {t('Import from clipboard')}
+      {showManageActions && (
+        <Stack gap="xs" mx="md" my="sm">
+          <Button variant="outline" leftSection={<ScalableIcon icon={IconPlus} />} onClick={onAddProvider}>
+            {t('Add')}
           </Button>
-        )}
-      </Stack>
+          {platform.type !== 'mobile' && (
+            <Button
+              variant="light"
+              leftSection={<ScalableIcon icon={IconFileImport} />}
+              onClick={onImportProvider}
+              loading={isImporting}
+            >
+              {t('Import from clipboard')}
+            </Button>
+          )}
+        </Stack>
+      )}
     </Stack>
   )
 }
