@@ -17,6 +17,7 @@ export function RouteComponent() {
 
   const [checkingTavily, setCheckingTavily] = useState(false)
   const [tavilyAvaliable, setTavilyAvaliable] = useState<boolean>()
+  const selectedProvider = extension.webSearch.provider === 'build-in' ? 'bing' : extension.webSearch.provider
   const checkTavily = async () => {
     if (extension.webSearch.tavilyApiKey) {
       setCheckingTavily(true)
@@ -51,11 +52,10 @@ export function RouteComponent() {
       <Select
         comboboxProps={{ withinPortal: true, withArrow: true }}
         data={[
-          { value: 'build-in', label: 'Chatbox Search (Pro)' },
           { value: 'bing', label: 'Bing Search (Free)' },
           { value: 'tavily', label: 'Tavily' },
         ]}
-        value={extension.webSearch.provider}
+        value={selectedProvider}
         onChange={(e) =>
           e &&
           setSettings({
@@ -71,12 +71,7 @@ export function RouteComponent() {
         label={t('Search Provider')}
         maw={320}
       />
-      {extension.webSearch.provider === 'build-in' && (
-        <Text size="xs" c="chatbox-gray">
-          {t('Chatbox Search is a paid feature with advanced capabilities and better performance.')}
-        </Text>
-      )}
-      {extension.webSearch.provider === 'bing' && (
+      {selectedProvider === 'bing' && (
         <Text size="xs" c="chatbox-gray">
           {t(
             'Bing Search is provided for free use, but it may have limitations and is subject to change by Microsoft.'

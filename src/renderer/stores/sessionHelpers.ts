@@ -41,8 +41,6 @@ export async function preprocessFile(
   tokenCountMap?: Record<string, number>
   error?: string
 }> {
-  const remoteConfig = settingActions.getRemoteConfig()
-
   try {
     const isPro = settingActions.isPro()
     const uniqKey = StorageKeyGenerator.fileUniqKey(file)
@@ -119,12 +117,7 @@ export async function preprocessFile(
         if (platform.type === 'mobile') {
           throw new Error('mobile_not_support_local_file_parsing')
         }
-        // 根据当前 IP，判断是否在错误中推荐 Chatbox AI
-        if (remoteConfig.setting_chatboxai_first) {
-          throw new Error('model_not_support_file')
-        } else {
-          throw new Error('model_not_support_file_2')
-        }
+        throw new Error('model_not_support_file_2')
       }
 
       // 从临时存储中获取文件内容

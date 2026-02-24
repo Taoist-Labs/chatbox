@@ -1,4 +1,4 @@
-import { chatSessionSettings, pictureSessionSettings, SystemProviders } from './defaults'
+import { chatSessionSettings, pictureSessionSettings, settings, SystemProviders } from './defaults'
 import { ModelProviderEnum } from './types'
 import { describe, expect, it } from 'vitest'
 
@@ -11,5 +11,9 @@ describe('defaults provider slimming', () => {
   it('uses wanjie as default session provider', () => {
     expect(chatSessionSettings().provider).toBe(ModelProviderEnum.Wanjie)
     expect(pictureSessionSettings().provider).toBe(ModelProviderEnum.Wanjie)
+  })
+
+  it('uses free web search provider by default', () => {
+    expect(settings().extension.webSearch.provider).toBe('bing')
   })
 })
