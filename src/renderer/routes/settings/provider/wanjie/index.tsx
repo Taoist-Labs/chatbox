@@ -1,17 +1,21 @@
-import { Alert, Button, Flex, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Flex, Stack, Text, TextInput, Title } from '@mantine/core'
 import { IconCircleCheck, IconInfoCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SystemProviders } from 'src/shared/defaults'
 import { ModelProviderEnum } from 'src/shared/types'
 import { ModelList } from '@/components/ModelList'
 import { ScalableIcon } from '@/components/ScalableIcon'
-import { loginWanjie, maskWanjieApiKey, sendWanjieSms, syncWanjieProviderConfig } from '@/packages/wanjie'
+import {
+  buildWanjieConfiguredSettings,
+  getWanjieBuiltinConfig,
+  loginWanjie,
+  maskWanjieApiKey,
+  sendWanjieSms,
+  syncWanjieProviderConfig,
+} from '@/packages/wanjie'
 import { useProviderSettings } from '@/stores/settingsStore'
 import { add as addToast } from '@/stores/toastActions'
-
-const DEFAULT_WORKER_HOST = 'http://127.0.0.1:8787'
 
 export const Route = createFileRoute('/settings/provider/wanjie/')({
   component: RouteComponent,
@@ -25,7 +29,6 @@ export function RouteComponent() {
   const { t } = useTranslation()
   const providerId = ModelProviderEnum.Wanjie
   const { providerSettings, setProviderSettings } = useProviderSettings(providerId)
-  const providerBaseInfo = useMemo(() => SystemProviders.find((p) => p.id === providerId), [providerId])
 
   const [phone, setPhone] = useState(providerSettings?.wanjiePhone || '')
   const [smsCode, setSmsCode] = useState('')
@@ -36,10 +39,19 @@ export function RouteComponent() {
   const [syncing, setSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  const workerHost = (providerSettings?.wanjieWorkerHost || DEFAULT_WORKER_HOST).trim()
-  const encryptionKey = (providerSettings?.wanjieEncryptionKey || '').trim()
+  const builtinConfig = getWanjieBuiltinConfig()
+  const workerHost = builtinConfig.workerBaseUrl.trim()
+  const encryptionKey = builtinConfig.encryptionKey.trim()
+  const modelApiHost = builtinConfig.modelApiHost.trim()
   const configuredApiKey = providerSettings?.apiKey || ''
   const displayModels = providerSettings?.models || []
+
+  useEffect(() => {
+    if (!modelApiHost || providerSettings?.apiHost === modelApiHost) {
+      return
+    }
+    setProviderSettings({ apiHost: modelApiHost })
+  }, [modelApiHost, providerSettings?.apiHost, setProviderSettings])
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -67,8 +79,14 @@ export function RouteComponent() {
       addToast(msg)
       return
     }
+    if (!workerHost) {
+      const msg = t('Wanjie worker host is not configured in code')
+      setErrorMessage(msg)
+      addToast(msg)
+      return
+    }
     if (!encryptionKey) {
-      const msg = t('Encryption key is required')
+      const msg = t('Wanjie encryption key is not configured in code')
       setErrorMessage(msg)
       addToast(msg)
       return
@@ -84,6 +102,7 @@ export function RouteComponent() {
       })
       setSmsId(response.smsId)
       setProviderSettings({
+        apiHost: modelApiHost,
         wanjiePhone: normalizedPhone,
         wanjieSmsId: response.smsId,
       })
@@ -107,11 +126,13 @@ export function RouteComponent() {
   }) => {
     setProviderSettings((prev) => ({
       ...prev,
-      wanjiePhone: next.phone,
-      wanjieSmsId: next.smsId,
-      wanjieAccountToken: next.accessToken,
-      apiKey: next.apiKey,
-      models: next.models,
+      ...buildWanjieConfiguredSettings({
+        phone: next.phone,
+        smsId: next.smsId,
+        accessToken: next.accessToken,
+        apiKey: next.apiKey,
+        models: next.models,
+      }),
     }))
   }
 
@@ -135,8 +156,14 @@ export function RouteComponent() {
       addToast(msg)
       return
     }
+    if (!workerHost) {
+      const msg = t('Wanjie worker host is not configured in code')
+      setErrorMessage(msg)
+      addToast(msg)
+      return
+    }
     if (!encryptionKey) {
-      const msg = t('Encryption key is required')
+      const msg = t('Wanjie encryption key is not configured in code')
       setErrorMessage(msg)
       addToast(msg)
       return
@@ -189,8 +216,14 @@ export function RouteComponent() {
       addToast(msg)
       return
     }
+    if (!workerHost) {
+      const msg = t('Wanjie worker host is not configured in code')
+      setErrorMessage(msg)
+      addToast(msg)
+      return
+    }
     if (!encryptionKey) {
-      const msg = t('Encryption key is required')
+      const msg = t('Wanjie encryption key is not configured in code')
       setErrorMessage(msg)
       addToast(msg)
       return
@@ -210,6 +243,7 @@ export function RouteComponent() {
       }
 
       setProviderSettings({
+        apiHost: modelApiHost,
         apiKey: synced.apiKey,
         models: synced.models,
       })
@@ -257,38 +291,14 @@ export function RouteComponent() {
         </Alert>
       ) : null}
 
-      <Stack gap="xs">
-        <Text span fw="600">
-          {t('Wanjie Worker API Host')}
+      <Alert variant="light" color="gray" title={t('Built-in Wanjie Configuration')}>
+        <Text size="sm">
+          {t('Wanjie Worker API Host')}: {workerHost}
         </Text>
-        <TextInput
-          value={providerSettings?.wanjieWorkerHost || ''}
-          placeholder={DEFAULT_WORKER_HOST}
-          onChange={(event) => setProviderSettings({ wanjieWorkerHost: event.currentTarget.value })}
-        />
-      </Stack>
-
-      <Stack gap="xs">
-        <Text span fw="600">
-          {t('Encryption Key')}
+        <Text size="sm">
+          {t('Model API Host')}: {modelApiHost}
         </Text>
-        <PasswordInput
-          value={providerSettings?.wanjieEncryptionKey || ''}
-          placeholder={t('32-char key configured in worker ENCRYPTION_KEY') as string}
-          onChange={(event) => setProviderSettings({ wanjieEncryptionKey: event.currentTarget.value })}
-        />
-      </Stack>
-
-      <Stack gap="xs">
-        <Text span fw="600">
-          {t('Model API Host')}
-        </Text>
-        <TextInput
-          value={providerSettings?.apiHost || ''}
-          placeholder={providerBaseInfo?.defaultSettings?.apiHost}
-          onChange={(event) => setProviderSettings({ apiHost: event.currentTarget.value })}
-        />
-      </Stack>
+      </Alert>
 
       <Flex gap="sm" align="flex-end">
         <Stack gap="xs" flex={1}>
@@ -306,23 +316,22 @@ export function RouteComponent() {
         </Button>
       </Flex>
 
-      <Flex gap="sm" align="flex-end">
+      <Stack gap="xs">
         <Stack gap="xs" flex={1}>
           <Text span fw="600">
             {t('Verification Code')}
           </Text>
           <TextInput value={smsCode} placeholder="123456" onChange={(event) => setSmsCode(event.currentTarget.value)} />
         </Stack>
-        <Stack gap="xs" flex={1}>
-          <Text span fw="600">
-            {t('smsId')}
-          </Text>
-          <TextInput value={smsId} onChange={(event) => setSmsId(event.currentTarget.value)} />
-        </Stack>
-      </Flex>
+        <Text size="sm" c="dimmed">
+          {smsId
+            ? t('smsId has been captured automatically from the SMS request.')
+            : t('Please click "Send SMS Code" first to obtain smsId automatically.')}
+        </Text>
+      </Stack>
 
       <Flex gap="sm">
-        <Button onClick={onLoginAndConfigure} loading={loggingIn}>
+        <Button onClick={onLoginAndConfigure} loading={loggingIn} disabled={!smsId.trim()}>
           {t('Login and Configure')}
         </Button>
         <Button variant="light" onClick={onRefreshConfig} loading={syncing}>

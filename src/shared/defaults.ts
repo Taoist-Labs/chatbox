@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import { WANJIE_MODEL_API_HOST } from './constants/wanjie'
 import {
   type Config,
   ModelProviderEnum,
@@ -183,7 +184,7 @@ export const SystemProviders: ProviderBaseInfo[] = [
       docs: 'https://fangzhou.wanjiedata.com',
     },
     defaultSettings: {
-      apiHost: 'https://fangzhou.wanjiedata.com',
+      apiHost: WANJIE_MODEL_API_HOST,
       models: [],
     },
   },

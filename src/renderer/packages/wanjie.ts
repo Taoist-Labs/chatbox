@@ -1,4 +1,5 @@
-import type { ProviderModelInfo } from 'src/shared/types'
+import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from 'src/shared/constants/wanjie'
+import type { ProviderModelInfo, ProviderSettings } from 'src/shared/types'
 
 export interface WanjieEncryptedPayload {
   data: string
@@ -14,6 +15,69 @@ interface WanjieApiResponse<T> {
 }
 
 const WanjieDefaultErrorMessage = 'Wanjie request failed'
+
+export type WanjieAuthDebugStage =
+  | 'request_decrypted'
+  | 'request_encrypted'
+  | 'response_encrypted'
+  | 'response_decrypted'
+  | 'response_failed'
+  | 'response_invalid'
+
+const WanjieAuthDebugPathPattern = /^\/api\/(sms\/send|auth\/login|user\/models|user\/api-key|user\/api-keys)$/
+
+export function shouldLogWanjieAuthPath(path: string): boolean {
+  return WanjieAuthDebugPathPattern.test(path)
+}
+
+export function logWanjieAuthDebug(params: {
+  path: string
+  method: 'GET' | 'POST'
+  stage: WanjieAuthDebugStage
+  data: unknown
+}) {
+  if (!shouldLogWanjieAuthPath(params.path)) {
+    return
+  }
+
+  console.log('[Wanjie Auth Debug]', {
+    path: params.path,
+    method: params.method,
+    stage: params.stage,
+    data: params.data,
+  })
+}
+
+export interface WanjieBuiltinConfig {
+  workerBaseUrl: string
+  encryptionKey: string
+  modelApiHost: string
+}
+
+export function getWanjieBuiltinConfig(): WanjieBuiltinConfig {
+  return {
+    workerBaseUrl: WANJIE_WORKER_API_HOST,
+    encryptionKey: WANJIE_ENCRYPTION_KEY,
+    modelApiHost: WANJIE_MODEL_API_HOST,
+  }
+}
+
+export function buildWanjieConfiguredSettings(params: {
+  phone: string
+  smsId: string
+  accessToken: string
+  apiKey: string
+  models: ProviderModelInfo[]
+}): ProviderSettings {
+  return {
+    apiHost: WANJIE_MODEL_API_HOST,
+    wanjiePhone: params.phone,
+    wanjieSmsId: params.smsId,
+    wanjieAccountToken: params.accessToken,
+    apiKey: params.apiKey,
+    models: params.models,
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -115,17 +179,53 @@ async function requestWanjieEncrypted<T>(params: {
   let url = `${trimTrailingSlash(workerBaseUrl)}${path}`
 
   if (method !== 'GET') {
+    const plainBody = body || {}
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'request_decrypted',
+      data: plainBody,
+    })
+
+    const encryptedBody = await encryptJson(plainBody, encryptionKey)
     headers['Content-Type'] = 'application/json'
-    request.body = JSON.stringify(await encryptJson(body || {}, encryptionKey))
+    request.body = JSON.stringify(encryptedBody)
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'request_encrypted',
+      data: encryptedBody,
+    })
   } else if (accessToken) {
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'request_decrypted',
+      data: { token: accessToken },
+    })
+
     const encryptedToken = await encryptText(accessToken, encryptionKey)
     const token = `${encodeURIComponent(encryptedToken.data)}.${encodeURIComponent(encryptedToken.iv)}`
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'request_encrypted',
+      data: {
+        token: encryptedToken,
+      },
+    })
     url += `?token=${token}`
   }
 
   const response = await fetch(url, request)
   const json = await response.json().catch(() => null)
   if (!isEncryptedPayload(json)) {
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'response_invalid',
+      data: json,
+    })
     const message =
       isRecord(json) && typeof json.message === 'string'
         ? json.message
@@ -133,8 +233,28 @@ async function requestWanjieEncrypted<T>(params: {
     throw new Error(message)
   }
 
+  logWanjieAuthDebug({
+    path,
+    method,
+    stage: 'response_encrypted',
+    data: json,
+  })
+
   const decrypted = await decryptJson<WanjieApiResponse<T>>(json, encryptionKey)
+  logWanjieAuthDebug({
+    path,
+    method,
+    stage: 'response_decrypted',
+    data: decrypted,
+  })
+
   if (!response.ok || !decrypted.success) {
+    logWanjieAuthDebug({
+      path,
+      method,
+      stage: 'response_failed',
+      data: decrypted,
+    })
     throw new Error(decrypted.message || `${WanjieDefaultErrorMessage}: ${response.status}`)
   }
 
