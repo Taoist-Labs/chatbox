@@ -1,5 +1,13 @@
+import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from 'src/shared/constants/wanjie'
 import type { ProviderModelInfo } from 'src/shared/types'
-import { extractWanjieApiKey, mapWanjieModels } from './wanjie'
+import {
+  buildWanjieConfiguredSettings,
+  extractWanjieApiKey,
+  getWanjieBuiltinConfig,
+  logWanjieAuthDebug,
+  mapWanjieModels,
+  shouldLogWanjieAuthPath,
+} from './wanjie'
 
 describe('wanjie helpers', () => {
   it('extracts api key from default api key payload', () => {
@@ -75,5 +83,76 @@ describe('wanjie helpers', () => {
     ]
 
     expect(models).toEqual(expected)
+  })
+
+  it('uses built-in wanjie runtime config', () => {
+    expect(getWanjieBuiltinConfig()).toEqual({
+      workerBaseUrl: WANJIE_WORKER_API_HOST,
+      encryptionKey: WANJIE_ENCRYPTION_KEY,
+      modelApiHost: WANJIE_MODEL_API_HOST,
+    })
+  })
+
+  it('builds configured settings with built-in model host and provided smsId', () => {
+    const models: ProviderModelInfo[] = [{ modelId: 'gpt-4o', type: 'chat' }]
+
+    const settings = buildWanjieConfiguredSettings({
+      phone: '13800138000',
+      smsId: 'sms-123',
+      accessToken: 'token-abc',
+      apiKey: 'sk-test',
+      models,
+    })
+
+    expect(settings).toEqual({
+      apiHost: WANJIE_MODEL_API_HOST,
+      wanjiePhone: '13800138000',
+      wanjieSmsId: 'sms-123',
+      wanjieAccountToken: 'token-abc',
+      apiKey: 'sk-test',
+      models,
+    })
+  })
+
+  it('recognizes wanjie login-related paths for debug logs', () => {
+    expect(shouldLogWanjieAuthPath('/api/sms/send')).toBe(true)
+    expect(shouldLogWanjieAuthPath('/api/auth/login')).toBe(true)
+    expect(shouldLogWanjieAuthPath('/api/user/models')).toBe(true)
+    expect(shouldLogWanjieAuthPath('/api/user/api-key')).toBe(true)
+    expect(shouldLogWanjieAuthPath('/api/user/api-keys')).toBe(true)
+    expect(shouldLogWanjieAuthPath('/api/other')).toBe(false)
+  })
+
+  it('prints encrypted and decrypted debug logs for wanjie auth flow', () => {
+    const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    logWanjieAuthDebug({
+      path: '/api/auth/login',
+      method: 'POST',
+      stage: 'response_encrypted',
+      data: { data: 'cipher', iv: 'nonce' },
+    })
+
+    logWanjieAuthDebug({
+      path: '/api/auth/login',
+      method: 'POST',
+      stage: 'response_decrypted',
+      data: { success: true, result: { accessToken: 'token' } },
+    })
+
+    expect(debugSpy).toHaveBeenCalledTimes(2)
+    expect(debugSpy.mock.calls[0]?.[0]).toBe('[Wanjie Auth Debug]')
+    expect(debugSpy.mock.calls[0]?.[1]).toMatchObject({
+      path: '/api/auth/login',
+      method: 'POST',
+      stage: 'response_encrypted',
+    })
+    expect(debugSpy.mock.calls[1]?.[1]).toMatchObject({
+      path: '/api/auth/login',
+      method: 'POST',
+      stage: 'response_decrypted',
+    })
+
+    debugSpy.mockRestore()
   })
 })
