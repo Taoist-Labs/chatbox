@@ -1,10 +1,9 @@
 import { ChatboxAIAPIError } from '@shared/models/errors'
 import { tool } from 'ai'
 import z from 'zod'
-import * as remote from '@/packages/remote'
+import * as localParser from '@/packages/local-parser'
 import { webSearchExecutor } from '@/packages/web-search'
 import platform from '@/platform'
-import * as settingActions from '@/stores/settingActions'
 
 const toolSetDescription = `
 Use these tools to search the web and extract content from URLs.
@@ -43,13 +42,8 @@ export const parseLinkTool = tool({
       .describe('Optional maximum number of characters to return from the parsed content.'),
   }),
   execute: async (input: { url: string; maxLength?: number }, _context: { abortSignal?: AbortSignal }) => {
-    const licenseKey = settingActions.getLicenseKey()
-    if (!licenseKey) {
-      throw ChatboxAIAPIError.fromCodeName('license_key_required', 'license_key_required')
-    }
-
-    const parsed = await remote.parseUserLinkPro({ licenseKey, url: input.url })
-    const content = ((await platform.getStoreBlob(parsed.storageKey)) || '').trim()
+    const parsed = await localParser.parseUrl(input.url)
+    const content = ((await platform.getStoreBlob(parsed.key)) || '').trim()
 
     const maxLength = input.maxLength ?? DEFAULT_PARSE_LINK_MAX_CHARS
     const normalizedMaxLength = Math.min(Math.max(maxLength, 500), 50_000)
