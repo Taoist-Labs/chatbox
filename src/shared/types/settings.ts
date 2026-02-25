@@ -29,6 +29,7 @@ export const ProviderSettingsSchema = z.object({
   wanjieEncryptionKey: z.string().optional().catch(undefined),
   wanjiePhone: z.string().optional().catch(undefined),
   wanjieSmsId: z.string().optional().catch(undefined),
+  wanjieSmsCooldownUntil: z.number().optional().catch(undefined),
   wanjieAccountToken: z.string().optional().catch(undefined),
 
   // azure

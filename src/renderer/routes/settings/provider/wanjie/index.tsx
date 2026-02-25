@@ -7,7 +7,9 @@ import { ModelProviderEnum } from 'src/shared/types'
 import { ModelList } from '@/components/ModelList'
 import { ScalableIcon } from '@/components/ScalableIcon'
 import {
+  createWanjieSmsCooldownUntil,
   buildWanjieConfiguredSettings,
+  getWanjieSmsCooldownSecondsLeft,
   getWanjieBuiltinConfig,
   loginWanjie,
   maskWanjieApiKey,
@@ -33,7 +35,9 @@ export function RouteComponent() {
   const [phone, setPhone] = useState(providerSettings?.wanjiePhone || '')
   const [smsCode, setSmsCode] = useState('')
   const [smsId, setSmsId] = useState(providerSettings?.wanjieSmsId || '')
-  const [countdown, setCountdown] = useState(0)
+  const [countdown, setCountdown] = useState(() =>
+    getWanjieSmsCooldownSecondsLeft(providerSettings?.wanjieSmsCooldownUntil)
+  )
   const [sendingCode, setSendingCode] = useState(false)
   const [loggingIn, setLoggingIn] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -71,7 +75,14 @@ export function RouteComponent() {
     return () => clearInterval(timer)
   }, [countdown])
 
+  useEffect(() => {
+    setCountdown(getWanjieSmsCooldownSecondsLeft(providerSettings?.wanjieSmsCooldownUntil))
+  }, [providerSettings?.wanjieSmsCooldownUntil])
+
   const onSendCode = async () => {
+    if (sendingCode || countdown > 0) {
+      return
+    }
     const normalizedPhone = phone.trim()
     if (!isLikelyChinaPhone(normalizedPhone)) {
       const msg = t('Please enter a valid 11-digit mainland China phone number')
@@ -100,13 +111,15 @@ export function RouteComponent() {
         encryptionKey,
         phone: normalizedPhone,
       })
+      const cooldownUntil = createWanjieSmsCooldownUntil()
       setSmsId(response.smsId)
       setProviderSettings({
         apiHost: modelApiHost,
         wanjiePhone: normalizedPhone,
         wanjieSmsId: response.smsId,
+        wanjieSmsCooldownUntil: cooldownUntil,
       })
-      setCountdown(60)
+      setCountdown(getWanjieSmsCooldownSecondsLeft(cooldownUntil))
       addToast(t('SMS code sent successfully'))
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : (t('Failed to send SMS code') as string) || ''
@@ -311,7 +324,7 @@ export function RouteComponent() {
             onChange={(event) => setPhone(event.currentTarget.value)}
           />
         </Stack>
-        <Button onClick={onSendCode} loading={sendingCode} disabled={countdown > 0}>
+        <Button onClick={onSendCode} loading={sendingCode} disabled={sendingCode || countdown > 0}>
           {countdown > 0 ? `${countdown}s` : t('Send SMS Code')}
         </Button>
       </Flex>
