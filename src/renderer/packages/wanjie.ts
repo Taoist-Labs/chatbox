@@ -15,6 +15,7 @@ interface WanjieApiResponse<T> {
 }
 
 const WanjieDefaultErrorMessage = 'Wanjie request failed'
+export const WANJIE_SMS_COOLDOWN_SECONDS = 60
 
 export type WanjieAuthDebugStage =
   | 'request_decrypted'
@@ -60,6 +61,20 @@ export function getWanjieBuiltinConfig(): WanjieBuiltinConfig {
     encryptionKey: WANJIE_ENCRYPTION_KEY,
     modelApiHost: WANJIE_MODEL_API_HOST,
   }
+}
+
+export function createWanjieSmsCooldownUntil(
+  nowMs: number = Date.now(),
+  cooldownSeconds: number = WANJIE_SMS_COOLDOWN_SECONDS
+): number {
+  return nowMs + cooldownSeconds * 1000
+}
+
+export function getWanjieSmsCooldownSecondsLeft(cooldownUntilMs?: number, nowMs: number = Date.now()): number {
+  if (!cooldownUntilMs || !Number.isFinite(cooldownUntilMs)) {
+    return 0
+  }
+  return Math.max(0, Math.ceil((cooldownUntilMs - nowMs) / 1000))
 }
 
 export function buildWanjieConfiguredSettings(params: {

@@ -1,8 +1,11 @@
 import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from 'src/shared/constants/wanjie'
 import type { ProviderModelInfo } from 'src/shared/types'
 import {
+  WANJIE_SMS_COOLDOWN_SECONDS,
   buildWanjieConfiguredSettings,
+  createWanjieSmsCooldownUntil,
   extractWanjieApiKey,
+  getWanjieSmsCooldownSecondsLeft,
   getWanjieBuiltinConfig,
   logWanjieAuthDebug,
   mapWanjieModels,
@@ -154,5 +157,19 @@ describe('wanjie helpers', () => {
     })
 
     debugSpy.mockRestore()
+  })
+
+  it('creates sms cooldown deadline using default cooldown seconds', () => {
+    const now = 1_700_000_000_000
+    expect(createWanjieSmsCooldownUntil(now)).toBe(now + WANJIE_SMS_COOLDOWN_SECONDS * 1000)
+  })
+
+  it('computes sms cooldown seconds left with ceiling and clamps to zero', () => {
+    const now = 1_700_000_000_000
+
+    expect(getWanjieSmsCooldownSecondsLeft(now + 59_200, now)).toBe(60)
+    expect(getWanjieSmsCooldownSecondsLeft(now + 1_000, now)).toBe(1)
+    expect(getWanjieSmsCooldownSecondsLeft(now - 1, now)).toBe(0)
+    expect(getWanjieSmsCooldownSecondsLeft(undefined, now)).toBe(0)
   })
 })
