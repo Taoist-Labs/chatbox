@@ -42,31 +42,67 @@ export const SearchResultSchema = z.object({
   items: z.array(SearchResultItemSchema),
 })
 
-// Message file schemas
-export const MessageFileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  fileType: z.string(),
-  url: z.string().optional(),
-  storageKey: z.string().optional(),
-  chatboxAIFileUUID: z.string().optional(),
-  tokenCountMap: TokenCountMapSchema.optional().catch(undefined),
-  tokenCalculatedAt: TokenCalculatedAtSchema,
-  lineCount: z.number().optional(),
-  byteLength: z.number().optional(),
-})
+function normalizeLegacyAttachmentUUID(
+  raw: unknown,
+  targetKey: 'remoteFileUUID' | 'remoteLinkUUID',
+  legacySuffix: 'FileUUID' | 'LinkUUID'
+) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return raw
+  }
 
-export const MessageLinkSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  title: z.string(),
-  storageKey: z.string().optional(),
-  chatboxAILinkUUID: z.string().optional(),
-  tokenCountMap: TokenCountMapSchema.optional(),
-  tokenCalculatedAt: TokenCalculatedAtSchema,
-  lineCount: z.number().optional(),
-  byteLength: z.number().optional(),
-})
+  const record = raw as Record<string, unknown>
+  if (record[targetKey] !== undefined) {
+    return record
+  }
+
+  const legacyKey = Object.keys(record).find((key) => key.endsWith(legacySuffix))
+  if (!legacyKey) {
+    return record
+  }
+
+  const legacyValue = record[legacyKey]
+  if (legacyValue === undefined) {
+    return record
+  }
+
+  return {
+    ...record,
+    [targetKey]: legacyValue,
+  }
+}
+
+// Message file schemas
+export const MessageFileSchema = z.preprocess(
+  (raw) => normalizeLegacyAttachmentUUID(raw, 'remoteFileUUID', 'FileUUID'),
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    fileType: z.string(),
+    url: z.string().optional(),
+    storageKey: z.string().optional(),
+    remoteFileUUID: z.string().optional(),
+    tokenCountMap: TokenCountMapSchema.optional().catch(undefined),
+    tokenCalculatedAt: TokenCalculatedAtSchema,
+    lineCount: z.number().optional(),
+    byteLength: z.number().optional(),
+  })
+)
+
+export const MessageLinkSchema = z.preprocess(
+  (raw) => normalizeLegacyAttachmentUUID(raw, 'remoteLinkUUID', 'LinkUUID'),
+  z.object({
+    id: z.string(),
+    url: z.string(),
+    title: z.string(),
+    storageKey: z.string().optional(),
+    remoteLinkUUID: z.string().optional(),
+    tokenCountMap: TokenCountMapSchema.optional(),
+    tokenCalculatedAt: TokenCalculatedAtSchema,
+    lineCount: z.number().optional(),
+    byteLength: z.number().optional(),
+  })
+)
 
 export const MessagePictureSchema = z.object({
   url: z.string().optional(),

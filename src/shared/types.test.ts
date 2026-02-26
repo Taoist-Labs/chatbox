@@ -1,6 +1,53 @@
 import { describe, expect, it } from 'vitest'
 import { copyMessagesWithMapping, copyThreads, createMessage } from './types'
+import { MessageFileSchema, MessageLinkSchema } from './types/session'
 import type { CompactionPoint, SessionThread } from './types/session'
+
+describe('message attachment uuid key compatibility', () => {
+  it('parses new file uuid field', () => {
+    const parsed = MessageFileSchema.parse({
+      id: 'file-1',
+      name: 'doc.txt',
+      fileType: 'text/plain',
+      remoteFileUUID: 'uuid-new',
+    })
+
+    expect(parsed.remoteFileUUID).toBe('uuid-new')
+  })
+
+  it('maps legacy file uuid field to new field', () => {
+    const parsed = MessageFileSchema.parse({
+      id: 'file-1',
+      name: 'doc.txt',
+      fileType: 'text/plain',
+      chatboxAIFileUUID: 'uuid-legacy',
+    })
+
+    expect(parsed.remoteFileUUID).toBe('uuid-legacy')
+  })
+
+  it('parses new link uuid field', () => {
+    const parsed = MessageLinkSchema.parse({
+      id: 'link-1',
+      url: 'https://example.com',
+      title: 'example',
+      remoteLinkUUID: 'uuid-new',
+    })
+
+    expect(parsed.remoteLinkUUID).toBe('uuid-new')
+  })
+
+  it('maps legacy link uuid field to new field', () => {
+    const parsed = MessageLinkSchema.parse({
+      id: 'link-1',
+      url: 'https://example.com',
+      title: 'example',
+      chatboxAILinkUUID: 'uuid-legacy',
+    })
+
+    expect(parsed.remoteLinkUUID).toBe('uuid-legacy')
+  })
+})
 
 describe('copyMessagesWithMapping', () => {
   it('should return messages with new IDs and mapping', () => {

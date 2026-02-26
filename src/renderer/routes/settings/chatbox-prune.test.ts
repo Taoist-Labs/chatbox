@@ -499,4 +499,10 @@ describe('chatbox deep prune', () => {
     expect(errorTipsSource).not.toMatch(/\bchatboxAIErrorDetail\b/)
     expect(defaultsSource).not.toMatch(/\bchatboxAIModel\b/)
   })
+
+  it('removes chatboxAI-named session attachment uuid fields from shared session schema', () => {
+    const source = readFileSync(new URL('../../../shared/types/session.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/\bchatboxAIFileUUID\b/)
+    expect(source).not.toMatch(/\bchatboxAILinkUUID\b/)
+  })
 })
