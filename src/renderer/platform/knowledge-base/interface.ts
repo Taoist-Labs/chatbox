@@ -2,7 +2,6 @@ import type {
   FileMeta,
   KnowledgeBase,
   KnowledgeBaseFile,
-  KnowledgeBaseProviderMode,
   KnowledgeBaseSearchResult,
 } from '@shared/types'
 import type { DocumentParserConfig } from '@shared/types/settings'
@@ -15,7 +14,6 @@ export interface KnowledgeBaseController {
     rerankModel: string
     visionModel?: string
     documentParser?: DocumentParserConfig
-    providerMode?: KnowledgeBaseProviderMode
   }): Promise<void>
   delete(id: number): Promise<void>
   listFiles(kbId: number): Promise<KnowledgeBaseFile[]>

@@ -26,7 +26,6 @@ export function registerKnowledgeBaseHandlers() {
         embeddingModel: row.embedding_model,
         rerankModel: row.rerank_model,
         visionModel: row.vision_model,
-        providerMode: row.provider_mode ? 'custom' : undefined,
         documentParser: row.document_parser ? JSON.parse(row.document_parser as string) : undefined,
         createdAt: row.created_at,
       }))
@@ -51,19 +50,17 @@ export function registerKnowledgeBaseHandlers() {
         rerankModel,
         visionModel,
         documentParser,
-        providerMode,
       }: {
         name: string
         embeddingModel: string
         rerankModel: string
         visionModel?: string
         documentParser?: { type: string; mineru?: { apiToken: string } }
-        providerMode?: 'custom'
       }
     ) => {
       try {
         log.info(
-          `ipcMain: kb:create, name=${name}, embeddingModel=${embeddingModel}, rerankModel=${rerankModel}, visionModel=${visionModel}, documentParser=${documentParser?.type || 'default'}, providerMode=${providerMode || 'not specified'}`
+          `ipcMain: kb:create, name=${name}, embeddingModel=${embeddingModel}, rerankModel=${rerankModel}, visionModel=${visionModel}, documentParser=${documentParser?.type || 'default'}`
         )
 
         // Validate required fields
@@ -77,15 +74,8 @@ export function registerKnowledgeBaseHandlers() {
         const db = getDatabase()
         const documentParserJson = documentParser ? JSON.stringify(documentParser) : null
         const rs = await db.execute({
-          sql: 'INSERT INTO knowledge_base (name, embedding_model, rerank_model, vision_model, document_parser, provider_mode) VALUES (?, ?, ?, ?, ?, ?)',
-          args: [
-            name.trim(),
-            embeddingModel,
-            rerankModel || null,
-            visionModel || null,
-            documentParserJson,
-            providerMode || 'custom',
-          ],
+          sql: 'INSERT INTO knowledge_base (name, embedding_model, rerank_model, vision_model, document_parser) VALUES (?, ?, ?, ?, ?)',
+          args: [name.trim(), embeddingModel, rerankModel || null, visionModel || null, documentParserJson],
         })
         const id = rs.lastInsertRowid
 
@@ -248,7 +238,6 @@ export function registerKnowledgeBaseHandlers() {
         status: row.status,
         error: row.error,
         createdAt: parseSQLiteTimestamp(row.created_at as string),
-        parsed_remotely: row.parsed_remotely || 0,
         parser_type: row.parser_type || 'local',
       }))
     } catch (error: any) {
@@ -317,7 +306,6 @@ export function registerKnowledgeBaseHandlers() {
         status: row.status,
         error: row.error,
         createdAt: parseSQLiteTimestamp(row.created_at as string),
-        parsed_remotely: row.parsed_remotely || 0,
         parser_type: row.parser_type || 'local',
       }))
     } catch (error: any) {

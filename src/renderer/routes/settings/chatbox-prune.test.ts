@@ -213,4 +213,34 @@ describe('chatbox deep prune', () => {
     expect(ipcSource).not.toMatch(/useRemoteParsing/)
     expect(loaderSource).not.toMatch(/use_remote_parsing/)
   })
+
+  it('removes kb provider mode runtime fields from shared and controller sources', () => {
+    const sharedSource = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
+    const interfaceSource = readFileSync(new URL('../../platform/knowledge-base/interface.ts', import.meta.url), 'utf8')
+    const controllerSource = readFileSync(
+      new URL('../../platform/knowledge-base/desktop-controller.ts', import.meta.url),
+      'utf8'
+    )
+    const pageSource = readFileSync(new URL('../../components/knowledge-base/KnowledgeBase.tsx', import.meta.url), 'utf8')
+
+    expect(sharedSource).not.toMatch(/KnowledgeBaseProviderMode/)
+    expect(sharedSource).not.toMatch(/providerMode\?:/)
+    expect(interfaceSource).not.toMatch(/providerMode\?:/)
+    expect(controllerSource).not.toMatch(/providerMode\?:/)
+    expect(pageSource).not.toMatch(/providerMode:\s*'custom'/)
+  })
+
+  it('removes kb file parsed_remotely runtime fields from shared and ipc sources', () => {
+    const sharedSource = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
+    const ipcSource = readFileSync(new URL('../../../main/knowledge-base/ipc-handlers.ts', import.meta.url), 'utf8')
+
+    expect(sharedSource).not.toMatch(/parsed_remotely/)
+    expect(ipcSource).not.toMatch(/parsed_remotely:/)
+  })
+
+  it('removes kb provider_mode runtime reads and writes from ipc source', () => {
+    const ipcSource = readFileSync(new URL('../../../main/knowledge-base/ipc-handlers.ts', import.meta.url), 'utf8')
+    expect(ipcSource).not.toMatch(/providerMode:/)
+    expect(ipcSource).not.toMatch(/provider_mode/)
+  })
 })

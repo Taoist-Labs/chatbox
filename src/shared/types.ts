@@ -163,16 +163,12 @@ export function copyThreads(source?: SessionThread[], idMapping?: Map<string, st
   })
 }
 
-// RAG related types
-export type KnowledgeBaseProviderMode = 'custom'
-
 export interface KnowledgeBase {
   id: number
   name: string
   embeddingModel: string
   rerankModel: string
   visionModel?: string
-  providerMode?: KnowledgeBaseProviderMode
   documentParser?: DocumentParserConfig
   createdAt: number
 }
@@ -189,7 +185,6 @@ export interface KnowledgeBaseFile {
   status: string
   error: string
   createdAt: number
-  parsed_remotely: number
   parser_type?: DocumentParserType
 }
 

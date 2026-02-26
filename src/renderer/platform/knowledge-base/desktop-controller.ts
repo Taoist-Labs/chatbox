@@ -1,5 +1,5 @@
 import type { ElectronIPC } from '@shared/electron-types'
-import type { FileMeta, KnowledgeBaseProviderMode } from '@shared/types'
+import type { FileMeta } from '@shared/types'
 import type { DocumentParserConfig } from '@shared/types/settings'
 import type { KnowledgeBaseController } from './interface'
 
@@ -17,7 +17,6 @@ class DesktopKnowledgeBaseController implements KnowledgeBaseController {
     rerankModel: string
     visionModel?: string
     documentParser?: DocumentParserConfig
-    providerMode?: KnowledgeBaseProviderMode
   }) {
     await this.ipc.invoke('kb:create', createParams)
   }

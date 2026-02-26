@@ -237,11 +237,9 @@ const KnowledgeBasePage: React.FC = () => {
         rerankModel: rerankModel,
         visionModel: visionModel,
         documentParser: documentParser,
-        providerMode: 'custom',
       })
 
       trackEvent('knowledge_base_created', {
-        provider_mode: 'custom',
         embedding_model: embeddingModel,
         rerank_model: rerankModel || null,
         vision_model: visionModel || null,
