@@ -331,4 +331,28 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/value === 'chatbox-ai' \? 'local' : value/)
   })
+
+  it('removes chatbox provider enum entries from shared provider types source', () => {
+    const source = readFileSync(new URL('../../../shared/types/provider.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ChatboxAI = 'chatbox-ai'/)
+  })
+
+  it('removes chatbox provider name mapping from shared models source', () => {
+    const source = readFileSync(new URL('../../../shared/models/index.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes chatbox provider enum usage from migration source', () => {
+    const source = readFileSync(new URL('../../stores/migration.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes chatbox provider enum usage from initial data source', () => {
+    const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes obsolete chatbox provider definition file', () => {
+    expect(existsSync(new URL('../../../shared/providers/definitions/chatboxai.ts', import.meta.url))).toBe(false)
+  })
 })

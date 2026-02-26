@@ -636,9 +636,13 @@ async function migrate_9_to_10(dataStore: MigrateStore): Promise<boolean> {
 
       if (session.id) {
         const oldSessionSettings = (session.settings || {}) as any
-        const sessionProvider: ModelProvider = oldSessionSettings.aiProvider ?? oldSettings.aiProvider
-        const modelKey = {
-          [ModelProviderEnum.ChatboxAI]: 'chatboxAIModel',
+        const rawSessionProvider = (oldSessionSettings.aiProvider ?? oldSettings.aiProvider) as ModelProvider
+        const sessionProvider: ModelProvider = Object.values(ModelProviderEnum).includes(
+          rawSessionProvider as ModelProviderEnum
+        )
+          ? rawSessionProvider
+          : ModelProviderEnum.Wanjie
+        const modelKeyMap: Partial<Record<ModelProviderEnum, string>> = {
           [ModelProviderEnum.OpenAI]: 'model',
           [ModelProviderEnum.Claude]: 'claudeModel',
           [ModelProviderEnum.Gemini]: 'geminiModel',
@@ -652,8 +656,9 @@ async function migrate_9_to_10(dataStore: MigrateStore): Promise<boolean> {
           [ModelProviderEnum.Groq]: 'groqModel',
           [ModelProviderEnum.ChatGLM6B]: 'chatglmModel',
           [ModelProviderEnum.Custom]: 'model',
-        }[sessionProvider]
-        const modelId: string = oldSessionSettings[modelKey!] ?? oldSettings[modelKey!]
+        }
+        const modelKey = modelKeyMap[sessionProvider as ModelProviderEnum] ?? 'model'
+        const modelId: string = oldSessionSettings[modelKey] ?? oldSettings[modelKey] ?? ''
         session.settings =
           session.type === 'chat'
             ? {

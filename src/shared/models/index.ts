@@ -10,7 +10,6 @@ export const aiProviderNameHash: Record<ModelProviderEnum, string> = {
   [ModelProviderEnum.OpenAIResponses]: 'OpenAI Responses API',
   [ModelProviderEnum.Azure]: 'Azure OpenAI API',
   [ModelProviderEnum.ChatGLM6B]: 'ChatGLM API',
-  [ModelProviderEnum.ChatboxAI]: 'Chatbox AI',
   [ModelProviderEnum.Claude]: 'Claude API',
   [ModelProviderEnum.Gemini]: 'Google Gemini API',
   [ModelProviderEnum.Ollama]: 'Ollama API',
