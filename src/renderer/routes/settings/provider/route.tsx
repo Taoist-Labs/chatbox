@@ -1,6 +1,6 @@
 import { Box, Flex } from '@mantine/core'
 import { SystemProviders } from '@shared/defaults'
-import type { ModelProviderEnum, ProviderInfo, ProviderSettings } from '@shared/types'
+import { ModelProviderEnum, type ProviderInfo, type ProviderSettings } from '@shared/types'
 import { createFileRoute, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,7 +11,6 @@ import { ImportProviderModal } from '@/components/settings/provider/ImportProvid
 import { ProviderList } from '@/components/settings/provider/ProviderList'
 import { useProviderImport } from '@/hooks/useProviderImport'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
-import useVersion from '@/hooks/useVersion'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { add as addToast } from '@/stores/toastActions'
 import { decodeBase64 } from '@/utils/base64'
@@ -34,22 +33,17 @@ export function RouteComponent() {
   const routerState = useRouterState()
   const customProviders = useSettingsStore((state) => state.customProviders)
   const providersMap = useSettingsStore((state) => state.providers)
-  const { isExceeded } = useVersion()
 
   const providers = useMemo<ProviderInfo[]>(
     () =>
       [
-        ...SystemProviders().filter(
-          (p) =>
-            p.id !== 'chatbox-ai' && // Chatbox AI is now a top-level menu item
-            !(isExceeded && p.name.toLocaleLowerCase().match(/openai|claude|gemini/i))
-        ),
+        ...SystemProviders().filter((p) => p.id === ModelProviderEnum.Wanjie),
         ...(customProviders || []),
       ].map((p) => ({
         ...p,
         ...(providersMap?.[p.id] || {}),
       })),
-    [customProviders, isExceeded, providersMap]
+    [customProviders, providersMap]
   )
 
   const [newProviderModalOpened, setNewProviderModalOpened] = useState(false)

@@ -1,5 +1,5 @@
-import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from 'src/shared/constants/wanjie'
-import type { ProviderModelInfo, ProviderSettings } from 'src/shared/types'
+import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from '@shared/constants/wanjie'
+import type { ProviderModelInfo, ProviderSettings } from '@shared/types'
 
 export interface WanjieEncryptedPayload {
   data: string
@@ -159,10 +159,12 @@ async function encryptText(plaintext: string, encryptionKey: string): Promise<Wa
 
 async function decryptText(payload: WanjieEncryptedPayload, encryptionKey: string): Promise<string> {
   const key = await importWanjieKey(encryptionKey)
+  const iv = Uint8Array.from(decodeBase64(payload.iv))
+  const data = Uint8Array.from(decodeBase64(payload.data))
   const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: decodeBase64(payload.iv) },
+    { name: 'AES-GCM', iv },
     key,
-    decodeBase64(payload.data)
+    data
   )
   return new TextDecoder().decode(decrypted)
 }

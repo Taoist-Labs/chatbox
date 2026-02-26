@@ -3,9 +3,9 @@ import { IconCircleCheck, IconInfoCircle, IconRefresh, IconRestore } from '@tabl
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ModelProviderEnum } from 'src/shared/types'
+import { ModelProviderEnum } from '@shared/types'
 import { ModelList } from '@/components/ModelList'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import {
   createWanjieSmsCooldownUntil,
   buildWanjieConfiguredSettings,

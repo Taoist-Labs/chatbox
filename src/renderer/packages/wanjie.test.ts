@@ -1,5 +1,6 @@
-import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from 'src/shared/constants/wanjie'
-import type { ProviderModelInfo } from 'src/shared/types'
+import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from '@shared/constants/wanjie'
+import type { ProviderModelInfo } from '@shared/types'
+import { describe, expect, it, vi } from 'vitest'
 import {
   WANJIE_SMS_COOLDOWN_SECONDS,
   buildWanjieConfiguredSettings,
