@@ -434,12 +434,11 @@ describe('chatbox deep prune', () => {
   it('removes chatbox-named shared request pool import paths', () => {
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
-    const providerSource = readFileSync(
-      new URL('../../../shared/providers/definitions/models/chatboxai.ts', import.meta.url),
-      'utf8'
-    )
     expect(requestSource).not.toMatch(/chatboxai_pool/)
     expect(remoteSource).not.toMatch(/chatboxai_pool/)
-    expect(providerSource).not.toMatch(/chatboxai_pool/)
+  })
+
+  it('removes orphaned chatbox-specific provider model file', () => {
+    expect(existsSync(new URL('../../../shared/providers/definitions/models/chatboxai.ts', import.meta.url))).toBe(false)
   })
 })
