@@ -13,20 +13,19 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import type { ImageGeneration } from '@shared/types'
-import { ModelProviderEnum, ModelProviderType } from '@shared/types'
 import {
+  IconArrowUp,
   IconAspectRatio,
   IconChevronRight,
   IconHistory,
   IconPhoto,
-  IconArrowUp,
   IconPlus,
   IconSparkles,
 } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CHATBOXAI_DEFAULT_IMAGE_MODEL, ImageModelSelect } from '@/components/ImageModelSelect'
+import { ImageModelSelect } from '@/components/ImageModelSelect'
 import Page from '@/components/layout/Page'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
@@ -47,7 +46,6 @@ import { lastUsedModelStore } from '@/stores/lastUsedModelStore'
 import { queryClient } from '@/stores/queryClient'
 import {
   blobToDataUrl,
-  CHATBOXAI_IMAGE_MODEL_IDS,
   GEMINI_IMAGE_MODEL_IDS,
   getRatioOptionsForModel,
   HISTORY_PANEL_WIDTH,
@@ -215,7 +213,7 @@ function ImageCreatorPage() {
   >([])
   const [showHistory, setShowHistory] = useState(true)
   const [showMobileHistory, setShowMobileHistory] = useState(false)
-  const [selectedProvider, setSelectedProvider] = useState<string>(ModelProviderEnum.ChatboxAI)
+  const [selectedProvider, setSelectedProvider] = useState<string>('')
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [selectedRatio, setSelectedRatio] = useState<string>('auto')
   const [showModelDrawer, setShowModelDrawer] = useState(false)
@@ -291,7 +289,7 @@ function ImageCreatorPage() {
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!prompt.trim() || isCurrentlyGenerating) return
+    if (!prompt.trim() || !selectedProvider || !selectedModel || isCurrentlyGenerating) return
 
     try {
       // Collect all unique source record IDs from reference images (DAG support)
@@ -320,7 +318,7 @@ function ImageCreatorPage() {
 
   const handleQuickPromptSubmit = useCallback(
     async (quickPrompt: string) => {
-      if (isCurrentlyGenerating) return
+      if (isCurrentlyGenerating || !selectedProvider || !selectedModel) return
 
       try {
         await createAndGenerate({
@@ -405,50 +403,34 @@ function ImageCreatorPage() {
   }
 
   const imageModelGroups = useMemo(() => {
-    const groups: { label: string; providerId: string; models: { modelId: string; displayName: string }[] }[] = []
-
-    const chatboxProvider = providers.find((p) => p.id === ModelProviderEnum.ChatboxAI)
-    if (chatboxProvider) {
-      const providerModels = chatboxProvider.models || chatboxProvider.defaultSettings?.models || []
-      const models = getAvailableImageModels(providerModels, CHATBOXAI_IMAGE_MODEL_IDS)
-      groups.push({
-        label: 'Chatbox AI',
-        providerId: ModelProviderEnum.ChatboxAI,
-        models: [CHATBOXAI_DEFAULT_IMAGE_MODEL, ...models],
-      })
-    }
-
-    const geminiProvider = providers.find((p) => p.id === ModelProviderEnum.Gemini)
-    if (geminiProvider) {
-      const providerModels = geminiProvider.models || geminiProvider.defaultSettings?.models || []
-      const models = getAvailableImageModels(providerModels, GEMINI_IMAGE_MODEL_IDS)
-      if (models.length > 0) {
-        groups.push({ label: 'Google Gemini', providerId: ModelProviderEnum.Gemini, models })
-      }
-    }
-
-    providers
-      .filter((p) => p.isCustom && p.type === ModelProviderType.Gemini)
-      .forEach((provider) => {
+    return providers
+      .map((provider) => {
         const providerModels = provider.models || provider.defaultSettings?.models || []
-        const models = getAvailableImageModels(providerModels, GEMINI_IMAGE_MODEL_IDS)
-        if (models.length > 0) {
-          groups.push({ label: provider.name, providerId: provider.id, models })
+        const models = getAvailableImageModels(providerModels, [...GEMINI_IMAGE_MODEL_IDS, ...OPENAI_IMAGE_MODEL_IDS])
+        if (models.length === 0) {
+          return null
         }
+        return { label: provider.name, providerId: provider.id, models }
       })
-
-    providers
-      .filter((p) => [ModelProviderEnum.OpenAI, ModelProviderEnum.Azure].includes(p.id as ModelProviderEnum))
-      .forEach((provider) => {
-        const providerModels = provider.models || provider.defaultSettings?.models || []
-        const models = getAvailableImageModels(providerModels, OPENAI_IMAGE_MODEL_IDS)
-        if (models.length > 0) {
-          groups.push({ label: provider.name, providerId: provider.id, models })
-        }
-      })
-
-    return groups
+      .filter(
+        (group): group is { label: string; providerId: string; models: { modelId: string; displayName: string }[] } =>
+          group !== null
+      )
   }, [providers])
+
+  useEffect(() => {
+    if (imageModelGroups.length === 0) {
+      return
+    }
+    const selectedGroup = imageModelGroups.find((group) => group.providerId === selectedProvider)
+    const hasSelectedModel = selectedGroup?.models.some((model) => model.modelId === selectedModel)
+    if (selectedGroup && hasSelectedModel) {
+      return
+    }
+    const firstGroup = imageModelGroups[0]
+    setSelectedProvider(firstGroup.providerId)
+    setSelectedModel(firstGroup.models[0]?.modelId || '')
+  }, [imageModelGroups, selectedProvider, selectedModel])
 
   // Workaround: DALL-E-3 was removed in new version, fallback to GPT Image
   useEffect(() => {
@@ -458,17 +440,17 @@ function ImageCreatorPage() {
   }, [selectedModel])
 
   const modelDisplayName = useMemo(() => {
+    if (!selectedProvider || !selectedModel) {
+      return t('Select model')
+    }
     const provider = providers.find((p) => p.id === selectedProvider)
     const providerModels = provider?.models || provider?.defaultSettings?.models || []
     const model = providerModels.find((m) => m.modelId === selectedModel)
     const modelName = model?.nickname || IMAGE_MODEL_FALLBACK_NAMES[selectedModel] || selectedModel
 
-    if (selectedProvider === ModelProviderEnum.ChatboxAI) {
-      return modelName
-    }
     const providerName = provider?.name || selectedProvider
-    return `${providerName} - ${modelName}`
-  }, [selectedProvider, selectedModel, providers])
+    return modelName ? `${providerName} - ${modelName}` : providerName
+  }, [selectedProvider, selectedModel, providers, t])
 
   const headerRight = isSmallScreen ? (
     <ActionIcon
@@ -597,11 +579,11 @@ function ImageCreatorPage() {
                       color={isCurrentlyGenerating ? 'dark' : 'chatbox-brand'}
                       radius="xl"
                       onClick={isCurrentlyGenerating ? undefined : handleSubmit}
-                      disabled={!prompt.trim() && !isCurrentlyGenerating}
-                      className={`shrink-0 mb-1 ${!prompt.trim() && !isCurrentlyGenerating ? 'disabled:!opacity-100 !text-white' : ''}`}
+                      disabled={(!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating}
+                      className={`shrink-0 mb-1 ${(!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating ? 'disabled:!opacity-100 !text-white' : ''}`}
                       style={{
                         cursor: isCurrentlyGenerating ? 'default' : undefined,
-                        ...(!prompt.trim() && !isCurrentlyGenerating
+                        ...((!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating
                           ? { backgroundColor: 'rgba(222, 226, 230, 1)' }
                           : {}),
                       }}

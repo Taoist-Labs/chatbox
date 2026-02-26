@@ -14,14 +14,13 @@ import type {
   OnResultChangeWithCancel,
   OnStatusChange,
 } from '../../../shared/models/types'
-import {
-  type KnowledgeBase,
-  type Message,
-  type MessageInfoPart,
-  type MessageToolCallPart,
-  ModelProviderEnum,
-  type ProviderOptions,
-  type StreamTextResult,
+import type {
+  KnowledgeBase,
+  Message,
+  MessageInfoPart,
+  MessageToolCallPart,
+  ProviderOptions,
+  StreamTextResult,
 } from '../../../shared/types'
 import { mcpController } from '../mcp/controller'
 import { convertToModelMessages, injectModelSystemPrompt } from './message-utils'
@@ -92,27 +91,17 @@ async function handleSearchResult(
 async function ocrMessages(messages: Message[]) {
   const settings = settingsStore.getState().getSettings()
   const hasUserOcrModel = settings.ocrModel?.provider && settings.ocrModel?.model
-  const hasLicenseKey = !!settings.licenseKey
 
-  if (!hasUserOcrModel && !hasLicenseKey) {
-    // No user-configured OCR model and no Chatbox AI license — cannot perform OCR
+  if (!hasUserOcrModel) {
     throw ChatboxAIAPIError.fromCodeName('model_not_support_image_2', 'model_not_support_image_2')
   }
 
-  const ocrProviderName = hasUserOcrModel ? settings.ocrModel!.provider : 'Chatbox AI'
+  const ocrProviderName = settings.ocrModel!.provider
   try {
-    let ocrModel: ModelInterface
     const dependencies = await createModelDependencies()
-    if (hasUserOcrModel) {
-      // User has explicitly configured an OCR model — always respect their choice
-      const ocrModelSetting = settings.ocrModel!
-      const modelSettings = getModelSettings(settings, ocrModelSetting.provider, ocrModelSetting.model)
-      ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
-    } else {
-      // Fallback to Chatbox AI built-in OCR model
-      const modelSettings = getModelSettings(settings, ModelProviderEnum.ChatboxAI, 'chatbox-ocr-1')
-      ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
-    }
+    const ocrModelSetting = settings.ocrModel!
+    const modelSettings = getModelSettings(settings, ocrModelSetting.provider, ocrModelSetting.model)
+    const ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
     await imageOCR(ocrModel, messages)
   } catch (err) {
     throw new OCRError(ocrProviderName, err instanceof Error ? err : new Error(`${err}`))

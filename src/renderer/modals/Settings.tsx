@@ -12,14 +12,13 @@ import clsx from 'clsx'
 import { type FC, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'sonner'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import SettingsKnowledgeBaseRouteComponent from '@/components/knowledge-base/KnowledgeBase'
 import { Modal } from '@/components/layout/Overlay'
-import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { getThemeDesign } from '@/hooks/useAppTheme'
 import useNeedRoomForWinControls from '@/hooks/useNeedRoomForWinControls'
 import { router } from '@/router'
 import { RouteComponent as SettingsChatRouteComponent } from '@/routes/settings/chat'
-import { RouteComponent as SettingsChatboxAiRouteComponent } from '@/routes/settings/chatbox-ai'
 import { RouteComponent as SettingsDefaultModelsRouteComponent } from '@/routes/settings/default-models'
 import { RouteComponent as SettingsDocumentParserRouteComponent } from '@/routes/settings/document-parser'
 import { RouteComponent as SettingsGeneralRouteComponent } from '@/routes/settings/general'
@@ -27,7 +26,6 @@ import { RouteComponent as SettingsHotkeysRouteComponent } from '@/routes/settin
 import { RouteComponent as SettingsIndexRouteComponent } from '@/routes/settings/index'
 import { RouteComponent as SettingsMcpRouteComponent } from '@/routes/settings/mcp'
 import { RouteComponent as SettingsProviderProviderIdRouteComponent } from '@/routes/settings/provider/$providerId'
-import { RouteComponent as SettingsProviderChatboxAiRouteComponent } from '@/routes/settings/provider/chatbox-ai'
 import { RouteComponent as SettingsProviderIndexRouteComponent } from '@/routes/settings/provider/index'
 import { RouteComponent as SettingsProviderRouteRouteComponent } from '@/routes/settings/provider/route'
 import { RouteComponent as SettingsProviderWanjieRouteComponent } from '@/routes/settings/provider/wanjie'
@@ -136,12 +134,6 @@ const SettingsIndexRoute = createRoute({
   getParentRoute: () => RootRoute,
 })
 
-const SettingsChatboxAiRoute = createRoute({
-  component: SettingsChatboxAiRouteComponent,
-  path: '/settings/chatbox-ai',
-  getParentRoute: () => RootRoute,
-})
-
 const SettingsGeneralRoute = createRoute({
   component: SettingsGeneralRouteComponent,
   path: '/settings/general',
@@ -202,12 +194,6 @@ const SettingsProviderIndexRoute = createRoute({
   getParentRoute: () => SettingsProviderRouteRoute,
 })
 
-const SettingsProviderChatboxAiRoute = createRoute({
-  component: SettingsProviderChatboxAiRouteComponent,
-  path: '/chatbox-ai',
-  getParentRoute: () => SettingsProviderRouteRoute,
-})
-
 const SettingsProviderWanjieRoute = createRoute({
   component: SettingsProviderWanjieRouteComponent,
   path: '/wanjie',
@@ -222,14 +208,12 @@ const SettingsProviderProviderIdRoute = createRoute({
 
 SettingsProviderRouteRoute.addChildren([
   SettingsProviderIndexRoute,
-  SettingsProviderChatboxAiRoute,
   SettingsProviderWanjieRoute,
   SettingsProviderProviderIdRoute,
 ])
 
 const routeTree = RootRoute.addChildren([
   SettingsIndexRoute,
-  SettingsChatboxAiRoute,
   SettingsGeneralRoute,
   SettingsChatRoute,
   SettingsWebSearchRoute,

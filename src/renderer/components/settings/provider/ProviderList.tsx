@@ -63,11 +63,9 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
             <Link
               key={provider.id}
               to={
-                provider.id === ModelProviderEnum.ChatboxAI
-                  ? '/settings/provider/chatbox-ai'
-                  : provider.id === ModelProviderEnum.Wanjie
-                    ? '/settings/provider/wanjie'
-                    : '/settings/provider/$providerId'
+                provider.id === ModelProviderEnum.Wanjie
+                  ? '/settings/provider/wanjie'
+                  : '/settings/provider/$providerId'
               }
               params={{ providerId: provider.id }}
               className={'block no-underline'}
