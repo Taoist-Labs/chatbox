@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 describe('chatbox deep prune', () => {
@@ -76,5 +76,18 @@ describe('chatbox deep prune', () => {
 
     expect(source).not.toMatch(/chatbox-ocr-1/)
     expect(source).not.toMatch(/Fallback to Chatbox AI built-in OCR model/)
+  })
+
+  it('removes obsolete chatbox settings component directory', () => {
+    expect(existsSync(new URL('./provider/chatbox-ai/-components', import.meta.url))).toBe(false)
+  })
+
+  it('removes obsolete chatbox models hook file', () => {
+    expect(existsSync(new URL('../../hooks/useChatboxAIModels.ts', import.meta.url))).toBe(false)
+  })
+
+  it('removes auth store type dependency on chatbox settings route', () => {
+    const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/routes\/settings\/provider\/chatbox-ai\/-components\/types/)
   })
 })
