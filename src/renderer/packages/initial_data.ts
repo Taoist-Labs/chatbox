@@ -58,7 +58,7 @@ export const defaultSessionsForEN: Session[] = [
     id: 'e22ab364-4681-4e24-aaba-461ed0fccfd3',
     name: 'Travel Guide (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/travel.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/travel.png',
     messages: [
       {
         id: 'a639e972-10b7-4a67-8f3d-bf46e1e94c68',
@@ -87,7 +87,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '55d92e88-02af-4c3b-a378-aa0a1970abb1',
     name: 'Social Media Influencer (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/twitter.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/twitter.png',
     messages: [
       {
         id: 'f8f341f4-9a13-448d-becd-b8d07c31f8dd',
@@ -116,7 +116,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '35df5a96-b612-406a-985b-3ab4d2c481ff',
     name: 'Software Developer (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/programmer.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/programmer.png',
     messages: [
       {
         id: 'a700be6c-cbdd-43a3-b572-49e7a921c059',
@@ -145,7 +145,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '776eac23-7b4a-40da-91cd-f233bb4742ed',
     name: 'Translator (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/translator.jpeg',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/translator.jpeg',
     messages: [
       {
         id: '4f609d56-5e6a-40b7-8e32-7b3ba8a9a990',
@@ -212,7 +212,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '81cfc426-48b4-4a13-ad42-bfcfc4544299',
     name: '小红书文案生成器 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/xhs.webp',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/xhs.webp',
     messages: [
       {
         id: '7a0de212-2790-49dd-a47a-b1cf67cfb581',
@@ -240,7 +240,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '8732ec08-b23c-4b5e-8f65-d63d808f970f',
     name: '夸夸机 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/9fa8f1eb09e717d110d614d7474cbc591381206547520499117.gif',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/9fa8f1eb09e717d110d614d7474cbc591381206547520499117.gif',
     messages: [
       {
         id: '2045db61-b350-43b1-b3f2-442d68d379aa',
@@ -269,7 +269,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '3e091ac6-ebfa-42c9-b125-c67ac2d45ee1',
     name: '翻译助手 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/translator.jpeg',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/translator.jpeg',
     messages: [
       {
         id: 'ed9b9e74-1715-446e-b3c1-bed565c4878c',
@@ -326,9 +326,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/card1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card3.png' },
       ],
     },
     {
@@ -341,9 +341,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/movie1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie3.png' },
       ],
     },
     {
@@ -356,9 +356,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/comic1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic3.png' },
       ],
     },
     {
@@ -371,9 +371,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/app1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app3.png' },
       ],
     },
     {
@@ -386,9 +386,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/girl1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl3.png' },
       ],
     },
     {
@@ -401,9 +401,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/cat1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat3.png' },
       ],
     },
   ].map(migrateMessage),
@@ -439,9 +439,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/card1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card3.png' },
       ],
     },
     {
@@ -454,9 +454,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/movie1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie3.png' },
       ],
     },
     {
@@ -469,9 +469,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/comic1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic3.png' },
       ],
     },
     {
@@ -484,9 +484,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/app1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app3.png' },
       ],
     },
     {
@@ -499,9 +499,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/girl1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl3.png' },
       ],
     },
     {
@@ -514,9 +514,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/cat1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat3.png' },
       ],
     },
   ].map(migrateMessage),
@@ -526,7 +526,7 @@ export const artifactSessionCN: Session = {
   id: 'chatbox-chat-demo-artifact-1-cn',
   name: '贪吃蛇(Artifact Example)',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/snake_game.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/snake_game.png',
   messages: [
     {
       id: '0104fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -591,7 +591,7 @@ export const artifactSessionEN: Session = {
   id: 'chatbox-chat-demo-artifact-1-en',
   name: 'Snake Game (Artifact Example)',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/snake_game.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/snake_game.png',
   messages: [
     {
       id: '0104fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -656,7 +656,7 @@ export const mermaidSessionEN: Session = {
   id: 'mermaid-demo-1-en',
   name: 'ChartWhiz',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/chartwhiz.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/chartwhiz.png',
   messages: [
     {
       id: '0001fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -845,7 +845,7 @@ export const mermaidSessionCN: Session = {
   id: 'mermaid-demo-1-cn',
   name: '做图表',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/chartwhiz.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/chartwhiz.png',
   messages: [
     {
       id: '0011fabe-564a-4b99-b9e3-24c34a6805b2',

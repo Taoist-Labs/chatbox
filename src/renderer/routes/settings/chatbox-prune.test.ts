@@ -646,4 +646,10 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../packages/mcp/builtin.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/mcp\.chatboxai\.app/)
   })
+
+  it('removes chatbox asset domains from initial session data source', () => {
+    const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/static\.chatboxai\.app/)
+    expect(source).not.toMatch(/download\.chatboxai\.app/)
+  })
 })
