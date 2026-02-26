@@ -585,4 +585,11 @@ describe('chatbox deep prune', () => {
     expect(customOpenAIResponsesSource).not.toMatch(/https:\/\/chatboxai\.app/)
     expect(customOpenAIResponsesSource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
   })
+
+  it('removes chatbox-specific image generation upgrade links from error tips source', () => {
+    const source = readFileSync(new URL('../image-creator/-components/ImageGenerationErrorTips.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+    expect(source).not.toMatch(/view_more_plans/)
+    expect(source).not.toMatch(/click_view_more_plans_button_from_image_creator/)
+  })
 })
