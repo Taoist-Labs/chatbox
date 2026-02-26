@@ -26,7 +26,7 @@ export function registerKnowledgeBaseHandlers() {
         embeddingModel: row.embedding_model,
         rerankModel: row.rerank_model,
         visionModel: row.vision_model,
-        providerMode: row.provider_mode || undefined,
+        providerMode: row.provider_mode ? 'custom' : undefined,
         documentParser: row.document_parser ? JSON.parse(row.document_parser as string) : undefined,
         createdAt: row.created_at,
       }))
@@ -58,7 +58,7 @@ export function registerKnowledgeBaseHandlers() {
         rerankModel: string
         visionModel?: string
         documentParser?: { type: string; mineru?: { apiToken: string } }
-        providerMode?: 'chatbox-ai' | 'custom'
+        providerMode?: 'custom'
       }
     ) => {
       try {
@@ -84,7 +84,7 @@ export function registerKnowledgeBaseHandlers() {
             rerankModel || null,
             visionModel || null,
             documentParserJson,
-            providerMode || null,
+            providerMode || 'custom',
           ],
         })
         const id = rs.lastInsertRowid
@@ -496,9 +496,9 @@ export function registerKnowledgeBaseHandlers() {
   })
 
   // Retry failed files
-  ipcMain.handle('kb:file:retry', async (_event, fileId: number, useRemoteParsing = false) => {
+  ipcMain.handle('kb:file:retry', async (_event, fileId: number) => {
     try {
-      log.debug(`ipcMain: kb:file:retry, fileId=${fileId}, useRemoteParsing=${useRemoteParsing}`)
+      log.debug(`ipcMain: kb:file:retry, fileId=${fileId}`)
 
       if (!fileId || fileId <= 0) {
         throw new Error('Invalid file ID')
@@ -518,15 +518,13 @@ export function registerKnowledgeBaseHandlers() {
         throw new Error('Only failed files can be retried')
       }
 
-      // Reset file status to pending for reprocessing, also set use_remote_parsing flag
+      // Reset file status to pending for reprocessing
       await db.execute({
-        sql: 'UPDATE kb_file SET status = ?, error = NULL, chunk_count = 0, total_chunks = 0, processing_started_at = NULL, use_remote_parsing = ? WHERE id = ?',
-        args: ['pending', useRemoteParsing ? 1 : 0, fileId],
+        sql: 'UPDATE kb_file SET status = ?, error = NULL, chunk_count = 0, total_chunks = 0, processing_started_at = NULL WHERE id = ?',
+        args: ['pending', fileId],
       })
 
-      log.info(
-        `[IPC] File retry request created: ${file.filename} (id=${fileId}, useRemoteParsing=${useRemoteParsing})`
-      )
+      log.info(`[IPC] File retry request created: ${file.filename} (id=${fileId})`)
       return { success: true }
     } catch (error: any) {
       log.error(`ipcMain: kb:file:retry failed for fileId=${fileId}`, error)
@@ -534,7 +532,6 @@ export function registerKnowledgeBaseHandlers() {
         scope.setTag('component', 'knowledge-base-ipc')
         scope.setTag('operation', 'file_retry')
         scope.setExtra('fileId', fileId)
-        scope.setExtra('useRemoteParsing', useRemoteParsing)
         sentry.captureException(error)
       })
       throw error

@@ -181,4 +181,36 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/providerMode === 'chatbox-ai'/)
     expect(source).not.toMatch(/knowledge_base_models/)
   })
+
+  it('removes chatbox provider mode enum from shared types source', () => {
+    const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/KnowledgeBaseProviderMode = 'chatbox-ai' \| 'custom'/)
+  })
+
+  it('removes chatbox provider mode type union from kb ipc source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/ipc-handlers.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/providerMode\?: 'chatbox-ai' \| 'custom'/)
+  })
+
+  it('removes chatbox rerank provider host override source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/model-providers.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/providerId === 'chatbox-ai'/)
+    expect(source).not.toMatch(/getChatboxAPIOrigin/)
+    expect(source).not.toMatch(/settings\.licenseKey/)
+  })
+
+  it('removes remote parsing retry flags from kb retry paths source', () => {
+    const interfaceSource = readFileSync(new URL('../../platform/knowledge-base/interface.ts', import.meta.url), 'utf8')
+    const controllerSource = readFileSync(
+      new URL('../../platform/knowledge-base/desktop-controller.ts', import.meta.url),
+      'utf8'
+    )
+    const ipcSource = readFileSync(new URL('../../../main/knowledge-base/ipc-handlers.ts', import.meta.url), 'utf8')
+    const loaderSource = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
+
+    expect(interfaceSource).not.toMatch(/retryFile\(fileId: number, useRemoteParsing\?: boolean\)/)
+    expect(controllerSource).not.toMatch(/useRemoteParsing/)
+    expect(ipcSource).not.toMatch(/useRemoteParsing/)
+    expect(loaderSource).not.toMatch(/use_remote_parsing/)
+  })
 })
