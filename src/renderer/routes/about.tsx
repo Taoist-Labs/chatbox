@@ -149,7 +149,7 @@ function RouteComponent() {
             <ListItem
               icon={<IconMessage2 className="w-full h-full" />}
               title={t('FAQs')}
-              link={`https://chatboxai.app/${language.split('-')[0] || 'en'}/help-center/chatbox-ai-service-faqs`}
+              link={`https://chatboxai.app/${language.split('-')[0] || 'en'}/help-center`}
             />
           </List>
         </Stack>

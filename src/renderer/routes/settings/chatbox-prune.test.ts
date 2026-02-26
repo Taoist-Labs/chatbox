@@ -372,4 +372,9 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../packages/token_config.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
+
+  it('removes chatbox ai service faqs link from about source', () => {
+    const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatbox-ai-service-faqs/)
+  })
 })
