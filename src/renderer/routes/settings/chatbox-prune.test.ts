@@ -612,4 +612,9 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/docs\.chatboxai\.app/)
   })
+
+  it('removes chatbox home domain residue from sidebar source', () => {
+    const source = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+  })
 })
