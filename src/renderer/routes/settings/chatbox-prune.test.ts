@@ -544,4 +544,10 @@ describe('chatbox deep prune', () => {
     expect(protectSource).not.toMatch(/chatboxai\.app/)
     expect(defaultsSource).not.toMatch(/chatboxai-3\.5/)
   })
+
+  it('removes chatbox domain and branding residue from format-chat export source', () => {
+    const source = readFileSync(new URL('../../lib/format-chat.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+    expect(source).not.toMatch(/Chatbox AI/)
+  })
 })
