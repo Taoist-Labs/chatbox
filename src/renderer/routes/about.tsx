@@ -6,7 +6,6 @@ import {
   IconClipboard,
   IconFileText,
   IconHome,
-  IconMail,
   IconMessage2,
   IconPencil,
 } from '@tabler/icons-react'
@@ -23,7 +22,6 @@ import useVersion from '@/hooks/useVersion'
 import platform from '@/platform'
 import iconPNG from '@/static/icon.png'
 import IMG_WECHAT_QRCODE from '@/static/wechat_qrcode.png'
-import { useLanguage } from '@/stores/settingsStore'
 
 export const Route = createFileRoute('/about')({
   component: RouteComponent,
@@ -32,7 +30,6 @@ export const Route = createFileRoute('/about')({
 function RouteComponent() {
   const { t, i18n: _i18n } = useTranslation()
   const version = useVersion()
-  const language = useLanguage()
   const isSmallScreen = useIsSmallScreen()
 
   return (
@@ -52,7 +49,7 @@ function RouteComponent() {
                   variant="default"
                   radius="xl"
                   className="flex-shrink-0"
-                  onClick={() => platform.openLink(`https://chatboxai.app/redirect_app/check_update/${language}`)}
+                  onClick={() => platform.openLink('https://github.com/chatboxai/chatbox/releases')}
                 >
                   {t('Check Update')}
                 </Button>
@@ -63,7 +60,7 @@ function RouteComponent() {
               <Flex gap="sm">
                 <Anchor
                   size="sm"
-                  href="https://chatboxai.app/privacy"
+                  href="https://github.com/chatboxai/chatbox"
                   target="_blank"
                   underline="hover"
                   c="chatbox-tertiary"
@@ -72,7 +69,7 @@ function RouteComponent() {
                 </Anchor>
                 <Anchor
                   size="sm"
-                  href="https://chatboxai.app/terms"
+                  href="https://github.com/chatboxai/chatbox/blob/main/LICENSE"
                   target="_blank"
                   underline="hover"
                   c="chatbox-tertiary"
@@ -91,7 +88,7 @@ function RouteComponent() {
               </Flex>
               <Text>
                 近期出现了附带 Chatbox 的所谓一键本地部署 DeepSeek 的付费捆绑软件安装包。
-                Chatbox客户端本身是开源免费软件，只在官网(chatboxai.app)销售托管AI服务。
+                Chatbox客户端本身是开源免费软件，托管AI服务请以官方渠道说明为准。
                 如果发现上当受骗，请尽快在对应支付平台如微信、支付宝申请退款。
               </Text>
             </Stack>
@@ -104,12 +101,6 @@ function RouteComponent() {
               link="https://github.com/chatboxai/chatbox"
               value="chatbox"
             />
-            {/* <ListItem
-              icon={<BrandX className="w-full h-full" />}
-              title={t('X(Twitter)')}
-              link="https://x.com/ChatboxAI_HQ"
-              value="@ChatboxAI_HQ"
-            /> */}
             <ListItem
               icon={<BrandRedNote className="w-full h-full" />}
               title={t('RedNote')}
@@ -123,7 +114,7 @@ function RouteComponent() {
             <ListItem
               icon={<IconHome className="w-full h-full" />}
               title={t('Homepage')}
-              link={`https://chatboxai.app/redirect_app/homepage/${language}`}
+              link="https://github.com/chatboxai/chatbox"
             />
             <ListItem
               icon={<IconClipboard className="w-full h-full" />}
@@ -133,23 +124,17 @@ function RouteComponent() {
             <ListItem
               icon={<IconPencil className="w-full h-full" />}
               title={t('Feedback')}
-              link={`https://chatboxai.app/redirect_app/feedback/${language}`}
+              link="https://github.com/chatboxai/chatbox/issues"
             />
             <ListItem
               icon={<IconFileText className="w-full h-full" />}
               title={t('Changelog')}
-              link={`https://chatboxai.app/${language.split('-')[0] || 'en'}/help-center/changelog`}
-            />
-            <ListItem
-              icon={<IconMail className="w-full h-full" />}
-              title={t('E-mail')}
-              link={`mailto:hi@chatboxai.com`}
-              value="hi@chatboxai.com"
+              link="https://github.com/chatboxai/chatbox/releases"
             />
             <ListItem
               icon={<IconMessage2 className="w-full h-full" />}
               title={t('FAQs')}
-              link={`https://chatboxai.app/${language.split('-')[0] || 'en'}/help-center`}
+              link="https://github.com/chatboxai/chatbox/wiki"
             />
           </List>
         </Stack>
