@@ -311,4 +311,14 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../stores/session/messages.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/return provider === ModelProviderEnum\.ChatboxAI/)
   })
+
+  it('removes chatbox-only stream output visibility branch from session settings source', () => {
+    const source = readFileSync(new URL('../../modals/SessionSettings.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/settings\?\.provider !== ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes chatbox provider icon branch from provider icon source', () => {
+    const source = readFileSync(new URL('../../components/icons/ProviderIcon.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/provider === ModelProviderEnum\.ChatboxAI/)
+  })
 })
