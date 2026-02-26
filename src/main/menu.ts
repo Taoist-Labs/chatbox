@@ -198,7 +198,7 @@ export default class MenuBuilder {
         {
           label: 'Learn More',
           click() {
-            shell.openExternal('https://chatboxai.app')
+            shell.openExternal('https://github.com/chatboxai/chatbox#readme')
           },
         },
         {
@@ -289,7 +289,7 @@ export default class MenuBuilder {
           {
             label: 'Learn More',
             click() {
-              shell.openExternal('https://chatboxai.app')
+              shell.openExternal('https://github.com/chatboxai/chatbox#readme')
             },
           },
           {

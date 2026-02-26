@@ -32,8 +32,6 @@ export class AppUpdater {
 
   async tryUpdate() {
     const feedUrls = [
-      'https://chatboxai.app/api/auto_upgrade',
-      'https://api.chatboxai.app/api/auto_upgrade',
       'https://api.ai-chatbox.com/api/auto_upgrade',
       'https://api.chatboxapp.xyz/api/auto_upgrade',
       'https://api.chatboxai.com/api/auto_upgrade',

@@ -377,4 +377,14 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatbox-ai-service-faqs/)
   })
+
+  it('removes chatbox domain updater feed urls from main app-updater source', () => {
+    const source = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app\/api\/auto_upgrade/)
+  })
+
+  it('removes chatbox domain help links from main menu source', () => {
+    const source = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/shell\.openExternal\('https:\/\/chatboxai\.app'\)/)
+  })
 })
