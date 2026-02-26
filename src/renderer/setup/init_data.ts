@@ -1,9 +1,8 @@
-import { defaultSessionsForCN, defaultSessionsForEN } from '@/packages/initial_data'
-import platform from '@/platform'
+import { v4 as uuidv4 } from 'uuid'
 import storage from '@/storage'
 import { StorageKey, StorageKeyGenerator } from '@/storage/StoreStorage'
 import * as chatStore from '@/stores/chatStore'
-import { getSessionMeta } from '@/stores/sessionHelpers'
+import { getSessionMeta, initEmptyChatSession } from '@/stores/sessionHelpers'
 
 export async function initData() {
   await initSessionsIfNeeded()
@@ -16,25 +15,15 @@ async function initSessionsIfNeeded() {
     return
   }
 
-  const newSessionList = await initPresetSessions()
+  const session = {
+    id: uuidv4(),
+    ...initEmptyChatSession(),
+  }
+  await storage.setItemNow(StorageKeyGenerator.session(session.id), session)
 
+  const newSessionList = [getSessionMeta(session)]
+  await storage.setItemNow(StorageKey.ChatSessionsList, newSessionList)
   await chatStore.updateSessionList(() => {
     return newSessionList
   })
-}
-
-async function initPresetSessions() {
-  const lang = await platform.getLocale().catch((e) => 'en')
-
-  const defaultSessions = lang.startsWith('zh') ? defaultSessionsForCN : defaultSessionsForEN
-
-  for (const session of defaultSessions) {
-    await storage.setItemNow(StorageKeyGenerator.session(session.id), session)
-  }
-
-  const sessionList = defaultSessions.map(getSessionMeta)
-
-  await storage.setItemNow(StorageKey.ChatSessionsList, sessionList)
-
-  return sessionList
 }

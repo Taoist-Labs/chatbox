@@ -80,7 +80,7 @@ export function settings(): Settings {
     fontSize: 14,
     spellCheck: true,
 
-    defaultPrompt: getDefaultPrompt(),
+    defaultPrompt: '',
 
     allowReportingAndTracking: true,
 
@@ -146,7 +146,7 @@ export function newConfigs(): Config {
 }
 
 export function getDefaultPrompt() {
-  return 'You are a helpful assistant.'
+  return ''
 }
 
 export function chatSessionSettings(): SessionSettings {
