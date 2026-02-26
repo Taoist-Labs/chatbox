@@ -34,7 +34,7 @@ export class AppUpdater {
     const feedUrls = [
       'https://api.ai-chatbox.com/api/auto_upgrade',
       'https://api.chatboxapp.xyz/api/auto_upgrade',
-      'https://api.chatboxai.com/api/auto_upgrade',
+      'https://api.ai-chatbox.com/api/auto_upgrade',
     ]
     for (const url of feedUrls) {
       try {

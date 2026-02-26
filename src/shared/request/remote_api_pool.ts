@@ -7,7 +7,7 @@ let API_ORIGIN = 'https://api.ai-chatbox.com'
 let POOL = [
   'https://api.ai-chatbox.com',
   'https://api.chatboxapp.xyz',
-  'https://api.chatboxai.com',
+  'https://api.ai-chatbox.com',
 ]
 
 export function isRemoteAPI(input: RequestInfo | URL) {

@@ -652,4 +652,11 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/static\.chatboxai\.app/)
     expect(source).not.toMatch(/download\.chatboxai\.app/)
   })
+
+  it('removes chatbox api domain residue from remote pool and updater sources', () => {
+    const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
+    const updaterSource = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
+    expect(poolSource).not.toMatch(/api\.chatboxai\.com/)
+    expect(updaterSource).not.toMatch(/api\.chatboxai\.com/)
+  })
 })
