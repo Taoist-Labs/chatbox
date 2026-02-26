@@ -659,4 +659,9 @@ describe('chatbox deep prune', () => {
     expect(poolSource).not.toMatch(/api\.chatboxai\.com/)
     expect(updaterSource).not.toMatch(/api\.chatboxai\.com/)
   })
+
+  it('removes chatbox support email residue from shared error messages source', () => {
+    const source = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/hi@chatboxai\.com/)
+  })
 })
