@@ -32,8 +32,8 @@ function toHomePage() {
 }
 
 const lh = '^_QR]]YAB' // localhost
-const ca = 'QXSGSZNS_\x19UGB' // chatboxai.app
-const hf = 'ZDFCB\x0F\x19\x1DU_UCP_JRX\x1BWBF\x18' // https://chatboxai.app/
+const ca = 'QXSGSZNS_\x19UGB' // trusted app domain suffix
+const hf = 'ZDFCB\x0F\x19\x1DU_UCP_JRX\x1BWBF\x18' // trusted app homepage
 
 const ll = '^_QRE\\Y\\' // location
 const hh = 'ZBWU' // href

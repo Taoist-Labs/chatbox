@@ -529,4 +529,13 @@ describe('chatbox deep prune', () => {
     expect(remoteSource).not.toMatch(/\bRELEASE_ORIGIN\b/)
     expect(imageGenerationSource).not.toMatch(/ChatboxAI API error code/)
   })
+
+  it('removes chatbox-domain comment residue from internal config and protect sources', () => {
+    const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
+    const protectSource = readFileSync(new URL('../../setup/protect.ts', import.meta.url), 'utf8')
+    const defaultsSource = readFileSync(new URL('../../../shared/defaults.ts', import.meta.url), 'utf8')
+    expect(variablesSource).not.toMatch(/api\.chatboxai\.app/)
+    expect(protectSource).not.toMatch(/chatboxai\.app/)
+    expect(defaultsSource).not.toMatch(/chatboxai-3\.5/)
+  })
 })

@@ -8,7 +8,7 @@ export const BUILD_PLATFORM = (process.env.CHATBOX_BUILD_PLATFORM || 'unknown') 
   | 'android'
   | 'web'
 
-// api.chatboxai.app
+// remote api host switches
 export const USE_LOCAL_API = process.env.USE_LOCAL_API || ''
 export const USE_BETA_API = process.env.USE_BETA_API || ''
 

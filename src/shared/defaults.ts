@@ -38,7 +38,7 @@ export function settings(): Settings {
     // claudeApiHost: 'https://api.anthropic.com',
     // claudeModel: 'claude-3-5-sonnet-20241022',
 
-    // hostedModel: 'chatboxai-3.5',
+    // hostedModel: 'gpt-4o-mini',
 
     // geminiAPIKey: '',
     // geminiAPIHost: 'https://generativelanguage.googleapis.com',
