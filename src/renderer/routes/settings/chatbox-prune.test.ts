@@ -636,4 +636,9 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../utils/request.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/cors-proxy\.chatboxai\.app/)
   })
+
+  it('removes chatbox artifact preview domain residue from artifact component source', () => {
+    const source = readFileSync(new URL('../../components/Artifact.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/artifact-preview\.chatboxai\.app/)
+  })
 })
