@@ -631,4 +631,9 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_upgrade_error_tips/)
   })
+
+  it('removes chatbox proxy domain residue from renderer request utility source', () => {
+    const source = readFileSync(new URL('../../utils/request.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/cors-proxy\.chatboxai\.app/)
+  })
 })
