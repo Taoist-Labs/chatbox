@@ -164,4 +164,21 @@ describe('chatbox deep prune', () => {
   it('removes obsolete remote retry modal file', () => {
     expect(existsSync(new URL('../../components/knowledge-base/RemoteRetryModal.tsx', import.meta.url))).toBe(false)
   })
+
+  it('removes knowledge-base chatbox provider mode controls from form source', () => {
+    const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBaseForm.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/KnowledgeBaseChatboxAIInfo/)
+    expect(source).not.toMatch(/KnowledgeBaseProviderModeSelect/)
+    expect(source).not.toMatch(/Radio value="chatbox-ai"/)
+    expect(source).not.toMatch(/'chatbox-ai' \| 'custom'/)
+  })
+
+  it('removes knowledge-base chatbox provider mode branches from page source', () => {
+    const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBase.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/newProviderMode/)
+    expect(source).not.toMatch(/chatboxAIModels/)
+    expect(source).not.toMatch(/isChatboxAIKnowledgeBase/)
+    expect(source).not.toMatch(/providerMode === 'chatbox-ai'/)
+    expect(source).not.toMatch(/knowledge_base_models/)
+  })
 })
