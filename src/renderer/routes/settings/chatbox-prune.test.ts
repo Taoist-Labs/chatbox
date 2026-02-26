@@ -641,4 +641,9 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../components/Artifact.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/artifact-preview\.chatboxai\.app/)
   })
+
+  it('removes chatbox mcp domain residue from builtin mcp server source', () => {
+    const source = readFileSync(new URL('../../packages/mcp/builtin.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/mcp\.chatboxai\.app/)
+  })
 })
