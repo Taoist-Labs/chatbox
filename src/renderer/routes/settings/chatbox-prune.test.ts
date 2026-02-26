@@ -624,4 +624,11 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_file_parse_error/)
   })
+
+  it('removes chatbox domain and upsell tracking residue from message error tips source', () => {
+    const source = readFileSync(new URL('../../components/chat/MessageErrTips.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+    expect(source).not.toMatch(/view_more_plans/)
+    expect(source).not.toMatch(/click_view_more_plans_button_from_upgrade_error_tips/)
+  })
 })
