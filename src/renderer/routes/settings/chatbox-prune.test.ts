@@ -550,4 +550,39 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/Chatbox AI/)
   })
+
+  it('removes chatbox-branded openrouter metadata headers from model providers', () => {
+    const openRouterSource = readFileSync(
+      new URL('../../../shared/providers/definitions/models/openrouter.ts', import.meta.url),
+      'utf8'
+    )
+    const openAISource = readFileSync(new URL('../../../shared/providers/definitions/models/openai.ts', import.meta.url), 'utf8')
+    const openAIResponsesSource = readFileSync(
+      new URL('../../../shared/providers/definitions/models/openai-responses.ts', import.meta.url),
+      'utf8'
+    )
+    const customOpenAISource = readFileSync(
+      new URL('../../../shared/providers/definitions/models/custom-openai.ts', import.meta.url),
+      'utf8'
+    )
+    const customOpenAIResponsesSource = readFileSync(
+      new URL('../../../shared/providers/definitions/models/custom-openai-responses.ts', import.meta.url),
+      'utf8'
+    )
+
+    expect(openRouterSource).not.toMatch(/https:\/\/chatboxai\.app/)
+    expect(openRouterSource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
+
+    expect(openAISource).not.toMatch(/https:\/\/chatboxai\.app/)
+    expect(openAISource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
+
+    expect(openAIResponsesSource).not.toMatch(/https:\/\/chatboxai\.app/)
+    expect(openAIResponsesSource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
+
+    expect(customOpenAISource).not.toMatch(/https:\/\/chatboxai\.app/)
+    expect(customOpenAISource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
+
+    expect(customOpenAIResponsesSource).not.toMatch(/https:\/\/chatboxai\.app/)
+    expect(customOpenAIResponsesSource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
+  })
 })
