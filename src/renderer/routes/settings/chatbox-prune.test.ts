@@ -151,4 +151,17 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../stores/session/threads.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/createMessage\('system', defaults\.getDefaultPrompt\(\)\)/)
   })
+
+  it('removes server-retry parser upsell flow from knowledge base documents source', () => {
+    const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBaseDocuments.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/RemoteRetryModal/)
+    expect(source).not.toMatch(/showRemoteRetryModal/)
+    expect(source).not.toMatch(/Use server parsing/)
+    expect(source).not.toMatch(/PARSER_NO_SUGGESTION_LIST/)
+    expect(source).not.toMatch(/parser_type === 'chatbox-ai'/)
+  })
+
+  it('removes obsolete remote retry modal file', () => {
+    expect(existsSync(new URL('../../components/knowledge-base/RemoteRetryModal.tsx', import.meta.url))).toBe(false)
+  })
 })
