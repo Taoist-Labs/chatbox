@@ -571,14 +571,12 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
           switch (parserType) {
             case 'mineru':
               return t('MinerU parse failed')
-            case 'chatbox-ai':
-              return t('Chatbox AI parse failed')
             case 'local':
             default:
               return t('Local parse failed')
           }
         }
-        const isRemoteParser = parserType === 'mineru' || parserType === 'chatbox-ai'
+        const isRemoteParser = parserType === 'mineru'
         return (
           <Flex gap={4} align="center">
             <Tooltip

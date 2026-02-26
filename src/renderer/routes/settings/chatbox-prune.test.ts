@@ -119,4 +119,36 @@ describe('chatbox deep prune', () => {
     expect(existsSync(new URL('../../../main/knowledge-base/parsers/chatbox-parser.ts', import.meta.url))).toBe(false)
     expect(existsSync(new URL('../../../main/knowledge-base/remote-file-parser.ts', import.meta.url))).toBe(false)
   })
+
+  it('removes chatbox parser enum from shared settings types source', () => {
+    const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/DocumentParserType = 'none' \| 'local' \| 'chatbox-ai' \| 'mineru'/)
+    expect(source).not.toMatch(/z\.enum\(\['none', 'local', 'chatbox-ai', 'mineru'\]\)/)
+  })
+
+  it('removes chatbox parser option from knowledge base form source', () => {
+    const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBaseForm.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/Cloud-based document parsing service, supports PDF, Office files, EPUB and many other file types/)
+  })
+
+  it('removes chatbox parser label branches from knowledge base ui source', () => {
+    const kbSource = readFileSync(new URL('../../components/knowledge-base/KnowledgeBase.tsx', import.meta.url), 'utf8')
+    const docsSource = readFileSync(
+      new URL('../../components/knowledge-base/KnowledgeBaseDocuments.tsx', import.meta.url),
+      'utf8'
+    )
+    expect(kbSource).not.toMatch(/case 'chatbox-ai':/)
+    expect(docsSource).not.toMatch(/case 'chatbox-ai':/)
+  })
+
+  it('removes default picture-session intro message source', () => {
+    const source = readFileSync(new URL('../../stores/sessionHelpers.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/Image Creator Intro/)
+    expect(source).toMatch(/initEmptyPictureSession[\s\S]*messages:\s*\[\]/)
+  })
+
+  it('removes fallback default system message injection on new thread source', () => {
+    const source = readFileSync(new URL('../../stores/session/threads.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/createMessage\('system', defaults\.getDefaultPrompt\(\)\)/)
+  })
 })

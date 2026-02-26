@@ -222,15 +222,10 @@ const KnowledgeBasePage: React.FC = () => {
   }
 
   function formatParserType(parserType?: DocumentParserType): string {
-    switch (parserType) {
-      case 'chatbox-ai':
-        return 'Chatbox AI'
-      case 'mineru':
-        return 'MinerU'
-      case 'local':
-      default:
-        return t('Local')
+    if (parserType === 'mineru') {
+      return 'MinerU'
     }
+    return t('Local')
   }
 
   const fetchKbList = useCallback(async () => {

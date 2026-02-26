@@ -12,7 +12,6 @@ import type {
 import type { DocumentParserConfig } from '@shared/types/settings'
 import { getMessageText, migrateMessage } from '@shared/utils/message'
 import { pick } from 'lodash'
-import i18n from '@/i18n'
 import { formatChatAsHtml, formatChatAsMarkdown, formatChatAsTxt } from '@/lib/format-chat'
 import { getLogger } from '@/lib/utils'
 import { PREVIEW_LINES } from '@/packages/context-management/attachment-payload'
@@ -572,7 +571,7 @@ export function initEmptyPictureSession(): Omit<Session, 'id'> {
   return {
     name: 'Untitled',
     type: 'picture',
-    messages: [createMessage('system', i18n.t('Image Creator Intro') || '')],
+    messages: [],
     settings: {
       ...lastUsedPictureModel,
     },

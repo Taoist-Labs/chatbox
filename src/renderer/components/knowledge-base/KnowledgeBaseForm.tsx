@@ -220,12 +220,6 @@ const PARSER_OPTIONS: { value: DocumentParserType; label: string; description: s
       'Uses built-in document parsing feature, supports common file types. Free usage, no compute points will be consumed.',
   },
   {
-    value: 'chatbox-ai',
-    label: 'Chatbox AI',
-    description:
-      'Cloud-based document parsing service, supports PDF, Office files, EPUB and many other file types. Consumes compute points.',
-  },
-  {
     value: 'mineru',
     label: 'MinerU',
     description: 'Third-party cloud parsing service, supports PDF and most Office files. Requires API token.',
@@ -247,6 +241,7 @@ export const DocumentParserSelector: React.FC<DocumentParserSelectorProps> = ({
   const [mineruToken, setMineruToken] = useState(parserConfig.mineru?.apiToken || '')
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionResult, setConnectionResult] = useState<{ success: boolean; error?: string } | null>(null)
+  const currentParserType = PARSER_OPTIONS.some((opt) => opt.value === parserConfig.type) ? parserConfig.type : 'local'
 
   const handleParserTypeChange = useCallback(
     (value: string | null) => {
@@ -305,7 +300,7 @@ export const DocumentParserSelector: React.FC<DocumentParserSelectorProps> = ({
     }
   }, [mineruToken, t])
 
-  const selectedOption = PARSER_OPTIONS.find((opt) => opt.value === parserConfig.type)
+  const selectedOption = PARSER_OPTIONS.find((opt) => opt.value === currentParserType)
 
   return (
     <Stack gap="xs">
@@ -316,7 +311,7 @@ export const DocumentParserSelector: React.FC<DocumentParserSelectorProps> = ({
           value: opt.value,
           label: t(opt.label),
         }))}
-        value={parserConfig.type}
+        value={currentParserType}
         onChange={handleParserTypeChange}
         allowDeselect={false}
         disabled={disabled}
@@ -328,7 +323,7 @@ export const DocumentParserSelector: React.FC<DocumentParserSelectorProps> = ({
         </Text>
       )}
 
-      {parserConfig.type === 'mineru' && !disabled && (
+      {currentParserType === 'mineru' && !disabled && (
         <Stack gap="xs">
           <PasswordInput
             placeholder={t('Enter your MinerU API token') as string}
@@ -377,7 +372,9 @@ interface DocumentParserDisplayProps {
 
 export const DocumentParserDisplay: React.FC<DocumentParserDisplayProps> = ({ parserType }) => {
   const { t } = useTranslation()
-  const currentType = parserType || 'local'
+  const currentType: DocumentParserType = PARSER_OPTIONS.some((opt) => opt.value === parserType)
+    ? (parserType as DocumentParserType)
+    : 'local'
 
   return (
     <Select
