@@ -409,4 +409,21 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/class ChatboxAIAPIError/)
     expect(source).not.toMatch(/interface ChatboxAIAPIErrorDetail/)
   })
+
+  it('removes chatbox-named remote error parse option from request and adapter sources', () => {
+    const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
+    const adapterTypesSource = readFileSync(new URL('../../../shared/types/adapters.ts', import.meta.url), 'utf8')
+    expect(requestSource).not.toMatch(/parseChatboxRemoteError/)
+    expect(adapterTypesSource).not.toMatch(/parseChatboxRemoteError/)
+  })
+
+  it('removes chatbox-named api pool helpers from request and remote sources', () => {
+    const poolSource = readFileSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url), 'utf8')
+    const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
+    const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    expect(poolSource).not.toMatch(/isChatboxAPI/)
+    expect(poolSource).not.toMatch(/getChatboxAPIOrigin/)
+    expect(requestSource).not.toMatch(/isChatboxAPI/)
+    expect(remoteSource).not.toMatch(/getChatboxAPIOrigin/)
+  })
 })

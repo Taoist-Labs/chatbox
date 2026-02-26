@@ -7,7 +7,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { streamText } from 'ai'
 import AbstractAISDKModel from '../../../models/abstract-ai-sdk'
 import type { CallChatCompletionOptions, ModelInterface } from '../../../models/types'
-import { getChatboxAPIOrigin } from '../../../request/chatboxai_pool'
+import { getRemoteAPIOrigin } from '../../../request/chatboxai_pool'
 import type { ChatboxAILicenseDetail, ProviderModelInfo } from '../../../types'
 import type { ModelDependencies } from '../../../types/adapters'
 
@@ -45,7 +45,7 @@ export default class ChatboxAI extends AbstractAISDKModel implements ModelInterf
   }
 
   private async chatboxAIFetch(url: RequestInfo | URL, options?: RequestInit) {
-    return this.dependencies.request.fetchWithOptions(url.toString(), options, { parseChatboxRemoteError: true })
+    return this.dependencies.request.fetchWithOptions(url.toString(), options, { parseRemoteAPIError: true })
   }
 
   static isSupportTextEmbedding() {
@@ -58,7 +58,7 @@ export default class ChatboxAI extends AbstractAISDKModel implements ModelInterf
     if (this.options.model.apiStyle === 'google') {
       const provider = createGoogleGenerativeAI({
         apiKey: this.options.licenseKey || '',
-        baseURL: `${getChatboxAPIOrigin()}/gateway/google-ai-studio/v1beta`,
+        baseURL: `${getRemoteAPIOrigin()}/gateway/google-ai-studio/v1beta`,
         headers: {
           'Instance-Id': instanceId,
           Authorization: `Bearer ${this.options.licenseKey || ''}`,
@@ -71,7 +71,7 @@ export default class ChatboxAI extends AbstractAISDKModel implements ModelInterf
       const provider = createOpenAICompatible({
         name: 'ChatboxAI',
         apiKey: this.options.licenseKey || '',
-        baseURL: `${getChatboxAPIOrigin()}/gateway/openai/v1`,
+        baseURL: `${getRemoteAPIOrigin()}/gateway/openai/v1`,
         headers: {
           'Instance-Id': instanceId,
           'chatbox-session-id': options.sessionId || '',
@@ -170,7 +170,7 @@ export default class ChatboxAI extends AbstractAISDKModel implements ModelInterf
     const instanceId = (this.options.licenseInstances ? this.options.licenseInstances[license] : '') || ''
     return createGoogleGenerativeAI({
       apiKey: this.options.licenseKey || '',
-      baseURL: `${getChatboxAPIOrigin()}/gateway/google-ai-studio/v1beta`,
+      baseURL: `${getRemoteAPIOrigin()}/gateway/google-ai-studio/v1beta`,
       headers: {
         'Instance-Id': instanceId,
         Authorization: `Bearer ${this.options.licenseKey || ''}`,
@@ -212,7 +212,7 @@ export default class ChatboxAI extends AbstractAISDKModel implements ModelInterf
     const license = this.options.licenseKey || ''
     const instanceId = (this.options.licenseInstances ? this.options.licenseInstances[license] : '') || ''
     const modelId = this.options.model.modelId
-    const res = await this.chatboxAIFetch(`${getChatboxAPIOrigin()}/api/ai/paint`, {
+    const res = await this.chatboxAIFetch(`${getRemoteAPIOrigin()}/api/ai/paint`, {
       headers: {
         Authorization: `Bearer ${license}`,
         'Instance-Id': instanceId,

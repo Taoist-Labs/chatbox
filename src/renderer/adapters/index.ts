@@ -36,7 +36,7 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
       fetchWithOptions: async (
         url: string,
         init?: RequestInit,
-        options?: { retry?: number; parseChatboxRemoteError?: boolean }
+        options?: { retry?: number; parseRemoteAPIError?: boolean }
       ): Promise<Response> => {
         // 支持自定义选项的 fetch
         return afetch(url, init, options || {})

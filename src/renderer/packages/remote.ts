@@ -94,7 +94,7 @@ function getAPIOrigin() {
   if (USE_LOCAL_API) {
     return 'http://localhost:8002'
   } else {
-    return chatboxaiAPI.getChatboxAPIOrigin()
+    return chatboxaiAPI.getRemoteAPIOrigin()
   }
 }
 
@@ -304,7 +304,7 @@ export async function generateUploadUrl(params: { licenseKey: string; filename: 
       },
       body: JSON.stringify(params),
     },
-    { parseChatboxRemoteError: true }
+    { parseRemoteAPIError: true }
   )
   const json: Response = await res.json()
   return json['data']
@@ -334,7 +334,7 @@ export async function createUserFile<T extends boolean>(params: {
       },
       body: JSON.stringify(params),
     },
-    { parseChatboxRemoteError: true }
+    { parseRemoteAPIError: true }
   )
   const json: Response = await res.json()
   return json['data']
@@ -385,7 +385,7 @@ export async function parseUserLinkPro(params: { licenseKey: string; url: string
       }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -443,7 +443,7 @@ export async function webBrowsing(params: { licenseKey: string; query: string })
       body: JSON.stringify(params),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -471,7 +471,7 @@ export async function activateLicense(params: { licenseKey: string; instanceName
       body: JSON.stringify(params),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 5,
     }
   )
@@ -491,7 +491,7 @@ export async function deactivateLicense(params: { licenseKey: string; instanceId
       body: JSON.stringify(params),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 5,
     }
   )
@@ -515,7 +515,7 @@ export async function validateLicense(params: { licenseKey: string; instanceId: 
       body: JSON.stringify(params),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 5,
     }
   )
@@ -558,7 +558,7 @@ export async function getModelManifest(params: { aiProvider: ModelProvider; lice
       }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -600,7 +600,7 @@ export async function getProviderModelsInfo(params: { modelIds: string[] }) {
       body: JSON.stringify(params),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -645,7 +645,7 @@ export async function requestLoginTicketId() {
       }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 3,
     }
   )
@@ -674,7 +674,7 @@ export async function checkLoginStatus(ticketId: string) {
       body: JSON.stringify({ ticket_id: ticketId }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -714,7 +714,7 @@ export async function refreshAccessToken(params: { refreshToken: string }) {
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -757,7 +757,7 @@ export async function getUserProfile() {
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -803,7 +803,7 @@ export async function listLicensesByUser(): Promise<UserLicense[]> {
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )

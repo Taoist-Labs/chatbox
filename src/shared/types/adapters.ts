@@ -19,7 +19,7 @@ export interface RequestAdapter {
   fetchWithOptions(
     url: string,
     init?: RequestInit,
-    options?: { retry?: number; parseChatboxRemoteError?: boolean }
+    options?: { retry?: number; parseRemoteAPIError?: boolean }
   ): Promise<Response>
   apiRequest(options: ApiRequestOptions): Promise<Response>
 }

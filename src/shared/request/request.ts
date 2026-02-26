@@ -1,6 +1,6 @@
 import { ApiError, BaseError, RemoteAPIError, NetworkError } from '../models/errors'
 import { parseJsonOrEmpty } from '../utils/json_utils'
-import { isChatboxAPI } from './chatboxai_pool'
+import { isRemoteAPI } from './chatboxai_pool'
 
 interface PlatformInfo {
   type: string
@@ -15,14 +15,14 @@ export function createAfetch(platformInfo: PlatformInfo) {
     init?: RequestInit,
     options: {
       retry?: number
-      parseChatboxRemoteError?: boolean
+      parseRemoteAPIError?: boolean
     } = {}
   ) {
     let requestError: BaseError | null = null
     const retry = options.retry || 0
     for (let i = 0; i < retry + 1; i++) {
       try {
-        if (isChatboxAPI(url)) {
+        if (isRemoteAPI(url)) {
           init = {
             ...init,
             headers: {
@@ -38,7 +38,7 @@ export function createAfetch(platformInfo: PlatformInfo) {
         // 状态码不在 200～299 之间，一般是接口报错了，这里也需要抛错后重试
         if (!res.ok) {
           const response = await res.text().catch((e) => '')
-          if (options.parseChatboxRemoteError) {
+          if (options.parseRemoteAPIError) {
             const errorCodeName = parseJsonOrEmpty(response)?.error?.code
             const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
             if (remoteAPIError) {
@@ -121,7 +121,7 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
     init?: RequestInit,
     options: {
       retry?: number
-      parseChatboxRemoteError?: boolean
+      parseRemoteAPIError?: boolean
     } = {}
   ) {
     // 获取当前 tokens
@@ -136,7 +136,7 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
         'x-chatbox-access-token': accessToken,
       }
 
-      if (isChatboxAPI(url)) {
+      if (isRemoteAPI(url)) {
         authHeaders['CHATBOX-PLATFORM'] = platformInfo.platform
         authHeaders['CHATBOX-PLATFORM-TYPE'] = platformInfo.type
         authHeaders['CHATBOX-OS'] = platformInfo.os
@@ -204,7 +204,7 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
 
           if (!retryRes.ok) {
             const response = await retryRes.text().catch(() => '')
-            if (options.parseChatboxRemoteError) {
+            if (options.parseRemoteAPIError) {
               const errorCodeName = parseJsonOrEmpty(response)?.error?.code
               const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
               if (remoteAPIError) {
@@ -220,7 +220,7 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
         // 其他错误状态码
         if (!res.ok) {
           const response = await res.text().catch(() => '')
-          if (options.parseChatboxRemoteError) {
+          if (options.parseRemoteAPIError) {
             const errorCodeName = parseJsonOrEmpty(response)?.error?.code
             const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
             if (remoteAPIError) {

@@ -10,12 +10,12 @@ let POOL = [
   'https://api.chatboxai.com',
 ]
 
-export function isChatboxAPI(input: RequestInfo | URL) {
+export function isRemoteAPI(input: RequestInfo | URL) {
   const url = typeof input === 'string' ? input : (input as Request).url ?? input.toString()
   return POOL.some((o) => url.startsWith(o)) || url.startsWith(API_ORIGIN)
 }
 
-export function getChatboxAPIOrigin() {
+export function getRemoteAPIOrigin() {
   if (process.env.USE_LOCAL_API) {
     return 'http://localhost:8002'
   }
