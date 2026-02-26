@@ -250,4 +250,11 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/parsed_remotely/)
     expect(source).not.toMatch(/provider_mode/)
   })
+
+  it('removes pro-only remote link parsing branch from session helper source', () => {
+    const source = readFileSync(new URL('../../stores/sessionHelpers.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/settingActions\.isPro/)
+    expect(source).not.toMatch(/parseUserLinkPro/)
+    expect(source).not.toMatch(/ChatboxAI 方案/)
+  })
 })
