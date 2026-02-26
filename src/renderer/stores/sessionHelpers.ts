@@ -81,6 +81,14 @@ function getEffectiveDocumentParserConfig(): DocumentParserConfig {
   return globalConfig ?? getPlatformDefaultDocumentParser()
 }
 
+function normalizeDocumentParserType(config: DocumentParserConfig): 'none' | 'local' | 'mineru' {
+  if (config.type === 'none' || config.type === 'local' || config.type === 'mineru') {
+    return config.type
+  }
+
+  return 'local'
+}
+
 /**
  * Parse file using local parser (desktop only)
  */
@@ -96,39 +104,6 @@ async function parseFileWithLocalParser(
 
   // Get content from temporary storage
   const content = (await storage.getBlob(result.key).catch(() => '')) || ''
-
-  // Store content to unique key
-  if (content) {
-    await storage.setBlob(uniqKey, content)
-  }
-
-  // Calculate token counts
-  const tokenCountMap: Record<string, number> = content
-    ? {
-        [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-        [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
-      }
-    : {}
-
-  if (content) {
-    await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-  }
-
-  return { content, storageKey: uniqKey, tokenCountMap }
-}
-
-/**
- * Parse file using Chatbox AI cloud service
- */
-async function parseFileWithChatboxAI(
-  file: File,
-  uniqKey: string
-): Promise<{ content: string; storageKey: string; tokenCountMap: Record<string, number> }> {
-  const licenseKey = settingActions.getLicenseKey()
-  const uploadedKey = await remote.uploadAndCreateUserFile(licenseKey || '', file)
-
-  // Get uploaded file content
-  const content = (await storage.getBlob(uploadedKey).catch(() => '')) || ''
 
   // Store content to unique key
   if (content) {
@@ -242,7 +217,8 @@ export async function preprocessFile(
 
     // Get document parser configuration from global settings
     const parserConfig = getEffectiveDocumentParserConfig()
-    log.debug(`Using document parser: ${parserConfig.type} for file: ${file.name}`)
+    const parserType = normalizeDocumentParserType(parserConfig)
+    log.debug(`Using document parser: ${parserType} for file: ${file.name}`)
 
     let result: { content: string; storageKey: string; tokenCountMap: Record<string, number> }
 
@@ -257,7 +233,7 @@ export async function preprocessFile(
       }
     } else {
       // Non-text files use the configured parser
-      switch (parserConfig.type) {
+      switch (parserType) {
         case 'none': {
           // No parser configured - non-text files are not supported
           // Prompt user to enable a parser in settings
@@ -272,17 +248,6 @@ export async function preprocessFile(
           } catch (error) {
             // Local parsing failed, throw appropriate error
             throw new Error('local_parser_failed')
-          }
-          break
-        }
-
-        case 'chatbox-ai': {
-          // Chatbox AI cloud parsing - available on all platforms
-          try {
-            result = await parseFileWithChatboxAI(file, uniqKey)
-          } catch (error) {
-            // Chatbox AI parsing failed
-            throw new Error('chatbox_ai_parser_failed')
           }
           break
         }

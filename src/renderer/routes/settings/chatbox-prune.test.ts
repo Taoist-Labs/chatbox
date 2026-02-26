@@ -90,4 +90,33 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/routes\/settings\/provider\/chatbox-ai\/-components\/types/)
   })
+
+  it('removes chatbox parser option from document parser settings source', () => {
+    const source = readFileSync(new URL('../../components/settings/DocumentParserSettings.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/value:\s*'chatbox-ai'/)
+    expect(source).not.toMatch(/'chatbox-ai':/)
+  })
+
+  it('removes chatbox parser implementation from knowledge-base router source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/parsers/index.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ChatboxParser/)
+    expect(source).not.toMatch(/case 'chatbox-ai':/)
+  })
+
+  it('removes chatbox parser branches from session helper source', () => {
+    const source = readFileSync(new URL('../../stores/sessionHelpers.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/parseFileWithChatboxAI/)
+    expect(source).not.toMatch(/case 'chatbox-ai':/)
+  })
+
+  it('removes chatbox parser branches from kb file loader source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/type === 'chatbox-ai'/)
+    expect(source).not.toMatch(/\{\s*type:\s*'chatbox-ai'\s*\}/)
+  })
+
+  it('removes obsolete chatbox parser files', () => {
+    expect(existsSync(new URL('../../../main/knowledge-base/parsers/chatbox-parser.ts', import.meta.url))).toBe(false)
+    expect(existsSync(new URL('../../../main/knowledge-base/remote-file-parser.ts', import.meta.url))).toBe(false)
+  })
 })

@@ -106,9 +106,8 @@ export async function processFileWithMastra(
     })
 
     if (!allChunks || allChunks.length === 0) {
-      // Cloud parsing (chatbox-ai, mineru) resulted in 0 chunks - mark as done (truly empty file)
-      // Local parsing resulted in 0 chunks - mark as failed so user can retry with server parsing
-      if (parserConfig.type === 'chatbox-ai' || parserConfig.type === 'mineru') {
+      // Third-party cloud parsing may return empty content for truly empty files.
+      if (parserUsed === 'mineru') {
         await db.execute({
           sql: 'UPDATE kb_file SET chunk_count = 0, status = ? WHERE id = ?',
           args: ['done', fileMeta.fileId],
@@ -284,7 +283,7 @@ async function processPendingFiles() {
     log.debug(`[FILE] Processing ${rs.rows.length} pending files`)
 
     for (const file of rs.rows) {
-      const useRemoteParsing = Boolean(file.use_remote_parsing)
+      const hasLegacyRemoteRetryFlag = Boolean(file.use_remote_parsing)
 
       // Parse KB parser config
       let kbParserConfig: DocumentParserConfig | undefined
@@ -296,23 +295,22 @@ async function processPendingFiles() {
         }
       }
 
-      // Get effective parser config
-      // When useRemoteParsing is true (user clicked "Retry with server parsing"), force use Chatbox AI parser
-      // This overrides the KB's configured parser to ensure server parsing is used
-      const effectiveParserConfig: DocumentParserConfig = useRemoteParsing
-        ? { type: 'chatbox-ai' }
-        : getEffectiveParserConfig(kbParserConfig)
+      // Legacy retry flag is no longer used to override parser type.
+      if (hasLegacyRemoteRetryFlag) {
+        log.warn(`[FILE] Ignoring legacy use_remote_parsing flag for file ${file.id}`)
+      }
+      const effectiveParserConfig: DocumentParserConfig = getEffectiveParserConfig(kbParserConfig)
 
       try {
         log.debug(
-          `[FILE] Processing file: ${file.filename} (id=${file.id}, parser=${effectiveParserConfig.type}, useRemoteParsing=${useRemoteParsing})`
+          `[FILE] Processing file: ${file.filename} (id=${file.id}, parser=${effectiveParserConfig.type}, legacyRemoteRetry=${hasLegacyRemoteRetryFlag})`
         )
 
-        // Mark as processing, record the processing start time, save parsing method and parser_type, and clear the use_remote_parsing flag
+        // Mark as processing, record the processing start time, save parser_type, and clear the use_remote_parsing flag
         // We set parser_type here at the start so that if parsing fails, the error message will correctly show which parser was used
         await db.execute({
           sql: 'UPDATE kb_file SET status = ?, processing_started_at = CURRENT_TIMESTAMP, use_remote_parsing = 0, parsed_remotely = ?, parser_type = ? WHERE id = ?',
-          args: ['processing', useRemoteParsing ? 1 : 0, effectiveParserConfig.type, file.id],
+          args: ['processing', 0, effectiveParserConfig.type, file.id],
         })
 
         // Use mastra to parse, chunk, embed, and store (supports resuming from chunk_count)
