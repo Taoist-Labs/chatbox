@@ -427,9 +427,6 @@ async function migrate_9_to_10(dataStore: MigrateStore): Promise<boolean> {
       chatglmApiKey,
       chatglmModel,
 
-      // chatbox-ai
-      chatboxAIModel,
-
       // claude
       claudeApiKey,
       claudeApiHost,

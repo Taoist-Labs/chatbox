@@ -32,20 +32,12 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/settings\.provider \?\? ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('replaces dedicated chatbox settings route with redirect source', () => {
-    const source = readFileSync(new URL('./chatbox-ai.tsx', import.meta.url), 'utf8')
-
-    expect(source).toMatch(/navigate\(\{\s*to:\s*'\/settings\/provider\/wanjie'/)
-    expect(source).not.toMatch(/useChatboxAIModels/)
-    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
+  it('removes dedicated chatbox settings route file', () => {
+    expect(existsSync(new URL('./chatbox-ai.tsx', import.meta.url))).toBe(false)
   })
 
-  it('replaces provider-level chatbox settings route with redirect source', () => {
-    const source = readFileSync(new URL('./provider/chatbox-ai/index.tsx', import.meta.url), 'utf8')
-
-    expect(source).toMatch(/navigate\(\{\s*to:\s*'\/settings\/provider\/wanjie'/)
-    expect(source).not.toMatch(/useChatboxAIModels/)
-    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
+  it('removes provider-level chatbox settings route file', () => {
+    expect(existsSync(new URL('./provider/chatbox-ai/index.tsx', import.meta.url))).toBe(false)
   })
 
   it('removes chatbox provider as image creator default source', () => {
@@ -364,5 +356,20 @@ describe('chatbox deep prune', () => {
   it('removes chatbox-specific auth store persistence key source', () => {
     const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/name:\s*'chatbox-ai-auth-info'/)
+  })
+
+  it('removes chatbox auth callback deep link route residue from main deeplinks source', () => {
+    const source = readFileSync(new URL('../../../main/deeplinks.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/\/settings\/provider\/chatbox-ai\?ticket_id=\$\{ticketId\}&status=\$\{status\}/)
+  })
+
+  it('removes chatbox ai model key migration residue from migration source', () => {
+    const source = readFileSync(new URL('../../stores/migration.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxAIModel/)
+  })
+
+  it('removes chatbox provider token config residue comments source', () => {
+    const source = readFileSync(new URL('../../packages/token_config.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
 })
