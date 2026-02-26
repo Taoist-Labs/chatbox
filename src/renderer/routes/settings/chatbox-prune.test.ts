@@ -617,4 +617,11 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
   })
+
+  it('removes chatbox domain and upsell tracking residue from file-parse error modal source', () => {
+    const source = readFileSync(new URL('../../modals/FileParseError.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+    expect(source).not.toMatch(/view_more_plans/)
+    expect(source).not.toMatch(/click_view_more_plans_button_from_file_parse_error/)
+  })
 })
