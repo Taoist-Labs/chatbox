@@ -321,4 +321,14 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../components/icons/ProviderIcon.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/provider === ModelProviderEnum\.ChatboxAI/)
   })
+
+  it('removes chatbox-ai openai-compatibility special branch from llm utils source', () => {
+    const source = readFileSync(new URL('../../../shared/utils/llm_utils.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/providerId === 'chatbox-ai'/)
+  })
+
+  it('removes chatbox-ai parser normalization from settings schema source', () => {
+    const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/value === 'chatbox-ai' \? 'local' : value/)
+  })
 })

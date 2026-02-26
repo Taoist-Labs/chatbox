@@ -15,8 +15,7 @@ export { ModelProviderType } from './provider'
 export type DocumentParserType = 'none' | 'local' | 'mineru'
 
 export const DocumentParserConfigSchema = z.object({
-  // Normalize legacy parser value to local for backward compatibility with persisted settings.
-  type: z.preprocess((value) => (value === 'chatbox-ai' ? 'local' : value), z.enum(['none', 'local', 'mineru'])),
+  type: z.enum(['none', 'local', 'mineru']),
   mineru: z
     .object({
       apiToken: z.string(),
