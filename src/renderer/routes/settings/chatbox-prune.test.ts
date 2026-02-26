@@ -355,4 +355,14 @@ describe('chatbox deep prune', () => {
   it('removes obsolete chatbox provider definition file', () => {
     expect(existsSync(new URL('../../../shared/providers/definitions/chatboxai.ts', import.meta.url))).toBe(false)
   })
+
+  it('removes chatbox aiProvider literals from initial data source', () => {
+    const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/aiProvider:\s*'chatbox-ai'/)
+  })
+
+  it('removes chatbox-specific auth store persistence key source', () => {
+    const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/name:\s*'chatbox-ai-auth-info'/)
+  })
 })

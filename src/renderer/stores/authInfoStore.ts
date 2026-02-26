@@ -55,7 +55,7 @@ export const authInfoStore = createStore<AuthTokensState & AuthTokensActions>()(
         },
       })),
       {
-        name: 'chatbox-ai-auth-info',
+        name: 'provider-auth-info',
         version: 0,
         partialize: (state) => ({
           accessToken: state.accessToken,
