@@ -269,4 +269,31 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/ChatboxAIAPIError/)
     expect(source).not.toMatch(/codeNameMap/)
   })
+
+  it('removes chatbox-first remote config bootstrap from root route source', () => {
+    const source = readFileSync(new URL('../__root.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/getRemoteConfig\('setting_chatboxai_first'\)/)
+    expect(source).not.toMatch(/setting_chatboxai_first/)
+  })
+
+  it('removes chatbox-first local mode upsell from message loading source', () => {
+    const source = readFileSync(new URL('../../components/chat/MessageLoading.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/setting_chatboxai_first/)
+    expect(source).not.toMatch(/Chatbox AI Service/)
+  })
+
+  it('removes chatbox-first web browsing error branch from session messages source', () => {
+    const source = readFileSync(new URL('../../stores/session/messages.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/setting_chatboxai_first/)
+  })
+
+  it('removes chatbox-first image error branch from abstract ai sdk source', () => {
+    const source = readFileSync(new URL('../../../shared/models/abstract-ai-sdk.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/setting_chatboxai_first/)
+  })
+
+  it('removes chatbox-first remote config flag from shared types source', () => {
+    const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/setting_chatboxai_first:/)
+  })
 })
