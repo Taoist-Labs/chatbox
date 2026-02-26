@@ -469,4 +469,27 @@ describe('chatbox deep prune', () => {
     expect(remoteSource).not.toMatch(/\bUSE_LOCAL_CHATBOX\b/)
     expect(remoteSource).not.toMatch(/\bUSE_BETA_CHATBOX\b/)
   })
+
+  it('removes chatbox-named build constants from renderer source usage', () => {
+    const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
+    expect(variablesSource).not.toMatch(/export const CHATBOX_BUILD_TARGET\b/)
+    expect(variablesSource).not.toMatch(/export const CHATBOX_BUILD_PLATFORM\b/)
+
+    const sources = [
+      readFileSync(new URL('../../index.tsx', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../hooks/useVersion.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../packages/apple_app_store.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../platform/index.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../setup/protect.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../setup/load_polyfill.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../setup/sentry_init.ts', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../components/session/ThreadHistoryDrawer.tsx', import.meta.url), 'utf8'),
+    ]
+
+    for (const source of sources) {
+      expect(source).not.toMatch(/\bCHATBOX_BUILD_TARGET\b/)
+      expect(source).not.toMatch(/\bCHATBOX_BUILD_PLATFORM\b/)
+    }
+  })
 })

@@ -1,9 +1,9 @@
 // 处理前端代码被剽窃的情况
 
 import platform from '../platform'
-import { CHATBOX_BUILD_TARGET } from '../variables'
+import { BUILD_TARGET } from '../variables'
 
-switch (CHATBOX_BUILD_TARGET) {
+switch (BUILD_TARGET) {
   case 'mobile_app':
     break
   case 'unknown':

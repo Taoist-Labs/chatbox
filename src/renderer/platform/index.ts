@@ -1,4 +1,4 @@
-import { CHATBOX_BUILD_TARGET } from '@/variables'
+import { BUILD_TARGET } from '@/variables'
 import DesktopPlatform from './desktop_platform'
 import type { Platform } from './interfaces'
 import TestPlatform from './test_platform'

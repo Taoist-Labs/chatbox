@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import { useAtomValue } from 'jotai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { remoteConfigAtom } from '@/stores/atoms'
-import { CHATBOX_BUILD_PLATFORM } from '@/variables'
+import { BUILD_PLATFORM } from '@/variables'
 import * as remote from '../packages/remote'
 import platform from '../platform'
 
@@ -34,7 +34,7 @@ export default function useVersion() {
   const remoteConfig = useAtomValue(remoteConfigAtom)
   const isExceeded = useMemo(
     () =>
-      CHATBOX_BUILD_PLATFORM === 'ios' &&
+      BUILD_PLATFORM === 'ios' &&
       Date.now() - getInitialTime() < 24 * 3600 * 1000 &&
       version &&
       remoteConfig.current_version &&

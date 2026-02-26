@@ -27,7 +27,7 @@ import platform from './platform'
 import icon from './static/icon.png'
 import { useLanguage } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
-import { CHATBOX_BUILD_PLATFORM } from './variables'
+import { BUILD_PLATFORM } from './variables'
 
 export default function Sidebar() {
   const { t } = useTranslation()
@@ -124,7 +124,7 @@ export default function Sidebar() {
       PaperProps={
         language === 'ar' ? { sx: { direction: 'rtl', overflowY: 'initial' } } : { sx: { overflowY: 'initial' } }
       }
-      disableSwipeToOpen={CHATBOX_BUILD_PLATFORM !== 'ios'} // 只在iOS设备上启用SwipeToOpen
+      disableSwipeToOpen={BUILD_PLATFORM !== 'ios'} // 只在iOS设备上启用SwipeToOpen
       disableEnforceFocus={true} // 关闭 focus trap，避免在侧边栏打开时弹出的 modal 中 input 无法点击
     >
       <Stack
@@ -226,7 +226,7 @@ export default function Sidebar() {
             label={
               <Flex align="center" gap={6}>
                 <span>{`${t('About')} ${/\d/.test(versionHook.version) ? `(${versionHook.version})` : ''}`}</span>
-                {CHATBOX_BUILD_PLATFORM === 'android' && versionHook.needCheckUpdate && (
+                {BUILD_PLATFORM === 'android' && versionHook.needCheckUpdate && (
                   <Box w={8} h={8} miw={8} bg="chatbox-brand" style={{ borderRadius: '50%' }} />
                 )}
               </Flex>

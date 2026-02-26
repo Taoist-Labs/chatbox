@@ -12,7 +12,7 @@ import { scrollToIndex } from '@/stores/scrollActions'
 import { removeCurrentThread, removeThread, switchThread as switchThreadAction } from '@/stores/sessionActions'
 import { getAllMessageList, getCurrentThreadHistoryHash } from '@/stores/sessionHelpers'
 import { useLanguage } from '@/stores/settingsStore'
-import { CHATBOX_BUILD_PLATFORM } from '@/variables'
+import { BUILD_PLATFORM } from '@/variables'
 import ActionMenu from '../ActionMenu'
 import { ScalableIcon } from '../common/ScalableIcon'
 
@@ -71,7 +71,7 @@ export default function ThreadHistoryDrawer({ session }: { session: Session }) {
       PaperProps={
         language === 'ar' ? { sx: { direction: 'rtl', overflowY: 'initial' } } : { sx: { overflowY: 'initial' } }
       }
-      disableSwipeToOpen={CHATBOX_BUILD_PLATFORM !== 'ios'} // 只在iOS设备上启用SwipeToOpen
+      disableSwipeToOpen={BUILD_PLATFORM !== 'ios'} // 只在iOS设备上启用SwipeToOpen
       disableEnforceFocus={true} // 关闭 focus trap，避免在侧边栏打开时弹出的 modal 中 input 无法点击
     >
       <Flex align="center" justify="space-between" className="px-sm py-xs">
