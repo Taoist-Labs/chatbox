@@ -243,4 +243,11 @@ describe('chatbox deep prune', () => {
     expect(ipcSource).not.toMatch(/providerMode:/)
     expect(ipcSource).not.toMatch(/provider_mode/)
   })
+
+  it('removes obsolete kb db migrations for remote/provider mode columns', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/db.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/use_remote_parsing/)
+    expect(source).not.toMatch(/parsed_remotely/)
+    expect(source).not.toMatch(/provider_mode/)
+  })
 })
