@@ -516,4 +516,10 @@ describe('chatbox deep prune', () => {
     expect(source).toMatch(/knowledge_base\.db/)
     expect(source).not.toMatch(/const dbPath = .*chatbox_kb\.db/)
   })
+
+  it('removes chatbox-named primary blob directory from main store source', () => {
+    const source = readFileSync(new URL('../../../main/store-node.ts', import.meta.url), 'utf8')
+    expect(source).toMatch(/store-blobs/)
+    expect(source).not.toMatch(/const filename = path\.resolve\(app\.getPath\('userData'\), 'chatbox-blobs', sanitizeFilename\(key\)\)/)
+  })
 })

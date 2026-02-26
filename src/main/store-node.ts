@@ -218,35 +218,68 @@ function checkConfigValid(filepath: string) {
   return true
 }
 
+const primaryBlobDir = path.resolve(app.getPath('userData'), 'store-blobs')
+const legacyBlobDir = path.resolve(app.getPath('userData'), 'chatbox-blobs')
+
+function getBlobFilename(blobDir: string, key: string) {
+  return path.resolve(blobDir, sanitizeFilename(key))
+}
+
+async function resolveReadableBlobFilename(key: string) {
+  const primaryFilename = getBlobFilename(primaryBlobDir, key)
+  if (await fs.pathExists(primaryFilename)) {
+    return primaryFilename
+  }
+
+  const legacyFilename = getBlobFilename(legacyBlobDir, key)
+  if (await fs.pathExists(legacyFilename)) {
+    return legacyFilename
+  }
+
+  return null
+}
+
 export async function getStoreBlob(key: string) {
-  const filename = path.resolve(app.getPath('userData'), 'chatbox-blobs', sanitizeFilename(key))
-  const exists = await fs.pathExists(filename)
-  if (!exists) {
+  const filename = await resolveReadableBlobFilename(key)
+  if (!filename) {
     return null
   }
   return fs.readFile(filename, { encoding: 'utf-8' })
 }
 
 export async function setStoreBlob(key: string, value: string) {
-  const filename = path.resolve(app.getPath('userData'), 'chatbox-blobs', sanitizeFilename(key))
+  const filename = getBlobFilename(primaryBlobDir, key)
   await fs.ensureDir(path.dirname(filename))
   return fs.writeFile(filename, value, { encoding: 'utf-8' })
 }
 
 export async function delStoreBlob(key: string) {
-  const filename = path.resolve(app.getPath('userData'), 'chatbox-blobs', sanitizeFilename(key))
-  const exists = await fs.pathExists(filename)
-  if (!exists) {
-    return
-  }
-  await fs.remove(filename)
+  const filenames = [getBlobFilename(primaryBlobDir, key), getBlobFilename(legacyBlobDir, key)]
+  await Promise.all(
+    filenames.map(async (filename) => {
+      const exists = await fs.pathExists(filename)
+      if (!exists) {
+        return
+      }
+      await fs.remove(filename)
+    })
+  )
 }
 
 export async function listStoreBlobKeys() {
-  const dir = path.resolve(app.getPath('userData'), 'chatbox-blobs')
-  const exists = await fs.pathExists(dir)
-  if (!exists) {
-    return []
+  const dirs = [primaryBlobDir, legacyBlobDir]
+  const keys = new Set<string>()
+
+  for (const dir of dirs) {
+    const exists = await fs.pathExists(dir)
+    if (!exists) {
+      continue
+    }
+    const filenames = await fs.readdir(dir)
+    for (const filename of filenames) {
+      keys.add(filename)
+    }
   }
-  return fs.readdir(dir)
+
+  return Array.from(keys)
 }
