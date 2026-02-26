@@ -5,7 +5,7 @@ import { USE_BETA_API, USE_BETA_CHATBOX, USE_LOCAL_API, USE_LOCAL_CHATBOX } from
 import { ofetch } from 'ofetch'
 import { z } from 'zod'
 import * as cache from 'src/shared/utils/cache'
-import * as chatboxaiAPI from '../../shared/request/chatboxai_pool'
+import * as chatboxaiAPI from '../../shared/request/remote_api_pool'
 import { createAfetch, createAuthenticatedAfetch, uploadFile } from '../../shared/request/request'
 import {
   type ChatboxAILicenseDetail,

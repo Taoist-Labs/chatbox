@@ -395,7 +395,7 @@ describe('chatbox deep prune', () => {
   })
 
   it('removes chatbox domain defaults from shared api pool source', () => {
-    const source = readFileSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
@@ -418,12 +418,28 @@ describe('chatbox deep prune', () => {
   })
 
   it('removes chatbox-named api pool helpers from request and remote sources', () => {
-    const poolSource = readFileSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url), 'utf8')
+    const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(poolSource).not.toMatch(/isChatboxAPI/)
     expect(poolSource).not.toMatch(/getChatboxAPIOrigin/)
     expect(requestSource).not.toMatch(/isChatboxAPI/)
     expect(remoteSource).not.toMatch(/getChatboxAPIOrigin/)
+  })
+
+  it('removes chatbox-named shared request pool file', () => {
+    expect(existsSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url))).toBe(false)
+  })
+
+  it('removes chatbox-named shared request pool import paths', () => {
+    const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
+    const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    const providerSource = readFileSync(
+      new URL('../../../shared/providers/definitions/models/chatboxai.ts', import.meta.url),
+      'utf8'
+    )
+    expect(requestSource).not.toMatch(/chatboxai_pool/)
+    expect(remoteSource).not.toMatch(/chatboxai_pool/)
+    expect(providerSource).not.toMatch(/chatboxai_pool/)
   })
 })

@@ -7,7 +7,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { streamText } from 'ai'
 import AbstractAISDKModel from '../../../models/abstract-ai-sdk'
 import type { CallChatCompletionOptions, ModelInterface } from '../../../models/types'
-import { getRemoteAPIOrigin } from '../../../request/chatboxai_pool'
+import { getRemoteAPIOrigin } from '../../../request/remote_api_pool'
 import type { ChatboxAILicenseDetail, ProviderModelInfo } from '../../../types'
 import type { ModelDependencies } from '../../../types/adapters'
 

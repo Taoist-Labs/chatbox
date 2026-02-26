@@ -1,6 +1,6 @@
 import { ApiError, BaseError, RemoteAPIError, NetworkError } from '../models/errors'
 import { parseJsonOrEmpty } from '../utils/json_utils'
-import { isRemoteAPI } from './chatboxai_pool'
+import { isRemoteAPI } from './remote_api_pool'
 
 interface PlatformInfo {
   type: string
