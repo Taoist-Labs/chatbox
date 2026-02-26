@@ -9,10 +9,21 @@ import { getLogger } from '../util'
 const log = getLogger('knowledge-base:db')
 
 // Database file path
-const dbPath = path.join(app.getPath('userData'), 'databases', 'chatbox_kb.db')
+const dbDir = path.join(app.getPath('userData'), 'databases')
+const primaryDbPath = path.join(dbDir, 'knowledge_base.db')
+const legacyDbPath = path.join(dbDir, 'chatbox_kb.db')
+
+function resolveDbPath() {
+  if (fs.existsSync(legacyDbPath) && !fs.existsSync(primaryDbPath)) {
+    log.info('[DB] Using legacy database file path', { legacyDbPath })
+    return legacyDbPath
+  }
+  return primaryDbPath
+}
+
+const dbPath = resolveDbPath()
 
 // Ensure database directory exists
-const dbDir = path.dirname(dbPath)
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
 }

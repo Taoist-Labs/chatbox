@@ -505,4 +505,15 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/\bchatboxAIFileUUID\b/)
     expect(source).not.toMatch(/\bchatboxAILinkUUID\b/)
   })
+
+  it('removes chatbox-named temp image filename prefix from main adapters source', () => {
+    const source = readFileSync(new URL('../../../main/adapters/index.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/`chatbox_\$\{folder\}_/)
+  })
+
+  it('removes chatbox-named primary kb db filename from main knowledge-base source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/db.ts', import.meta.url), 'utf8')
+    expect(source).toMatch(/knowledge_base\.db/)
+    expect(source).not.toMatch(/const dbPath = .*chatbox_kb\.db/)
+  })
 })

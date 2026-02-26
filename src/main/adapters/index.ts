@@ -21,7 +21,7 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
     storage: {
       async saveImage(folder: string, dataUrl: string): Promise<string> {
         // 将图片写入 /tmp 目录下的临时文件
-        const fileName = `chatbox_${folder}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.img`
+        const fileName = `app_${folder}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.img`
         const filePath = path.join(os.tmpdir(), fileName)
         // 支持 data URL 或纯 base64
         let base64Data = dataUrl
