@@ -453,4 +453,11 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/type ChatboxAILicenseDetail/)
     expect(source).not.toMatch(/ChatboxAILicenseDetail \| null/)
   })
+
+  it('removes chatbox-named helper identifiers from remote api source', () => {
+    const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/\bchatboxaiAPI\b/)
+    expect(source).not.toMatch(/\bgetChatboxOrigin\b/)
+    expect(source).not.toMatch(/\bgetChatboxHeaders\b/)
+  })
 })

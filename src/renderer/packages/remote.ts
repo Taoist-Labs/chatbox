@@ -5,7 +5,7 @@ import { USE_BETA_API, USE_BETA_CHATBOX, USE_LOCAL_API, USE_LOCAL_CHATBOX } from
 import { ofetch } from 'ofetch'
 import { z } from 'zod'
 import * as cache from 'src/shared/utils/cache'
-import * as chatboxaiAPI from '../../shared/request/remote_api_pool'
+import * as remoteAPIPool from '../../shared/request/remote_api_pool'
 import { createAfetch, createAuthenticatedAfetch, uploadFile } from '../../shared/request/request'
 import {
   type RemoteLicenseDetail,
@@ -94,7 +94,7 @@ function getAPIOrigin() {
   if (USE_LOCAL_API) {
     return 'http://localhost:8002'
   } else {
-    return chatboxaiAPI.getRemoteAPIOrigin()
+    return remoteAPIPool.getRemoteAPIOrigin()
   }
 }
 
@@ -102,7 +102,7 @@ function deriveWebOriginFromAPIOrigin(apiOrigin: string) {
   return apiOrigin.replace('://api.', '://')
 }
 
-export function getChatboxOrigin() {
+export function getWebOrigin() {
   if (USE_LOCAL_CHATBOX) {
     return 'http://localhost:3002'
   } else if (USE_BETA_CHATBOX) {
@@ -112,7 +112,7 @@ export function getChatboxOrigin() {
   }
 }
 
-const getChatboxHeaders = async () => {
+const getRemoteHeaders = async () => {
   return {
     'CHATBOX-PLATFORM': await platform.getPlatform(),
     'CHATBOX-PLATFORM-TYPE': platform.type,
@@ -203,7 +203,7 @@ export async function getRemoteConfig(config: keyof RemoteConfig) {
   }
   const res = await ofetch<Response>(`${getAPIOrigin()}/api/remote_config/${config}`, {
     retry: 3,
-    headers: await getChatboxHeaders(),
+    headers: await getRemoteHeaders(),
   })
   return res['data']
 }
@@ -221,7 +221,7 @@ export async function getDialogConfig(params: { uuid: string; language: string; 
     method: 'POST',
     retry: 3,
     body: params,
-    headers: await getChatboxHeaders(),
+    headers: await getRemoteHeaders(),
   })
   return res['data'] || null
 }
@@ -234,7 +234,7 @@ export async function getLicenseDetail(params: { licenseKey: string }) {
     retry: 3,
     headers: {
       Authorization: params.licenseKey,
-      ...(await getChatboxHeaders()),
+      ...(await getRemoteHeaders()),
     },
   })
   return res['data'] || null
@@ -264,7 +264,7 @@ export async function getLicenseDetailRealtime(params: { licenseKey: string }): 
       retry: 5,
       headers: {
         Authorization: params.licenseKey,
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       onResponseError({ response }) {
         // 在错误响应时捕获 error 对象
@@ -300,7 +300,7 @@ export async function generateUploadUrl(params: { licenseKey: string; filename: 
       headers: {
         Authorization: params.licenseKey,
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -330,7 +330,7 @@ export async function createUserFile<T extends boolean>(params: {
       headers: {
         Authorization: params.licenseKey,
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -377,7 +377,7 @@ export async function parseUserLinkPro(params: { licenseKey: string; url: string
       headers: {
         Authorization: params.licenseKey,
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({
         ...params,
@@ -438,7 +438,7 @@ export async function webBrowsing(params: { licenseKey: string; query: string })
       headers: {
         Authorization: params.licenseKey,
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -466,7 +466,7 @@ export async function activateLicense(params: { licenseKey: string; instanceName
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -510,7 +510,7 @@ export async function validateLicense(params: { licenseKey: string; instanceId: 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -549,7 +549,7 @@ export async function getModelManifest(params: { aiProvider: ModelProvider; lice
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({
         aiProvider: params.aiProvider,
@@ -576,7 +576,7 @@ export async function reportContent(params: { id: string; type: string; details:
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(await getChatboxHeaders()),
+      ...(await getRemoteHeaders()),
     },
     body: JSON.stringify(params),
   })
@@ -595,7 +595,7 @@ export async function getProviderModelsInfo(params: { modelIds: string[] }) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify(params),
     },
@@ -629,14 +629,14 @@ export async function requestLoginTicketId() {
   const appVersion = await platform.getVersion()
   const deviceName = await platform.getDeviceName()
 
-  console.log('getChatboxOrigin()', getChatboxOrigin())
+  console.log('getWebOrigin()', getWebOrigin())
   const res = await afetch(
-    `${getChatboxOrigin()}/api/auth/request_login_ticket`,
+    `${getWebOrigin()}/api/auth/request_login_ticket`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({
         device_type: deviceType,
@@ -664,12 +664,12 @@ export async function checkLoginStatus(ticketId: string) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `${getChatboxOrigin()}/api/auth/login_status`,
+    `${getWebOrigin()}/api/auth/login_status`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({ ticket_id: ticketId }),
     },
@@ -705,12 +705,12 @@ export async function refreshAccessToken(params: { refreshToken: string }) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `${getChatboxOrigin()}/api/auth/token_refresh`,
+    `${getWebOrigin()}/api/auth/token_refresh`,
     {
       method: 'POST',
       headers: {
         'x-chatbox-refresh-token': params.refreshToken,
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
@@ -748,12 +748,12 @@ export async function getUserProfile() {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    `${getChatboxOrigin()}/api/user/profile`,
+    `${getWebOrigin()}/api/user/profile`,
     {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
@@ -794,12 +794,12 @@ export async function listLicensesByUser(): Promise<UserLicense[]> {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    `${getChatboxOrigin()}/api/license/list_by_user`,
+    `${getWebOrigin()}/api/license/list_by_user`,
     {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
