@@ -460,4 +460,13 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/\bgetChatboxOrigin\b/)
     expect(source).not.toMatch(/\bgetChatboxHeaders\b/)
   })
+
+  it('removes chatbox-named web env switches from renderer variables and remote source', () => {
+    const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
+    const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    expect(variablesSource).not.toMatch(/\bUSE_LOCAL_CHATBOX\b/)
+    expect(variablesSource).not.toMatch(/\bUSE_BETA_CHATBOX\b/)
+    expect(remoteSource).not.toMatch(/\bUSE_LOCAL_CHATBOX\b/)
+    expect(remoteSource).not.toMatch(/\bUSE_BETA_CHATBOX\b/)
+  })
 })

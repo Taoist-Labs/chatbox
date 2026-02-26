@@ -1,7 +1,7 @@
 import { getLogger } from '@/lib/utils'
 import platform from '@/platform'
 import { authInfoStore } from '@/stores/authInfoStore'
-import { USE_BETA_API, USE_BETA_CHATBOX, USE_LOCAL_API, USE_LOCAL_CHATBOX } from '@/variables'
+import { USE_BETA_API, USE_BETA_WEB, USE_LOCAL_API, USE_LOCAL_WEB } from '@/variables'
 import { ofetch } from 'ofetch'
 import { z } from 'zod'
 import * as cache from 'src/shared/utils/cache'
@@ -103,9 +103,9 @@ function deriveWebOriginFromAPIOrigin(apiOrigin: string) {
 }
 
 export function getWebOrigin() {
-  if (USE_LOCAL_CHATBOX) {
+  if (USE_LOCAL_WEB) {
     return 'http://localhost:3002'
-  } else if (USE_BETA_CHATBOX) {
+  } else if (USE_BETA_WEB) {
     return 'https://beta.ai-chatbox.com'
   } else {
     return deriveWebOriginFromAPIOrigin(getAPIOrigin())
