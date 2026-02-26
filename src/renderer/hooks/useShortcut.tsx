@@ -6,7 +6,7 @@ import { uiStore } from '@/stores/uiStore'
 import { getOS } from '../packages/navigator'
 import platform from '../platform'
 import { currentSessionIdAtom } from '../stores/atoms'
-import { createEmpty, startNewThread, switchToIndex, switchToNext } from '../stores/sessionActions'
+import { startNewThread, switchToIndex, switchToNext } from '../stores/sessionActions'
 import * as dom from './dom'
 import { useIsSmallScreen } from './useScreenChange'
 
@@ -17,15 +17,18 @@ export default function useShortcut() {
     const handleKeyDown = (e: KeyboardEvent) => {
       keyboardShortcut(e)
     }
-    const cancel = platform.onWindowShow(() => {
+    const focusMessageInput = () => {
       // 大屏幕下，窗口显示时自动聚焦输入框
       if (!isSmallScreen) {
         dom.focusMessageInput()
       }
-    })
+    }
+    const cancelOnFocus = platform.onWindowFocused(focusMessageInput)
+    const cancelOnShow = platform.onWindowShow(focusMessageInput)
     window.addEventListener('keydown', handleKeyDown)
     return () => {
-      cancel()
+      cancelOnFocus()
+      cancelOnShow()
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [isSmallScreen])
@@ -44,9 +47,9 @@ export default function useShortcut() {
     }
     if (e.key === 'e' && ctrlKey) {
       dom.focusMessageInput()
-      uiStore.setState((state) => ({
-        inputBoxWebBrowsingMode: !state.inputBoxWebBrowsingMode,
-      }))
+      // Toggle session-level web browsing mode using cached display value
+      const sessionId = getDefaultStore().get(currentSessionIdAtom) || 'new'
+      uiStore.getState().toggleSessionWebBrowsing(sessionId)
       return
     }
 
@@ -59,7 +62,9 @@ export default function useShortcut() {
     }
     // 创建新图片会话 CmdOrCtrl + Shift + N
     if (e.key === 'n' && ctrlKey && shift) {
-      createEmpty('picture')
+      router.navigate({
+        to: '/image-creator',
+      })
       return
     }
     // 归档当前会话的上下文。

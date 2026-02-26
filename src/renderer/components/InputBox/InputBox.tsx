@@ -1,11 +1,32 @@
 import NiceModal from '@ebay/nice-modal-react'
-import { ActionIcon, Box, Button, Flex, Menu, Stack, Text, Textarea, Tooltip } from '@mantine/core'
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Flex,
+  Loader,
+  Menu,
+  Stack,
+  Text,
+  Textarea,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core'
 import { useViewportSize } from '@mantine/hooks'
+import {
+  getFileAcceptConfig,
+  getFileAcceptString,
+  getUnsupportedFileType,
+  isSupportedFile,
+} from '@shared/file-extensions'
+import { getModel } from '@shared/providers'
+import { formatNumber } from '@shared/utils'
 import {
   IconAdjustmentsHorizontal,
   IconAlertCircle,
   IconArrowBackUp,
   IconArrowUp,
+  IconChevronRight,
   IconCirclePlus,
   IconFilePencil,
   IconFolder,
@@ -14,31 +35,42 @@ import {
   IconPhoto,
   IconPlayerStopFilled,
   IconPlus,
-  IconSelector,
   IconSettings,
   IconVocabulary,
+  IconWorldWww,
 } from '@tabler/icons-react'
-import { useAtom } from 'jotai'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { useAtom, useAtomValue } from 'jotai'
 import _, { pick } from 'lodash'
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import type React from 'react'
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useTranslation } from 'react-i18next'
-import { formatNumber } from 'src/shared/utils'
+import { createModelDependencies } from '@/adapters'
 import useInputBoxHistory from '@/hooks/useInputBoxHistory'
 import { useKnowledgeBase } from '@/hooks/useKnowledgeBase'
 import { useMessageInput } from '@/hooks/useMessageInput'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
-import { useTokenCount } from '@/hooks/useTokenCount'
 import { cn } from '@/lib/utils'
+import {
+  getContextMessageIds,
+  isAutoCompactionEnabled,
+  isCompactionInProgress,
+  useContextTokens,
+} from '@/packages/context-management'
 import { trackingEvent } from '@/packages/event'
+import { getModelContextWindowSync } from '@/packages/model-context'
 import * as picUtils from '@/packages/pic_utils'
 import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import * as atoms from '@/stores/atoms'
+import { compactionUIStateMapAtom } from '@/stores/atoms/compactionAtoms'
+import * as chatStore from '@/stores/chatStore'
 import { useSession, useSessionSettings } from '@/stores/chatStore'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { settingsStore, useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import { delay } from '@/utils'
 import { featureFlags } from '@/utils/feature-flags'
@@ -53,16 +85,15 @@ import {
 import * as dom from '../../hooks/dom'
 import * as sessionHelpers from '../../stores/sessionHelpers'
 import * as toastActions from '../../stores/toastActions'
-import { FileMiniCard, ImageMiniCard, LinkMiniCard } from '../Attachments'
-import { CompressionModal } from '../CompressionModal'
-import ImageModelSelect from '../ImageModelSelect'
+import { CompactionStatus } from '../chat/CompactionStatus'
+import { CompressionModal } from '../common/CompressionModal'
+import { ScalableIcon } from '../common/ScalableIcon'
+import Disclaimer from '../Disclaimer'
 import ProviderImageIcon from '../icons/ProviderImageIcon'
 import KnowledgeBaseMenu from '../knowledge-base/KnowledgeBaseMenu'
 import ModelSelector from '../ModelSelector'
 import MCPMenu from '../mcp/MCPMenu'
-import { ScalableIcon } from '../ScalableIcon'
-import { Keys } from '../Shortcut'
-import { ImageUploadButton } from './ImageUploadButton'
+import { FileMiniCard, ImageMiniCard, LinkMiniCard } from './Attachments'
 import { ImageUploadInput } from './ImageUploadInput'
 import {
   cleanupFile,
@@ -74,13 +105,12 @@ import {
   storeFilePromise,
   storeLinkPromise,
 } from './preprocessState'
-import { SessionSettingsButton } from './SessionSettingsButton'
 import TokenCountMenu from './TokenCountMenu'
-import { WebBrowsingButton } from './WebBrowsingButton'
 
 export type InputBoxPayload = {
   constructedMessage: Message
   needGenerating?: boolean
+  onUserMessageReady?: () => void
 }
 
 export type InputBoxRef = {
@@ -122,18 +152,43 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     ref
   ) => {
     const { t } = useTranslation()
+    const navigate = useNavigate()
     const isSmallScreen = useIsSmallScreen()
+    const toolbarIconSize = isSmallScreen ? 22 : 18
     const { height: viewportHeight } = useViewportSize()
     const pasteLongTextAsAFile = useSettingsStore((state) => state.pasteLongTextAsAFile)
     const shortcuts = useSettingsStore((state) => state.shortcuts)
     const widthFull = useUIStore((s) => s.widthFull) || fullWidth
 
-    // Use atom as the source of truth for pictureKeys and attachments
-    const webBrowsingMode = useUIStore((s) => s.inputBoxWebBrowsingMode)
-    const setWebBrowsingMode = useUIStore((s) => s.setInputBoxWebBrowsingMode)
-
     const currentSessionId = sessionId
     const isNewSession = currentSessionId === 'new'
+
+    // Session-level web browsing mode
+    const sessionWebBrowsingMap = useUIStore((s) => s.sessionWebBrowsingMap)
+    const setSessionWebBrowsing = useUIStore((s) => s.setSessionWebBrowsing)
+    const updateCurrentWebBrowsingDisplay = useUIStore((s) => s.updateCurrentWebBrowsingDisplay)
+    // Get session-specific value, or use default based on provider (ChatboxAI defaults to true)
+    const webBrowsingMode = useMemo(() => {
+      const sessionValue = sessionWebBrowsingMap[currentSessionId || 'new']
+      if (sessionValue !== undefined) {
+        return sessionValue
+      }
+      // Default: true for ChatboxAI, false for others
+      return model?.provider === ModelProviderEnum.ChatboxAI
+    }, [sessionWebBrowsingMap, currentSessionId, model?.provider])
+
+    // this is used for keyboard shortcut. if we don't provide this, kbd wont know what to set when it's a new session(it doesnt have provider info)
+    useEffect(() => {
+      updateCurrentWebBrowsingDisplay(currentSessionId || 'new', webBrowsingMode)
+    }, [currentSessionId, webBrowsingMode, updateCurrentWebBrowsingDisplay])
+
+    const setWebBrowsingMode = useCallback(
+      (enabled: boolean) => {
+        setSessionWebBrowsing(currentSessionId || 'new', enabled)
+      },
+      [currentSessionId, setSessionWebBrowsing]
+    )
+
     const { messageInput, setMessageInput, clearDraft } = useMessageInput('', { isNewSession })
 
     // Pre-constructed message state (scoped by session)
@@ -147,16 +202,13 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     const { sessionSettings: currentSessionMergedSettings } = useSessionSettings(sessionId || null)
 
     // Get current messages for token counting - will only recalculate when stable messages actually change
+    // Uses getContextMessageIds to respect compaction points
     const currentContextMessageIds = useMemo(() => {
-      // Attention: do not return empty array, it will cause useTokenCount to recalculate tokens
       if (isNewSession) return null
-      if (!currentSessionMergedSettings?.maxContextMessageCount) return null
       if (!currentSession?.messages.length) return null
-      return currentSession.messages
-        .filter((m) => !m.generating)
-        .map((m) => m.id)
-        .slice(-(currentSessionMergedSettings.maxContextMessageCount || 0))
-    }, [isNewSession, currentSessionMergedSettings?.maxContextMessageCount, currentSession?.messages])
+
+      return getContextMessageIds(currentSession, currentSessionMergedSettings?.maxContextMessageCount)
+    }, [isNewSession, currentSessionMergedSettings?.maxContextMessageCount, currentSession])
 
     const { knowledgeBase, setKnowledgeBase } = useKnowledgeBase({ isNewSession })
 
@@ -204,6 +256,17 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
       return hasProcessingFiles || hasProcessingLinks
     }, [preConstructedMessage.preprocessingStatus])
 
+    // Check if any preprocessing has errors
+    const hasPreprocessErrors = useMemo(() => {
+      const hasErrorFiles = Object.values(preConstructedMessage.preprocessingStatus.files || {}).some(
+        (status) => status === 'error'
+      )
+      const hasErrorLinks = Object.values(preConstructedMessage.preprocessingStatus.links || {}).some(
+        (status) => status === 'error'
+      )
+      return hasErrorFiles || hasErrorLinks
+    }, [preConstructedMessage.preprocessingStatus])
+
     const disableSubmit = useMemo(
       () => !(messageInput.trim() || links?.length || attachments?.length || pictureKeys?.length),
       [messageInput, links, attachments, pictureKeys]
@@ -229,12 +292,110 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
       return (providerInfo?.models || providerInfo?.defaultSettings?.models)?.find((m) => m.modelId === model.modelId)
     }, [providers, model])
 
-    // Calculate token counts - use stable messages to avoid recalculation during streaming
-    const { currentInputTokens, contextTokens, totalTokens } = useTokenCount(
-      currentSessionId || null,
-      preConstructedMessage.message,
-      currentContextMessageIds,
-      model
+    // Check if model supports tool use for files
+    const { data: modelSupportToolUseForFile = false } = useQuery({
+      queryKey: ['model-tool-capability', model?.provider, model?.modelId],
+      queryFn: async () => {
+        if (!model?.provider || !model?.modelId) {
+          return false
+        }
+
+        try {
+          const globalSettings = settingsStore.getState().getSettings()
+          const configs = await platform.getConfig()
+          const dependencies = await createModelDependencies()
+
+          const settings = {
+            provider: model.provider,
+            modelId: model.modelId,
+            ...currentSessionMergedSettings,
+          }
+
+          const modelInstance = getModel(settings, globalSettings, configs, dependencies)
+          return modelInstance.isSupportToolUse('read-file')
+        } catch (e) {
+          console.debug('useModelToolCapability: failed to check capability', e)
+          return false
+        }
+      },
+      enabled: !!(model?.provider && model?.modelId),
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+    })
+
+    // Calculate token counts using unified cache layer
+    const { contextTokens, currentInputTokens, totalTokens, isCalculating, pendingTasks, messageCount } =
+      useContextTokens({
+        sessionId: currentSessionId || null,
+        session: currentSession,
+        settings: currentSessionMergedSettings || {},
+        model,
+        modelSupportToolUseForFile,
+        constructedMessage: preConstructedMessage.message,
+      })
+
+    const globalSettings = useSettingsStore((state) => state)
+    const [isCompacting, setIsCompacting] = useState(false)
+
+    const compactionUIStateMap = useAtomValue(compactionUIStateMapAtom)
+    const isCompactionRunning = useMemo(() => {
+      if (!currentSessionId || isNewSession) return false
+      return compactionUIStateMap[currentSessionId]?.status === 'running'
+    }, [compactionUIStateMap, currentSessionId, isNewSession])
+
+    const autoCompactionEnabled = useMemo(() => {
+      if (!currentSession) return globalSettings.autoCompaction ?? true
+      return isAutoCompactionEnabled(currentSession.settings, globalSettings)
+    }, [currentSession, globalSettings])
+
+    const contextWindowKnown = useMemo(() => {
+      if (!model?.modelId) return false
+      return !!modelInfo?.contextWindow || getModelContextWindowSync(model.modelId) !== null
+    }, [model?.modelId, modelInfo?.contextWindow])
+
+    // Use model setting contextWindow if available, otherwise fallback to models.dev data
+    const effectiveContextWindow = useMemo(() => {
+      if (modelInfo?.contextWindow) return modelInfo.contextWindow
+      if (model?.modelId) return getModelContextWindowSync(model.modelId)
+      return null
+    }, [modelInfo?.contextWindow, model?.modelId])
+
+    // Calculate token usage percentage
+    const tokenPercentage = useMemo(() => {
+      if (!effectiveContextWindow || effectiveContextWindow <= 0) return null
+      return Math.round((totalTokens / effectiveContextWindow) * 100)
+    }, [totalTokens, effectiveContextWindow])
+
+    useEffect(() => {
+      if (!currentSessionId || isNewSession) {
+        setIsCompacting(false)
+        return
+      }
+      const checkCompacting = () => {
+        setIsCompacting(isCompactionInProgress(currentSessionId))
+      }
+      checkCompacting()
+      const interval = setInterval(checkCompacting, 1000)
+      return () => clearInterval(interval)
+    }, [currentSessionId, isNewSession])
+
+    const handleAutoCompactionChange = useCallback(
+      async (enabled: boolean) => {
+        if (!currentSessionId || isNewSession) return
+        await chatStore.updateSession(currentSessionId, (session) => {
+          if (!session) {
+            throw new Error('Session not found')
+          }
+          return {
+            ...session,
+            settings: {
+              ...session.settings,
+              autoCompaction: enabled,
+            },
+          }
+        })
+      },
+      [currentSessionId, isNewSession]
     )
 
     const [showSelectModelErrorTip, setShowSelectModelErrorTip] = useState(false)
@@ -286,6 +447,12 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
         return
       }
 
+      // 有解析失败的文件或链接时，阻止发送并显示 toast
+      if (hasPreprocessErrors) {
+        toastActions.add(t('Some files failed to parse. Please remove them and try again.'))
+        return
+      }
+
       // 未选择模型时 显示error tip
       if (!model) {
         // 如果不延时执行，会导致error tip 立即消失
@@ -306,40 +473,41 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
           return
         }
 
+        const messageTextForHistory =
+          preConstructedMessage.message.contentParts.find((p) => p.type === 'text')?.text || ''
+
         const params = {
           constructedMessage: preConstructedMessage.message,
           needGenerating,
-        }
-
-        // 重置输入内容
-        clearDraft()
-        setLinks([])
-        // 重置预处理数据
-        setPreConstructedMessage({
-          text: '',
-          pictureKeys: [],
-          attachments: [],
-          links: [],
-          preprocessedFiles: [],
-          preprocessedLinks: [],
-          preprocessingStatus: {
-            files: {},
-            links: {},
+          onUserMessageReady: () => {
+            clearDraft()
+            setLinks([])
+            setPreConstructedMessage({
+              text: '',
+              pictureKeys: [],
+              attachments: [],
+              links: [],
+              preprocessedFiles: [],
+              preprocessedLinks: [],
+              preprocessingStatus: {
+                files: {},
+                links: {},
+              },
+              preprocessingPromises: {
+                files: new Map(),
+                links: new Map(),
+              },
+              message: undefined,
+            })
+            setShowRollbackThreadButton(false)
+            if (platform.type !== 'mobile' && messageTextForHistory) {
+              addInputBoxHistory(messageTextForHistory)
+            }
           },
-          preprocessingPromises: {
-            files: new Map(),
-            links: new Map(),
-          },
-          message: undefined,
-        })
-        // 重置清理上下文按钮
-        setShowRollbackThreadButton(false)
-        // 如果提交成功，添加到输入历史 (非手机端)
-        if (platform.type !== 'mobile' && preConstructedMessage.message) {
-          addInputBoxHistory(preConstructedMessage.message.contentParts.find((p) => p.type === 'text')?.text || '')
         }
 
         await onSubmit?.(params)
+
         trackingEvent('send_message', { event_category: 'user' })
       } catch (e) {
         console.error('Error submitting message:', e)
@@ -458,14 +626,11 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     }
 
     const startFilePreprocessing = (file: File) => {
-      // 设置为处理中状态
-      setPreConstructedMessage((prevMsg) => markFileProcessing(prevMsg, file))
-
       // 异步预处理文件，失败时标记为 error，并吞掉异常避免 Promise.all reject
-      const preprocessPromise = sessionHelpers
+      return sessionHelpers
         .preprocessFile(file, { provider: model?.provider || '', modelId: model?.modelId || '' })
         .then((preprocessedFile) => {
-          setPreConstructedMessage((prev) => onFileProcessed(prev, file, preprocessedFile, 10))
+          setPreConstructedMessage((prev) => onFileProcessed(prev, file, preprocessedFile, 20))
         })
         .catch((error) => {
           setPreConstructedMessage((prev) =>
@@ -478,16 +643,13 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                 storageKey: '',
                 error: (error as Error)?.message || 'Failed to preprocess the file.',
               },
-              10
+              20
             )
           )
         })
-
-      // Store the promise
-      setPreConstructedMessage((prev) => storeFilePromise(prev, file, preprocessPromise))
     }
 
-    const insertLinks = async (urls: string[]) => {
+    const insertLinks = (urls: string[]) => {
       let newLinks = [...(links || []), ...urls.map((u) => ({ url: u }))]
       newLinks = _.uniqBy(newLinks, 'url')
       newLinks = newLinks.slice(-6) // 最多插入 6 个链接
@@ -514,21 +676,45 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
           setPreConstructedMessage((prev) => ({
             ...prev,
             pictureKeys: [...(prev.pictureKeys || []), key].slice(-8),
-          })) // 最多插入 8 个图片
+          })) // Maximum 8 images
         } else {
+          // Check if file type is supported
+          if (!isSupportedFile(file.name)) {
+            const unsupportedType = getUnsupportedFileType(file.name)
+            let errorMsg = t('Unsupported file type: {{fileName}}', { fileName: file.name })
+            if (unsupportedType === 'iwork') {
+              errorMsg = t('iWork files (Pages, Keynote) are not supported. Please export to PDF or Office format.')
+            } else if (unsupportedType === 'audio') {
+              errorMsg = t('Audio files are not supported')
+            } else if (unsupportedType === 'video') {
+              errorMsg = t('Video files are not supported')
+            } else if (unsupportedType === 'binary') {
+              errorMsg = t('Binary/executable files are not supported')
+            } else if (unsupportedType === 'archive') {
+              errorMsg = t('Archive files are not supported. Please extract and upload individual files.')
+            } else if (unsupportedType === 'image') {
+              errorMsg = t('Advanced image formats are not supported. Please convert to JPG or PNG.')
+            }
+            toastActions.add(errorMsg)
+            continue
+          }
           setPreConstructedMessage((prev) => {
             const newAttachments = prev.attachments.find(
               (f) => StorageKeyGenerator.fileUniqKey(f) === StorageKeyGenerator.fileUniqKey(file)
             )
               ? prev.attachments
-              : [...(prev.attachments || []), file].slice(-10) // 最多插入 10 个附件
+              : [...(prev.attachments || []), file].slice(-20) // Maximum 20 attachments
 
-            // 只预处理前10个文件，避免浪费资源
+            // Only preprocess first 20 files to avoid wasting resources
             const fileIndex = newAttachments.findIndex(
               (f) => f.name === file.name && f.lastModified === file.lastModified
             )
-            if (fileIndex < 10) {
-              startFilePreprocessing(file)
+            if (fileIndex < 20) {
+              const preprocessPromise = startFilePreprocessing(file)
+              return {
+                ...storeFilePromise(markFileProcessing(prev, file), file, preprocessPromise),
+                attachments: newAttachments,
+              }
             }
 
             return {
@@ -623,9 +809,15 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
 
     // 拖拽上传
     const { getRootProps, getInputProps } = useDropzone({
-      onDrop: (acceptedFiles: File[]) => {
+      onDrop: (acceptedFiles: File[], fileRejections) => {
         insertFiles(acceptedFiles)
+        // Show toast for rejected files
+        if (fileRejections.length > 0) {
+          const rejectedNames = fileRejections.map((r) => r.file.name).join(', ')
+          toastActions.add(t('Unsupported file type: {{fileName}}', { fileName: rejectedNames }))
+        }
       },
+      accept: getFileAcceptConfig(),
       noClick: true,
       noKeyboard: true,
     })
@@ -665,212 +857,294 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
       [knowledgeBase, setKnowledgeBase]
     )
 
+    // Show deprecated notice for legacy picture sessions
+    if (sessionType === 'picture') {
+      return (
+        <Box pt={0} pb={isSmallScreen ? 'md' : 'sm'} px="sm" id={dom.InputBoxID}>
+          <Stack
+            className={cn('rounded-2xl bg-chatbox-background-secondary', widthFull ? 'w-full' : 'max-w-4xl mx-auto')}
+            gap="xs"
+            p="md"
+            align="center"
+          >
+            <Text size="sm" c="chatbox-tertiary" ta="center">
+              {t('This image session is no longer active. Please use the new Image Creator for image generation.')}
+            </Text>
+            <Button variant="light" size="xs" onClick={() => navigate({ to: '/image-creator' })}>
+              {t('Go to Image Creator')}
+            </Button>
+          </Stack>
+        </Box>
+      )
+    }
+
     return (
-      <Box
-        pt={0}
-        pb={isSmallScreen ? 'md' : 'sm'}
-        px={isSmallScreen ? '0.3rem' : '1rem'}
-        id={dom.InputBoxID}
-        {...getRootProps()}
-      >
+      <Box pt={0} pb={isSmallScreen ? 'md' : 'sm'} px="sm" id={dom.InputBoxID} {...getRootProps()}>
         <input className="hidden" {...getInputProps()} />
-        <Stack
-          className={cn(
-            'rounded-lg sm:rounded-md bg-chatbox-background-secondary border border-solid border-chatbox-border-primary justify-between',
-            widthFull ? 'w-full' : 'max-w-4xl mx-auto',
-            !isSmallScreen && 'min-h-[92px]'
-          )}
-          gap={0}
-        >
-          <Textarea
-            unstyled={true}
-            classNames={{
-              input:
-                'block w-full outline-none border-none px-sm pt-sm pb-sm resize-none bg-transparent text-chatbox-tint-primary',
-            }}
-            size="sm"
-            id={dom.messageInputID}
-            ref={inputRef}
-            placeholder={t('Type your question here...') || ''}
-            bg="transparent"
-            autosize={true}
-            minRows={1}
-            maxRows={Math.max(3, Math.floor(viewportHeight / 100))}
-            value={messageInput}
-            autoFocus={!isSmallScreen}
-            onChange={onMessageInput}
-            onKeyDown={onKeyDown}
-            onPaste={onPaste}
-          />
+        <Stack className={cn(widthFull ? 'w-full' : 'max-w-4xl mx-auto')} gap="xs">
+          {currentSessionId && <CompactionStatus sessionId={currentSessionId} />}
+          <Stack
+            className={cn(
+              'rounded-md bg-chatbox-background-secondary justify-between px-3 py-2',
+              !isSmallScreen && 'min-h-[92px]'
+            )}
+            style={{ border: '1px solid var(--chatbox-border-primary)' }}
+            gap="xs"
+          >
+            {/* Input Row */}
+            <Flex align="flex-end" gap={4}>
+              <Textarea
+                unstyled={true}
+                classNames={{
+                  root: 'flex-1',
+                  wrapper: 'flex-1',
+                  input:
+                    'block w-full outline-none border-none px-2 py-1 resize-none bg-transparent text-chatbox-tint-primary',
+                }}
+                size="sm"
+                id={dom.messageInputID}
+                ref={inputRef}
+                placeholder={t('Type your question here...') || ''}
+                bg="transparent"
+                autosize={true}
+                minRows={2}
+                maxRows={Math.max(4, Math.floor(viewportHeight / 100))}
+                value={messageInput}
+                autoFocus={!isSmallScreen}
+                readOnly={isCompactionRunning}
+                onChange={onMessageInput}
+                onKeyDown={onKeyDown}
+                onPaste={onPaste}
+              />
 
-          {(!!pictureKeys.length || !!attachments.length || !!links.length) && (
-            <Flex px="sm" pb="xs" align="center" wrap="wrap" onClick={() => dom.focusMessageInput()}>
-              {pictureKeys?.map((picKey) => (
-                <ImageMiniCard key={picKey} storageKey={picKey} onDelete={() => onImageDeleteClick(picKey)} />
-              ))}
-              {attachments?.map((file) => (
-                <FileMiniCard
-                  key={StorageKeyGenerator.fileUniqKey(file)}
-                  name={file.name}
-                  fileType={file.type}
-                  status={preConstructedMessage.preprocessingStatus.files[StorageKeyGenerator.fileUniqKey(file)]}
-                  onDelete={() => {
-                    setPreConstructedMessage((prev) => ({
-                      ...cleanupFile(prev, file),
-                      attachments: (prev.attachments || []).filter(
-                        (f) => StorageKeyGenerator.fileUniqKey(f) !== StorageKeyGenerator.fileUniqKey(file)
-                      ),
-                    }))
-                  }}
-                />
-              ))}
-              {links?.map((link) => (
-                <LinkMiniCard
-                  key={StorageKeyGenerator.linkUniqKey(link.url)}
-                  url={link.url}
-                  status={preConstructedMessage.preprocessingStatus.links[StorageKeyGenerator.linkUniqKey(link.url)]}
-                  onDelete={() => {
-                    setLinks(links.filter((l) => l.url !== link.url))
-                    setPreConstructedMessage((prev) => cleanupLink(prev, link.url))
-                  }}
-                />
-              ))}
+              {/* Send Button */}
+              <ActionIcon
+                disabled={(disableSubmit || isPreprocessing || isSubmitting || isCompactionRunning) && !generating}
+                size={32}
+                variant="filled"
+                color={generating ? 'dark' : 'chatbox-brand'}
+                radius="xl"
+                onClick={generating ? onStopGenerating : () => handleSubmit()}
+                className={cn(
+                  'shrink-0 mb-1',
+                  !generating &&
+                    (disableSubmit || isPreprocessing || isSubmitting || isCompactionRunning) &&
+                    'disabled:!opacity-100 !text-white'
+                )}
+                style={
+                  !generating && (disableSubmit || isPreprocessing || isSubmitting || isCompactionRunning)
+                    ? { backgroundColor: 'rgba(222, 226, 230, 1)' }
+                    : undefined
+                }
+              >
+                {generating ? (
+                  <ScalableIcon icon={IconPlayerStopFilled} size={16} />
+                ) : (
+                  <ScalableIcon icon={IconArrowUp} size={16} />
+                )}
+              </ActionIcon>
             </Flex>
-          )}
 
-          <Flex px="sm" pb="sm" align="flex-end" justify="space-between" gap="0" wrap="wrap">
-            <Flex gap="md" flex="0 1 auto" className="!hidden sm:!flex">
-              {sessionType !== 'picture' && (
-                <>
-                  <ImageUploadInput ref={pictureInputRef} onChange={onFileInputChange} />
-                  <input type="file" ref={fileInputRef} className="hidden" onChange={onFileInputChange} multiple />
-
-                  <AttachmentMenu
-                    onImageUploadClick={onImageUploadClick}
-                    onFileUploadClick={onFileUploadClick}
-                    handleAttachLink={handleAttachLink}
-                    t={t}
-                  />
-
-                  {featureFlags.mcp && (
-                    <MCPMenu>
-                      {(enabledTools) =>
-                        enabledTools > 0 ? (
-                          <Button radius="md" variant="light" h="auto" w="auto" px="xs" py={0}>
-                            <Flex gap="3xs" align="center">
-                              <ScalableIcon icon={IconHammer} strokeWidth={1.8} size={22} />
-                              <span>{enabledTools}</span>
-                            </Flex>
-                          </Button>
-                        ) : (
-                          <ActionIcon size={24} variant="subtle" color="chatbox-secondary">
-                            <ScalableIcon icon={IconHammer} size={22} strokeWidth={1.8} />
-                          </ActionIcon>
-                        )
-                      }
-                    </MCPMenu>
-                  )}
-                  {featureFlags.knowledgeBase && (
-                    <KnowledgeBaseMenu currentKnowledgeBaseId={knowledgeBase?.id} onSelect={handleKnowledgeBaseSelect}>
-                      <ActionIcon
-                        size={24}
-                        variant="subtle"
-                        color={knowledgeBase ? 'chatbox-brand' : 'chatbox-secondary'}
-                      >
-                        <ScalableIcon icon={IconVocabulary} size={22} strokeWidth={1.8} />
-                      </ActionIcon>
-                    </KnowledgeBaseMenu>
-                  )}
-
-                  <Tooltip
-                    label={
-                      <Stack align="center" gap="xxs" pb="xxs">
-                        <div className="whitespace-nowrap">{t('Web Browsing')}</div>
-                        <Flex align="center">
-                          <Keys keys={shortcuts.inputBoxWebBrowsingMode.split('+')} size="small" opacity={0.7} />
-                        </Flex>
-                      </Stack>
-                    }
-                    withArrow
-                    position="top"
-                  >
-                    <WebBrowsingButton
-                      active={webBrowsingMode}
-                      onClick={() => {
-                        setWebBrowsingMode(!webBrowsingMode)
-                        dom.focusMessageInput()
+            {(!!pictureKeys.length || !!attachments.length || !!links.length) && (
+              <Flex align="center" wrap="wrap" onClick={() => dom.focusMessageInput()}>
+                {pictureKeys?.map((picKey) => (
+                  <ImageMiniCard key={picKey} storageKey={picKey} onDelete={() => onImageDeleteClick(picKey)} />
+                ))}
+                {attachments?.map((file) => {
+                  const fileKey = StorageKeyGenerator.fileUniqKey(file)
+                  const status = preConstructedMessage.preprocessingStatus.files[fileKey]
+                  const preprocessedFile = preConstructedMessage.preprocessedFiles.find(
+                    (f) => StorageKeyGenerator.fileUniqKey(f.file) === fileKey
+                  )
+                  return (
+                    <FileMiniCard
+                      key={fileKey}
+                      name={file.name}
+                      fileType={file.type}
+                      status={status}
+                      errorMessage={preprocessedFile?.error}
+                      onErrorClick={() => {
+                        if (preprocessedFile?.error) {
+                          void NiceModal.show('file-parse-error', {
+                            errorCode: preprocessedFile.error,
+                            fileName: file.name,
+                          })
+                        }
+                      }}
+                      onDelete={() => {
+                        // Cancel any ongoing MinerU parsing for this file
+                        if (file.path && platform.cancelMineruParse) {
+                          platform.cancelMineruParse(file.path).catch(() => {
+                            // Ignore cancellation errors
+                          })
+                        }
+                        setPreConstructedMessage((prev) => ({
+                          ...cleanupFile(prev, file),
+                          attachments: (prev.attachments || []).filter(
+                            (f) => StorageKeyGenerator.fileUniqKey(f) !== fileKey
+                          ),
+                        }))
                       }}
                     />
-                  </Tooltip>
+                  )
+                })}
+                {links?.map((link) => {
+                  const linkKey = StorageKeyGenerator.linkUniqKey(link.url)
+                  const status = preConstructedMessage.preprocessingStatus.links[linkKey]
+                  const preprocessedLink = preConstructedMessage.preprocessedLinks.find(
+                    (l) => StorageKeyGenerator.linkUniqKey(l.url) === linkKey
+                  )
+                  return (
+                    <LinkMiniCard
+                      key={linkKey}
+                      url={link.url}
+                      status={status}
+                      errorMessage={preprocessedLink?.error}
+                      onErrorClick={() => {
+                        if (preprocessedLink?.error) {
+                          void NiceModal.show('file-parse-error', {
+                            errorCode: preprocessedLink.error,
+                            fileName: link.url,
+                          })
+                        }
+                      }}
+                      onDelete={() => {
+                        setLinks(links.filter((l) => l.url !== link.url))
+                        setPreConstructedMessage((prev) => cleanupLink(prev, link.url))
+                      }}
+                    />
+                  )
+                })}
+              </Flex>
+            )}
 
-                  {showRollbackThreadButton ? (
-                    <Tooltip label={t('Back to Previous')} withArrow position="top-start">
-                      <ActionIcon size={24} variant="subtle" color="chatbox-secondary" onClick={rollbackThread}>
-                        <ScalableIcon icon={IconArrowBackUp} size={22} strokeWidth={1.8} />
-                      </ActionIcon>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip
-                      label={
-                        <Stack align="center" gap="xxs" pb="xxs">
-                          <div className="whitespace-nowrap">{t('Start a New Thread')}</div>
-                          <Flex align="center">
-                            <Keys keys={shortcuts.messageListRefreshContext.split('+')} size="small" opacity={0.7} />
-                          </Flex>
-                        </Stack>
-                      }
-                      withArrow
-                      position="top-start"
-                    >
-                      <ActionIcon
-                        size={24}
-                        variant="subtle"
-                        color="chatbox-secondary"
-                        disabled={!onStartNewThread}
-                        onClick={startNewThread}
-                      >
-                        <ScalableIcon icon={IconFilePencil} size={22} strokeWidth={1.8} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                </>
-              )}
-              {model?.provider === ModelProviderEnum.ChatboxAI && sessionType === 'picture' && (
-                <>
-                  <ImageUploadInput ref={pictureInputRef} onChange={onFileInputChange} />
-                  <ImageUploadButton onClick={onImageUploadClick} tooltipLabel={t('Attach Image')} />
-                </>
-              )}
-              <SessionSettingsButton
-                onClick={onClickSessionSettings}
-                tooltipLabel={t('Customize settings for the current conversation')}
-                disabled={!onClickSessionSettings}
+            {/* Toolbar Row */}
+            <Flex align="center" gap={0} className="shrink-0 w-full" justify="space-between">
+              {/* Hidden file inputs */}
+              <ImageUploadInput ref={pictureInputRef} onChange={onFileInputChange} />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={onFileInputChange}
+                multiple
+                accept={getFileAcceptString()}
               />
-            </Flex>
 
-            <Flex className="sm:!hidden" gap="xs">
-              {sessionType !== 'picture' ? (
-                <>
-                  <AttachmentMenu
-                    onImageUploadClick={onImageUploadClick}
-                    onFileUploadClick={onFileUploadClick}
-                    handleAttachLink={handleAttachLink}
-                    t={t}
-                    size={20}
-                    iconSize={undefined}
-                  />
+              {/* Left Group: Tool Buttons */}
+              <Flex align="center" gap={0}>
+                <AttachmentMenu
+                  onImageUploadClick={onImageUploadClick}
+                  onFileUploadClick={onFileUploadClick}
+                  handleAttachLink={handleAttachLink}
+                  t={t}
+                />
 
-                  <WebBrowsingButton
-                    active={webBrowsingMode}
+                {featureFlags.mcp && (
+                  <MCPMenu>
+                    {(enabledTools) => (
+                      <UnstyledButton className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors">
+                        <IconHammer
+                          size={toolbarIconSize}
+                          strokeWidth={1.8}
+                          className={
+                            enabledTools > 0
+                              ? 'text-[var(--chatbox-tint-brand)]'
+                              : 'text-[var(--chatbox-tint-secondary)]'
+                          }
+                        />
+                        {enabledTools > 0 && (
+                          <Text size="xs" className="text-[var(--chatbox-tint-brand)]">
+                            {enabledTools}
+                          </Text>
+                        )}
+                      </UnstyledButton>
+                    )}
+                  </MCPMenu>
+                )}
+
+                {featureFlags.knowledgeBase && !isSmallScreen && (
+                  <KnowledgeBaseMenu currentKnowledgeBaseId={knowledgeBase?.id} onSelect={handleKnowledgeBaseSelect}>
+                    <UnstyledButton className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors">
+                      <IconVocabulary
+                        size={toolbarIconSize}
+                        strokeWidth={1.8}
+                        className={
+                          knowledgeBase ? 'text-[var(--chatbox-tint-brand)]' : 'text-[var(--chatbox-tint-secondary)]'
+                        }
+                      />
+                    </UnstyledButton>
+                  </KnowledgeBaseMenu>
+                )}
+
+                <Tooltip label={t('Web Search')} position="top" withArrow disabled={isSmallScreen}>
+                  <UnstyledButton
                     onClick={() => {
                       setWebBrowsingMode(!webBrowsingMode)
                       dom.focusMessageInput()
                     }}
-                    isMobile
-                  />
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors"
+                  >
+                    <IconWorldWww
+                      size={toolbarIconSize}
+                      strokeWidth={1.8}
+                      className={
+                        webBrowsingMode ? 'text-[var(--chatbox-tint-brand)]' : 'text-[var(--chatbox-tint-secondary)]'
+                      }
+                    />
+                  </UnstyledButton>
+                </Tooltip>
 
+                {!isSmallScreen &&
+                  (showRollbackThreadButton ? (
+                    <Tooltip label={t('Rollback Thread')} position="top" withArrow>
+                      <UnstyledButton
+                        onClick={rollbackThread}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors"
+                      >
+                        <IconArrowBackUp
+                          size={toolbarIconSize}
+                          strokeWidth={1.8}
+                          className="text-[var(--chatbox-tint-secondary)]"
+                        />
+                      </UnstyledButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip label={t('New Thread')} position="top" withArrow>
+                      <UnstyledButton
+                        onClick={startNewThread}
+                        disabled={!onStartNewThread}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors disabled:opacity-50"
+                      >
+                        <IconFilePencil
+                          size={toolbarIconSize}
+                          strokeWidth={1.8}
+                          className="text-[var(--chatbox-tint-secondary)]"
+                        />
+                      </UnstyledButton>
+                    </Tooltip>
+                  ))}
+
+                {!isSmallScreen && (
+                  <Tooltip label={t('Conversation Settings')} position="top" withArrow>
+                    <UnstyledButton
+                      onClick={onClickSessionSettings}
+                      disabled={!onClickSessionSettings}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors disabled:opacity-50"
+                    >
+                      <IconAdjustmentsHorizontal
+                        size={toolbarIconSize}
+                        strokeWidth={1.8}
+                        className="text-[var(--chatbox-tint-secondary)]"
+                      />
+                    </UnstyledButton>
+                  </Tooltip>
+                )}
+
+                {/* Mobile: Settings menu */}
+                {isSmallScreen && (
                   <Menu
-                    trigger={isSmallScreen ? 'click' : 'hover'}
+                    trigger="click"
                     openDelay={100}
                     closeDelay={100}
                     keepMounted
@@ -880,17 +1154,13 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                     }}
                   >
                     <Menu.Target>
-                      <ActionIcon
-                        variant="transparent"
-                        w={20}
-                        h={20}
-                        miw={20}
-                        mih={20}
-                        bd="none"
-                        color="chatbox-secondary"
-                      >
-                        <ScalableIcon icon={IconSettings} size={20} strokeWidth={1.8} />
-                      </ActionIcon>
+                      <UnstyledButton className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors">
+                        <IconSettings
+                          size={toolbarIconSize}
+                          strokeWidth={1.8}
+                          className="text-[var(--chatbox-tint-secondary)]"
+                        />
+                      </UnstyledButton>
                     </Menu.Target>
                     <Menu.Dropdown>
                       <Menu.Item leftSection={<ScalableIcon icon={IconPlus} size={16} />} onClick={startNewThread}>
@@ -904,53 +1174,45 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                       </Menu.Item>
                     </Menu.Dropdown>
                   </Menu>
-                </>
-              ) : (
-                <>
-                  {model?.provider === ModelProviderEnum.ChatboxAI && (
-                    <>
-                      <ImageUploadInput ref={pictureInputRef} onChange={onFileInputChange} />
-                      <ImageUploadButton onClick={onImageUploadClick} tooltipLabel={t('Add images')} isMobile />
-                    </>
-                  )}
-                  <SessionSettingsButton
-                    onClick={onClickSessionSettings}
-                    tooltipLabel={t('Customize settings for the current conversation')}
-                    disabled={!onClickSessionSettings}
-                    isMobile
-                  />
-                </>
-              )}
-            </Flex>
-
-            <Flex gap={isSmallScreen ? 'xxs' : 'sm'} align="flex-end" justify="flex-end" flex="1 1 auto ">
-              {/* Wrap TokenCountMenu and ModelSelector in a Flex with center alignment */}
-              <Flex gap={isSmallScreen ? 'xxs' : 'sm'} align="center">
-                {/* Token count display */}
-                {sessionType !== 'picture' && (
-                  <TokenCountMenu
-                    currentInputTokens={currentInputTokens}
-                    contextTokens={contextTokens}
-                    totalTokens={totalTokens}
-                    contextWindow={modelInfo?.contextWindow}
-                    currentMessageCount={currentContextMessageIds?.length ?? 0}
-                    maxContextMessageCount={currentSessionMergedSettings?.maxContextMessageCount}
-                    onCompressClick={sessionId && !isNewSession ? () => setShowCompressionModal(true) : undefined}
-                  >
-                    <Flex
-                      align="center"
-                      gap="2"
-                      className="text-xs text-chatbox-tint-secondary cursor-pointer hover:text-chatbox-tint-primary transition-colors"
-                    >
-                      <ScalableIcon icon={IconArrowUp} size={14} />
-                      <Text span size="xs" className="whitespace-nowrap">
-                        {formatNumber(totalTokens)}
-                        {!isSmallScreen && modelInfo?.contextWindow && ` / ${formatNumber(modelInfo.contextWindow)}`}
-                      </Text>
-                    </Flex>
-                  </TokenCountMenu>
                 )}
+              </Flex>
 
+              {/* Right Group: Token Count + Model Selector */}
+              <Flex align="center" gap={0}>
+                <TokenCountMenu
+                  currentInputTokens={currentInputTokens}
+                  contextTokens={contextTokens}
+                  totalTokens={totalTokens}
+                  isCalculating={isCalculating}
+                  pendingTasks={pendingTasks}
+                  totalContextMessages={messageCount}
+                  contextWindow={effectiveContextWindow ?? undefined}
+                  currentMessageCount={currentContextMessageIds?.length ?? 0}
+                  maxContextMessageCount={currentSessionMergedSettings?.maxContextMessageCount}
+                  onCompressClick={sessionId && !isNewSession ? () => setShowCompressionModal(true) : undefined}
+                  autoCompactionEnabled={autoCompactionEnabled}
+                  isCompacting={isCompacting}
+                  contextWindowKnown={contextWindowKnown}
+                  onAutoCompactionChange={sessionId && !isNewSession ? handleAutoCompactionChange : undefined}
+                >
+                  <Flex
+                    align="center"
+                    gap="2"
+                    className={`text-xs cursor-pointer hover:text-chatbox-tint-secondary transition-colors px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] ${
+                      tokenPercentage && tokenPercentage > 80 ? 'text-red-500' : 'text-chatbox-tint-tertiary'
+                    }`}
+                  >
+                    <ScalableIcon icon={IconArrowUp} size={14} />
+                    {isCalculating && <Loader size={10} />}
+                    <Text span size="xs" className="whitespace-nowrap" c="inherit">
+                      {isCalculating ? '~' : ''}
+                      {formatNumber(totalTokens)}
+                      {tokenPercentage !== null && tokenPercentage > 10 && ` (${tokenPercentage}%)`}
+                    </Text>
+                  </Flex>
+                </TokenCountMenu>
+
+                {/* Model Selector */}
                 <Tooltip
                   label={
                     <Flex align="center" c="white" gap="xxs">
@@ -964,60 +1226,37 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                   opened={showSelectModelErrorTip}
                   withArrow
                 >
-                  {sessionType === 'picture' ? (
-                    <ImageModelSelect onSelect={onSelectModel}>
-                      <span className="flex items-center text-sm cursor-pointer bg-transparent h-6">
-                        {providers.find((p) => p.id === model?.provider)?.name || model?.provider || t('Select Model')}
-                        <ScalableIcon icon={IconSelector} size={16} className="opacity-50" />
-                      </span>
-                    </ImageModelSelect>
-                  ) : (
-                    <ModelSelector
-                      onSelect={onSelectModel}
-                      selectedProviderId={model?.provider}
-                      selectedModelId={model?.modelId}
-                      position="top-end"
-                      transitionProps={{
-                        transition: 'fade-up',
-                        duration: 200,
-                      }}
-                    >
-                      <Flex gap="xxs" px={isSmallScreen ? 0 : 'xs'} align="center" className={cn('cursor-pointer')}>
-                        {!!model && <ProviderImageIcon size={isSmallScreen ? 20 : 24} provider={model.provider} />}
-                        <Text size={isSmallScreen ? 'xs' : 'sm'} className="line-clamp-1">
-                          {modelSelectorDisplayText}
-                        </Text>
-                        <ScalableIcon
-                          icon={IconSelector}
-                          size={20}
-                          className="flex-[0_0_auto] text-chatbox-tint-tertiary"
-                        />
-                      </Flex>
-                    </ModelSelector>
-                  )}
+                  <ModelSelector
+                    onSelect={onSelectModel}
+                    selectedProviderId={model?.provider}
+                    selectedModelId={model?.modelId}
+                    position="top-end"
+                    transitionProps={{
+                      transition: 'fade-up',
+                      duration: 200,
+                    }}
+                  >
+                    <UnstyledButton className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors">
+                      {!!model && <ProviderImageIcon size={18} provider={model.provider} />}
+                      <Text
+                        size="sm"
+                        className={cn(
+                          'text-[var(--chatbox-tint-secondary)] truncate',
+                          isSmallScreen ? 'max-w-[100px]' : 'max-w-[160px]'
+                        )}
+                      >
+                        {modelSelectorDisplayText}
+                      </Text>
+                      <IconChevronRight
+                        size={14}
+                        className="text-[var(--chatbox-tint-tertiary)] rotate-90 flex-shrink-0"
+                      />
+                    </UnstyledButton>
+                  </ModelSelector>
                 </Tooltip>
               </Flex>
-
-              <ActionIcon
-                disabled={(disableSubmit || isPreprocessing || isSubmitting) && !generating}
-                radius={18}
-                size={isSmallScreen ? 28 : 36}
-                onClick={generating ? onStopGenerating : () => handleSubmit()}
-                className={cn(
-                  // 'mt-[-6px] mb-[2px]',
-                  (disableSubmit || isPreprocessing || isSubmitting) &&
-                    !generating &&
-                    '!text-white !bg-chatbox-background-tertiary'
-                )}
-              >
-                {generating ? (
-                  <ScalableIcon icon={IconPlayerStopFilled} size={20} />
-                ) : (
-                  <ScalableIcon icon={IconArrowUp} size={20} />
-                )}
-              </ActionIcon>
             </Flex>
-          </Flex>
+          </Stack>
         </Stack>
         {currentSession && (
           <CompressionModal
@@ -1031,16 +1270,15 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
   }
 )
 
-// Reusable attachment menu component
+// Reusable attachment menu component with lightweight style
 const AttachmentMenu: React.FC<{
   onImageUploadClick: () => void
   onFileUploadClick: () => void
   handleAttachLink: () => void
   t: (key: string) => string
-  size?: number
-  iconSize?: number
-}> = ({ onImageUploadClick, onFileUploadClick, handleAttachLink, t, size = 24, iconSize = 20 }) => {
+}> = ({ onImageUploadClick, onFileUploadClick, handleAttachLink, t }) => {
   const isSmallScreen = useIsSmallScreen()
+  const toolbarIconSize = isSmallScreen ? 22 : 18
   return (
     <Menu
       shadow="md"
@@ -1055,23 +1293,18 @@ const AttachmentMenu: React.FC<{
       }}
     >
       <Menu.Target>
-        <ActionIcon
-          size={size === 20 ? undefined : `${size}px`}
-          variant={size === 20 ? 'transparent' : 'subtle'}
-          color="chatbox-secondary"
-          {...(size === 20 ? { w: 20, h: 20, miw: 20, mih: 20, bd: 'none' } : {})}
-        >
-          <ScalableIcon icon={IconCirclePlus} strokeWidth={1.8} size={iconSize} />
-        </ActionIcon>
+        <UnstyledButton className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[var(--chatbox-background-tertiary)] transition-colors">
+          <IconCirclePlus size={toolbarIconSize} strokeWidth={1.8} className="text-[var(--chatbox-tint-secondary)]" />
+        </UnstyledButton>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item leftSection={<ScalableIcon icon={IconPhoto} size={16} />} onClick={onImageUploadClick}>
+        <Menu.Item leftSection={<IconPhoto size={16} />} onClick={onImageUploadClick}>
           {t('Attach Image')}
         </Menu.Item>
-        <Menu.Item leftSection={<ScalableIcon icon={IconFolder} size={16} />} onClick={onFileUploadClick}>
+        <Menu.Item leftSection={<IconFolder size={16} />} onClick={onFileUploadClick}>
           {t('Select File')}
         </Menu.Item>
-        <Menu.Item leftSection={<ScalableIcon icon={IconLink} size={16} />} onClick={handleAttachLink}>
+        <Menu.Item leftSection={<IconLink size={16} />} onClick={handleAttachLink}>
           {t('Attach Link')}
         </Menu.Item>
       </Menu.Dropdown>
@@ -1080,4 +1313,4 @@ const AttachmentMenu: React.FC<{
 }
 
 // Memoize the InputBox component to prevent unnecessary re-renders during streaming
-export default React.memo(InputBox)
+export default memo(InputBox)

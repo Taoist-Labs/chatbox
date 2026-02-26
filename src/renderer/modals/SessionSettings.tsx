@@ -6,7 +6,6 @@ import {
   FileButton,
   Flex,
   Input,
-  Modal,
   Slider,
   Stack,
   Switch,
@@ -14,11 +13,7 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core'
-import { IconInfoCircle, IconTrash } from '@tabler/icons-react'
-import { pick } from 'lodash'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { chatSessionSettings, pictureSessionSettings } from 'src/shared/defaults'
+import { chatSessionSettings, pictureSessionSettings } from '@shared/defaults'
 import {
   createMessage,
   isChatSession,
@@ -26,15 +21,20 @@ import {
   ModelProviderEnum,
   type Session,
   type SessionSettings,
-} from 'src/shared/types'
-import { AssistantAvatar } from '@/components/Avatar'
+} from '@shared/types'
+import { IconInfoCircle, IconTrash } from '@tabler/icons-react'
+import { pick } from 'lodash'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AssistantAvatar } from '@/components/common/Avatar'
+import { AdaptiveModal } from '@/components/common/AdaptiveModal'
+import LazyNumberInput from '@/components/common/LazyNumberInput'
+import MaxContextMessageCountSlider from '@/components/common/MaxContextMessageCountSlider'
+import SliderWithInput from '@/components/common/SliderWithInput'
 import { handleImageInputAndSave } from '@/components/Image'
 import ImageStyleSelect from '@/components/ImageStyleSelect'
-import LazyNumberInput from '@/components/LazyNumberInput'
-import MaxContextMessageCountSlider from '@/components/MaxContextMessageCountSlider'
-import { ScalableIcon } from '@/components/ScalableIcon'
-import SegmentedControl from '@/components/SegmentedControl'
-import SliderWithInput from '@/components/SliderWithInput'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
+import SegmentedControl from '@/components/common/SegmentedControl'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { trackingEvent } from '@/packages/event'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
@@ -146,7 +146,7 @@ const SessionSettingsModal = NiceModal.create(
     }
 
     return (
-      <Modal
+      <AdaptiveModal
         opened={modal.visible}
         onClose={() => {
           modal.resolve()
@@ -157,6 +157,7 @@ const SessionSettingsModal = NiceModal.create(
         size="lg"
         title={t('Conversation Settings')}
         onFocus={(e) => e.stopPropagation()}
+        trapFocus={false}
         // fullWidth
       >
         <div style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -224,6 +225,9 @@ const SessionSettingsModal = NiceModal.create(
               classNames={{
                 input: '!text-chatbox-tint-primary',
               }}
+              styles={{
+                input: { touchAction: 'manipulation' },
+              }}
             />
 
             <Stack className=" border border-solid border-chatbox-border-primary rounded-md">
@@ -266,13 +270,12 @@ const SessionSettingsModal = NiceModal.create(
             </Stack>
           </Stack>
         </div>
-        <Flex justify="flex-end" align="center" gap="md" px="md" py="sm" pb="0">
-          <Button onClick={onCancel} variant="subtle" color="chatbox-secondary">
-            {t('cancel')}
-          </Button>
+
+        <AdaptiveModal.Actions>
+          <AdaptiveModal.CloseButton onClick={onCancel} />
           <Button onClick={onSave}>{t('save')}</Button>
-        </Flex>
-      </Modal>
+        </AdaptiveModal.Actions>
+      </AdaptiveModal>
     )
   }
 )

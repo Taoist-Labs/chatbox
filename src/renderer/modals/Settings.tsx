@@ -11,14 +11,17 @@ import {
 import clsx from 'clsx'
 import { type FC, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Toaster } from 'sonner'
 import SettingsKnowledgeBaseRouteComponent from '@/components/knowledge-base/KnowledgeBase'
-import { Modal } from '@/components/Overlay'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { Modal } from '@/components/layout/Overlay'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { getThemeDesign } from '@/hooks/useAppTheme'
 import useNeedRoomForWinControls from '@/hooks/useNeedRoomForWinControls'
 import { router } from '@/router'
 import { RouteComponent as SettingsChatRouteComponent } from '@/routes/settings/chat'
+import { RouteComponent as SettingsChatboxAiRouteComponent } from '@/routes/settings/chatbox-ai'
 import { RouteComponent as SettingsDefaultModelsRouteComponent } from '@/routes/settings/default-models'
+import { RouteComponent as SettingsDocumentParserRouteComponent } from '@/routes/settings/document-parser'
 import { RouteComponent as SettingsGeneralRouteComponent } from '@/routes/settings/general'
 import { RouteComponent as SettingsHotkeysRouteComponent } from '@/routes/settings/hotkeys'
 import { RouteComponent as SettingsIndexRouteComponent } from '@/routes/settings/index'
@@ -97,6 +100,7 @@ export const SettingsModal: FC<SettingsModalProps> = (props) => {
       <Box flex={1} w="100%" maw={1200} mx="auto" className="overflow-auto">
         <RouterProvider router={modalRouter} />
       </Box>
+      <Toaster richColors position="bottom-center" />
     </Modal>
   )
 }
@@ -131,6 +135,12 @@ const SettingsIndexRoute = createRoute({
   getParentRoute: () => RootRoute,
 })
 
+const SettingsChatboxAiRoute = createRoute({
+  component: SettingsChatboxAiRouteComponent,
+  path: '/settings/chatbox-ai',
+  getParentRoute: () => RootRoute,
+})
+
 const SettingsGeneralRoute = createRoute({
   component: SettingsGeneralRouteComponent,
   path: '/settings/general',
@@ -158,6 +168,12 @@ const SettingsMcpRoute = createRoute({
 const SettingsKnowledgeBaseRoute = createRoute({
   component: SettingsKnowledgeBaseRouteComponent,
   path: '/settings/knowledge-base',
+  getParentRoute: () => RootRoute,
+})
+
+const SettingsDocumentParserRoute = createRoute({
+  component: SettingsDocumentParserRouteComponent,
+  path: '/settings/document-parser',
   getParentRoute: () => RootRoute,
 })
 
@@ -205,11 +221,13 @@ SettingsProviderRouteRoute.addChildren([
 
 const routeTree = RootRoute.addChildren([
   SettingsIndexRoute,
+  SettingsChatboxAiRoute,
   SettingsGeneralRoute,
   SettingsChatRoute,
   SettingsWebSearchRoute,
   SettingsMcpRoute,
   SettingsKnowledgeBaseRoute,
+  SettingsDocumentParserRoute,
   SettingsHotkeysRoute,
   SettingsDefaultModelsRoute,
   SettingsProviderRouteRoute,

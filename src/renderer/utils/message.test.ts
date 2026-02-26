@@ -1,4 +1,4 @@
-import type { Message } from 'src/shared/types'
+import type { Message } from '@shared/types'
 import { describe, expect, test } from 'vitest'
 import { sequenceMessages } from '../../shared/utils/message'
 
@@ -252,5 +252,27 @@ L3
         expect(gotMessage).toEqual(expectedMessage)
       })
     })
+  })
+
+  test('multiple calls should not accumulate quote prefixes', () => {
+    const originalMessages: Message[] = [
+      { id: '1', role: 'assistant', contentParts: [{ type: 'text', text: 'Hello' }] },
+      { id: '2', role: 'user', contentParts: [{ type: 'text', text: 'Hi' }] },
+    ]
+
+    // First call
+    const result1 = sequenceMessages(originalMessages)
+    expect(result1[0].contentParts[0]).toEqual({ type: 'text', text: '> Hello\n' })
+
+    // Second call with same original messages should produce same result
+    const result2 = sequenceMessages(originalMessages)
+    expect(result2[0].contentParts[0]).toEqual({ type: 'text', text: '> Hello\n' })
+
+    // Original messages should not be mutated
+    expect(originalMessages[0].contentParts[0]).toEqual({ type: 'text', text: 'Hello' })
+
+    // Third call should still produce same result
+    const result3 = sequenceMessages(originalMessages)
+    expect(result3[0].contentParts[0]).toEqual({ type: 'text', text: '> Hello\n' })
   })
 })

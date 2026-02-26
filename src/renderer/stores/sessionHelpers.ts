@@ -1,4 +1,4 @@
-import { pick } from 'lodash'
+import { isTextFilePath } from '@shared/file-extensions'
 import type {
   ExportChatFormat,
   ExportChatScope,
@@ -8,13 +8,17 @@ import type {
   SessionThread,
   SessionThreadBrief,
   Settings,
-} from 'src/shared/types'
-import { getMessageText, migrateMessage } from 'src/shared/utils/message'
+} from '@shared/types'
+import type { DocumentParserConfig } from '@shared/types/settings'
+import { getMessageText, migrateMessage } from '@shared/utils/message'
+import { pick } from 'lodash'
 import i18n from '@/i18n'
 import { formatChatAsHtml, formatChatAsMarkdown, formatChatAsTxt } from '@/lib/format-chat'
+import { getLogger } from '@/lib/utils'
+import { PREVIEW_LINES } from '@/packages/context-management/attachment-payload'
 import * as localParser from '@/packages/local-parser'
 import * as remote from '@/packages/remote'
-import { estimateTokens } from '@/packages/token'
+import { estimateTokens, getTokenizerType } from '@/packages/token'
 import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKey, StorageKeyGenerator } from '@/storage/StoreStorage'
@@ -23,12 +27,174 @@ import * as defaults from '../../shared/defaults'
 import { createMessage, type Message, SessionSettingsSchema, TOKEN_CACHE_KEYS } from '../../shared/types'
 import { lastUsedModelStore } from './lastUsedModelStore'
 import * as settingActions from './settingActions'
-import { settingsStore } from './settingsStore'
+import { getPlatformDefaultDocumentParser, settingsStore } from './settingsStore'
+
+const log = getLogger('session-helpers')
+
+function getCurrentTokenizerType(): 'default' | 'deepseek' {
+  const currentModel = lastUsedModelStore.getState().chat
+  return getTokenizerType(currentModel)
+}
+
+export function computePreviewMetadata(
+  content: string,
+  tokenizerType: 'default' | 'deepseek',
+  existingTokenMap: Record<string, number> = {}
+): {
+  lineCount: number
+  byteLength: number
+  tokenCountMap: Record<string, number>
+  tokenCalculatedAt: Record<string, number>
+} {
+  const lineCount = content.split('\n').length
+  const byteLength = new TextEncoder().encode(content).length
+  const now = Date.now()
+
+  const previewContent = content.split('\n').slice(0, PREVIEW_LINES).join('\n')
+
+  const tokenCountMap: Record<string, number> = { ...existingTokenMap }
+  const tokenCalculatedAt: Record<string, number> = {}
+
+  // Only calculate for the specified tokenizer
+  const fullKey = tokenizerType // 'default' or 'deepseek'
+  const previewKey = `${tokenizerType}_preview`
+
+  if (tokenCountMap[fullKey] === undefined) {
+    tokenCountMap[fullKey] = estimateTokens(
+      content,
+      tokenizerType === 'deepseek' ? { provider: '', modelId: 'deepseek' } : undefined
+    )
+    tokenCalculatedAt[fullKey] = now
+  }
+
+  tokenCountMap[previewKey] = estimateTokens(
+    previewContent,
+    tokenizerType === 'deepseek' ? { provider: '', modelId: 'deepseek' } : undefined
+  )
+  tokenCalculatedAt[previewKey] = now
+
+  return { lineCount, byteLength, tokenCountMap, tokenCalculatedAt }
+}
+
+function getEffectiveDocumentParserConfig(): DocumentParserConfig {
+  const globalConfig = settingsStore.getState().extension?.documentParser
+  return globalConfig ?? getPlatformDefaultDocumentParser()
+}
+
+/**
+ * Parse file using local parser (desktop only)
+ */
+async function parseFileWithLocalParser(
+  file: File,
+  uniqKey: string
+): Promise<{ content: string; storageKey: string; tokenCountMap: Record<string, number> }> {
+  const result = await platform.parseFileLocally(file)
+
+  if (!result.isSupported || !result.key) {
+    throw new Error('local_parser_failed')
+  }
+
+  // Get content from temporary storage
+  const content = (await storage.getBlob(result.key).catch(() => '')) || ''
+
+  // Store content to unique key
+  if (content) {
+    await storage.setBlob(uniqKey, content)
+  }
+
+  // Calculate token counts
+  const tokenCountMap: Record<string, number> = content
+    ? {
+        [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
+        [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
+      }
+    : {}
+
+  if (content) {
+    await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
+  }
+
+  return { content, storageKey: uniqKey, tokenCountMap }
+}
+
+/**
+ * Parse file using Chatbox AI cloud service
+ */
+async function parseFileWithChatboxAI(
+  file: File,
+  uniqKey: string
+): Promise<{ content: string; storageKey: string; tokenCountMap: Record<string, number> }> {
+  const licenseKey = settingActions.getLicenseKey()
+  const uploadedKey = await remote.uploadAndCreateUserFile(licenseKey || '', file)
+
+  // Get uploaded file content
+  const content = (await storage.getBlob(uploadedKey).catch(() => '')) || ''
+
+  // Store content to unique key
+  if (content) {
+    await storage.setBlob(uniqKey, content)
+  }
+
+  // Calculate token counts
+  const tokenCountMap: Record<string, number> = content
+    ? {
+        [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
+        [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
+      }
+    : {}
+
+  if (content) {
+    await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
+  }
+
+  return { content, storageKey: uniqKey, tokenCountMap }
+}
+
+/**
+ * Parse file using MinerU service (Desktop only)
+ */
+async function parseFileWithMineruService(
+  file: File,
+  uniqKey: string,
+  apiToken: string
+): Promise<{ content: string; storageKey: string; tokenCountMap: Record<string, number> }> {
+  // Check if platform supports MinerU parsing
+  if (!platform.parseFileWithMineru) {
+    throw new Error('third_party_parser_not_supported_in_chat')
+  }
+
+  // Call platform method to parse file
+  const result = await platform.parseFileWithMineru(file, apiToken)
+
+  // Handle cancellation - throw a special error that will be caught silently
+  if (result.cancelled) {
+    throw new Error('parsing_cancelled')
+  }
+
+  if (!result.success || !result.content) {
+    throw new Error('third_party_parser_failed')
+  }
+
+  const content = result.content
+
+  // Store content to unique key
+  await storage.setBlob(uniqKey, content)
+
+  // Calculate token counts
+  const tokenCountMap: Record<string, number> = {
+    [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
+    [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
+  }
+
+  await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
+
+  return { content, storageKey: uniqKey, tokenCountMap }
+}
+
 /**
  * 预处理文件以获取内容和存储键
  * @param file 文件对象
  * @param settings 会话设置
- * @param tokenLimit 每个文件的token限制
  * @returns 预处理后的文件信息
  */
 export async function preprocessFile(
@@ -39,123 +205,131 @@ export async function preprocessFile(
   content: string
   storageKey: string
   tokenCountMap?: Record<string, number>
+  lineCount?: number
+  byteLength?: number
   error?: string
 }> {
-  const remoteConfig = settingActions.getRemoteConfig()
-
   try {
-    const isPro = settingActions.isPro()
     const uniqKey = StorageKeyGenerator.fileUniqKey(file)
 
-    // 检查是否已经处理过这个文件
+    // Check if file has already been processed (cache hit)
     const existingContent = await storage.getBlob(uniqKey).catch(() => null)
     if (existingContent) {
-      // Get existing token map or create new one
+      log.debug(`File already preprocessed: ${file.name}, using cached content.`)
       const existingTokenMap: Record<string, number> = (await storage.getItem(`${uniqKey}_tokenMap`, {})) as Record<
         string,
         number
       >
 
-      // Calculate tokens for both tokenizers if not cached
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.default]) {
-        existingTokenMap[TOKEN_CACHE_KEYS.default] = estimateTokens(existingContent)
-      }
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.deepseek]) {
-        existingTokenMap[TOKEN_CACHE_KEYS.deepseek] = estimateTokens(existingContent, {
-          provider: '',
-          modelId: 'deepseek',
-        })
-      }
+      const tokenizerType = getCurrentTokenizerType()
+      const { lineCount, byteLength, tokenCountMap } = computePreviewMetadata(
+        existingContent,
+        tokenizerType,
+        existingTokenMap
+      )
 
-      // Save updated token map if changes were made
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.default] || !existingTokenMap[TOKEN_CACHE_KEYS.deepseek]) {
-        await storage.setItem(`${uniqKey}_tokenMap`, existingTokenMap)
-      }
+      await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
 
       return {
         file,
         content: existingContent,
         storageKey: uniqKey,
-        tokenCountMap: existingTokenMap,
+        tokenCountMap,
+        lineCount,
+        byteLength,
       }
     }
 
-    if (isPro) {
-      // ChatboxAI 方案：上传文件并获取内容
-      const licenseKey = settingActions.getLicenseKey()
-      const uploadedKey = await remote.uploadAndCreateUserFile(licenseKey || '', file)
+    // Get document parser configuration from global settings
+    const parserConfig = getEffectiveDocumentParserConfig()
+    log.debug(`Using document parser: ${parserConfig.type} for file: ${file.name}`)
 
-      // 获取上传后的文件内容（如果可用）
-      const content = (await storage.getBlob(uploadedKey).catch(() => '')) || ''
+    let result: { content: string; storageKey: string; tokenCountMap: Record<string, number> }
 
-      // 将内容存储到唯一键下
-      if (content) {
-        await storage.setBlob(uniqKey, content)
-      }
-
-      // Calculate token counts for both tokenizers
-      const tokenCountMap: Record<string, number> = content
-        ? {
-            [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-            [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
-          }
-        : {}
-
-      // Store token map for future use
-      if (content) {
-        await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-      }
-
-      return {
-        file,
-        content,
-        storageKey: uniqKey,
-        tokenCountMap,
+    // Text files always use local parsing for efficiency (same as Knowledge Base behavior)
+    // This applies to all platforms (desktop/web/mobile)
+    if (isTextFilePath(file.name)) {
+      log.debug(`Text file detected, using local parser: ${file.name}`)
+      try {
+        result = await parseFileWithLocalParser(file, uniqKey)
+      } catch (error) {
+        throw new Error('local_parser_failed')
       }
     } else {
-      // 本地方案：解析文件内容
-      const result = await platform.parseFileLocally(file)
-      if (!result.isSupported || !result.key) {
-        if (platform.type === 'mobile') {
-          throw new Error('mobile_not_support_local_file_parsing')
+      // Non-text files use the configured parser
+      switch (parserConfig.type) {
+        case 'none': {
+          // No parser configured - non-text files are not supported
+          // Prompt user to enable a parser in settings
+          throw new Error('document_parser_not_configured')
         }
-        // 根据当前 IP，判断是否在错误中推荐 Chatbox AI
-        if (remoteConfig.setting_chatboxai_first) {
-          throw new Error('model_not_support_file')
-        } else {
-          throw new Error('model_not_support_file_2')
-        }
-      }
 
-      // 从临时存储中获取文件内容
-      const content = (await storage.getBlob(result.key).catch(() => '')) || ''
-
-      // 将内容存储到唯一键下
-      if (content) {
-        await storage.setBlob(uniqKey, content)
-      }
-
-      // Calculate token counts for both tokenizers
-      const tokenCountMap: Record<string, number> = content
-        ? {
-            [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-            [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
+        case 'local': {
+          // Local parsing - only available on desktop
+          // On mobile/web, this will fail and throw local_parser_failed
+          try {
+            result = await parseFileWithLocalParser(file, uniqKey)
+          } catch (error) {
+            // Local parsing failed, throw appropriate error
+            throw new Error('local_parser_failed')
           }
-        : {}
+          break
+        }
 
-      // Store token map for future use
-      if (content) {
-        await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
-      }
+        case 'chatbox-ai': {
+          // Chatbox AI cloud parsing - available on all platforms
+          try {
+            result = await parseFileWithChatboxAI(file, uniqKey)
+          } catch (error) {
+            // Chatbox AI parsing failed
+            throw new Error('chatbox_ai_parser_failed')
+          }
+          break
+        }
 
-      return {
-        file,
-        content,
-        storageKey: uniqKey,
-        tokenCountMap,
+        case 'mineru': {
+          // MinerU parsing - available on desktop only
+          const apiToken = parserConfig.mineru?.apiToken
+          if (!apiToken) {
+            throw new Error('mineru_api_token_required')
+          }
+          try {
+            result = await parseFileWithMineruService(file, uniqKey, apiToken)
+          } catch (error) {
+            // Re-throw known errors, wrap unknown ones
+            if (error instanceof Error && error.message.startsWith('third_party_parser')) {
+              throw error
+            }
+            throw new Error('third_party_parser_failed')
+          }
+          break
+        }
+
+        default: {
+          // Unknown parser type, fall back to error
+          throw new Error('document_parser_not_configured')
+        }
       }
     }
+
+    const tokenizerType = getCurrentTokenizerType()
+    const { lineCount, byteLength, tokenCountMap } = computePreviewMetadata(
+      result.content,
+      tokenizerType,
+      result.tokenCountMap
+    )
+    await storage.setItem(`${result.storageKey}_tokenMap`, tokenCountMap)
+
+    return {
+      file,
+      content: result.content,
+      storageKey: result.storageKey,
+      tokenCountMap,
+      lineCount,
+      byteLength,
+    }
   } catch (error) {
+    log.error('Failed to preprocess file:', error)
     return {
       file,
       content: '',
@@ -180,6 +354,8 @@ export async function preprocessLink(
   content: string
   storageKey: string
   tokenCountMap?: Record<string, number>
+  lineCount?: number
+  byteLength?: number
   error?: string
 }> {
   try {
@@ -199,28 +375,23 @@ export async function preprocessLink(
         number
       >
 
-      // Calculate tokens for both tokenizers if not cached
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.default]) {
-        existingTokenMap[TOKEN_CACHE_KEYS.default] = estimateTokens(existingContent)
-      }
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.deepseek]) {
-        existingTokenMap[TOKEN_CACHE_KEYS.deepseek] = estimateTokens(existingContent, {
-          provider: '',
-          modelId: 'deepseek',
-        })
-      }
+      const tokenizerType = getCurrentTokenizerType()
+      const { lineCount, byteLength, tokenCountMap } = computePreviewMetadata(
+        existingContent,
+        tokenizerType,
+        existingTokenMap
+      )
 
-      // Save updated token map if changes were made
-      if (!existingTokenMap[TOKEN_CACHE_KEYS.default] || !existingTokenMap[TOKEN_CACHE_KEYS.deepseek]) {
-        await storage.setItem(`${uniqKey}_tokenMap`, existingTokenMap)
-      }
+      await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
 
       return {
         url,
         title,
         content: existingContent,
         storageKey: uniqKey,
-        tokenCountMap: existingTokenMap,
+        tokenCountMap,
+        lineCount,
+        byteLength,
       }
     }
 
@@ -237,13 +408,11 @@ export async function preprocessLink(
         await storage.setBlob(uniqKey, content)
       }
 
-      // Calculate token counts for both tokenizers
-      const tokenCountMap: Record<string, number> = content
-        ? {
-            [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-            [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
-          }
-        : {}
+      // Calculate token counts including preview metadata
+      const tokenizerType = getCurrentTokenizerType()
+      const { lineCount, byteLength, tokenCountMap } = content
+        ? computePreviewMetadata(content, tokenizerType)
+        : { lineCount: undefined, byteLength: undefined, tokenCountMap: {} }
 
       // Store token map for future use
       if (content) {
@@ -256,6 +425,8 @@ export async function preprocessLink(
         content,
         storageKey: uniqKey,
         tokenCountMap,
+        lineCount,
+        byteLength,
       }
     } else {
       // 本地方案：解析链接内容
@@ -267,15 +438,11 @@ export async function preprocessLink(
         await storage.setBlob(uniqKey, content)
       }
 
-      // Calculate token counts for both tokenizers
-      const tokenCountMap: Record<string, number> = content
-        ? {
-            [TOKEN_CACHE_KEYS.default]: estimateTokens(content),
-            [TOKEN_CACHE_KEYS.deepseek]: estimateTokens(content, { provider: '', modelId: 'deepseek' }),
-          }
-        : {}
+      const tokenizerType = getCurrentTokenizerType()
+      const { lineCount, byteLength, tokenCountMap } = content
+        ? computePreviewMetadata(content, tokenizerType)
+        : { lineCount: undefined, byteLength: undefined, tokenCountMap: {} }
 
-      // Store token map for future use
       if (content) {
         await storage.setItem(`${uniqKey}_tokenMap`, tokenCountMap)
       }
@@ -286,6 +453,8 @@ export async function preprocessLink(
         content,
         storageKey: uniqKey,
         tokenCountMap,
+        lineCount,
+        byteLength,
       }
     }
   } catch (error) {
@@ -315,6 +484,8 @@ export function constructUserMessage(
     content: string
     storageKey: string
     tokenCountMap?: Record<string, number>
+    lineCount?: number
+    byteLength?: number
   }> = [],
   preprocessedLinks: Array<{
     url: string
@@ -322,6 +493,8 @@ export function constructUserMessage(
     content: string
     storageKey: string
     tokenCountMap?: Record<string, number>
+    lineCount?: number
+    byteLength?: number
   }> = []
 ): Message {
   // 只使用原始文本，不添加文件和链接内容
@@ -333,7 +506,6 @@ export function constructUserMessage(
     msg.contentParts.push(...pictureKeys.map((k) => ({ type: 'image' as const, storageKey: k })))
   }
 
-  // 添加附件元数据（只包含存储键，不包含内容）
   if (preprocessedFiles.length > 0) {
     msg.files = preprocessedFiles.map((f) => ({
       id: f.storageKey || f.file.name,
@@ -341,10 +513,11 @@ export function constructUserMessage(
       fileType: f.file.type,
       storageKey: f.storageKey,
       tokenCountMap: f.tokenCountMap,
+      lineCount: f.lineCount,
+      byteLength: f.byteLength,
     }))
   }
 
-  // 添加链接元数据（只包含存储键，不包含内容）
   if (preprocessedLinks.length > 0) {
     msg.links = preprocessedLinks.map((l) => ({
       id: l.storageKey || l.url,
@@ -352,6 +525,8 @@ export function constructUserMessage(
       title: l.title,
       storageKey: l.storageKey,
       tokenCountMap: l.tokenCountMap,
+      lineCount: l.lineCount,
+      byteLength: l.byteLength,
     }))
   }
 
@@ -409,7 +584,7 @@ export function initEmptyChatSession(): Omit<Session, 'id'> {
     type: 'chat',
     messages: [],
     settings: {
-      maxContextMessageCount: settings.maxContextMessageCount || 6,
+      maxContextMessageCount: settings.maxContextMessageCount ?? Number.MAX_SAFE_INTEGER,
       temperature: settings.temperature || undefined,
       topP: settings.topP || undefined,
       ...(settings.defaultChatModel

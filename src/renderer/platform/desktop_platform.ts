@@ -1,10 +1,12 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <any> */
+
+import type { ElectronIPC } from '@shared/electron-types'
+import type { Config, Settings, ShortcutSetting } from '@shared/types'
+import { cache } from '@shared/utils/cache'
 import localforage from 'localforage'
-import type { ElectronIPC } from 'src/shared/electron-types'
-import type { Config, Settings, ShortcutSetting } from 'src/shared/types'
-import { cache } from 'src/shared/utils/cache'
 import { v4 as uuidv4 } from 'uuid'
 import { parseLocale } from '@/i18n/parser'
+import { type ImageGenerationStorage, IndexedDBImageGenerationStorage } from '@/storage/ImageGenerationStorage'
 import { getOS } from '../packages/navigator'
 import type { Platform, PlatformType } from './interfaces'
 import DesktopKnowledgeBaseController from './knowledge-base/desktop-controller'
@@ -19,6 +21,7 @@ export default class DesktopPlatform implements Platform {
   public exporter = new WebExporter()
 
   private _kbController?: DesktopKnowledgeBaseController
+  private _imageGenerationStorage: ImageGenerationStorage | null = null
 
   public ipc: ElectronIPC
   constructor(ipc: ElectronIPC) {
@@ -46,6 +49,9 @@ export default class DesktopPlatform implements Platform {
   }
   public onWindowShow(callback: () => void): () => void {
     return this.ipc.onWindowShow(callback)
+  }
+  public onWindowFocused(callback: () => void): () => void {
+    return this.ipc.onWindowFocused(callback)
   }
   public onUpdateDownloaded(callback: () => void): () => void {
     return this.ipc.onUpdateDownloaded(callback)
@@ -185,6 +191,14 @@ export default class DesktopPlatform implements Platform {
     return this.ipc.invoke('appLog', JSON.stringify({ level, message }))
   }
 
+  public async exportLogs(): Promise<string> {
+    return this.ipc.invoke('exportLogs')
+  }
+
+  public async clearLogs(): Promise<void> {
+    return this.ipc.invoke('clearLogs')
+  }
+
   public async ensureAutoLaunch(enable: boolean) {
     return this.ipc.invoke('ensureAutoLaunch', enable)
   }
@@ -204,6 +218,27 @@ export default class DesktopPlatform implements Platform {
     const key = `parseFile-` + uuidv4()
     await this.setStoreBlob(key, result.text)
     return { key, isSupported: true }
+  }
+
+  async parseFileWithMineru(
+    file: File,
+    apiToken: string
+  ): Promise<{ success: boolean; content?: string; error?: string; cancelled?: boolean }> {
+    if (!file.path) {
+      // Files without path (e.g., pasted files) are not supported for MinerU parsing
+      return { success: false, error: 'File path is required for MinerU parsing' }
+    }
+
+    return this.ipc.invoke('parser:parse-file-with-mineru', {
+      filePath: file.path,
+      filename: file.name,
+      mimeType: file.type,
+      apiToken,
+    })
+  }
+
+  async cancelMineruParse(filePath: string): Promise<{ success: boolean; error?: string }> {
+    return this.ipc.invoke('parser:cancel-mineru-parse', filePath)
   }
 
   public async parseUrl(url: string): Promise<{ key: string; title: string }> {
@@ -232,6 +267,13 @@ export default class DesktopPlatform implements Platform {
       this._kbController = new DesktopKnowledgeBaseController(this.ipc)
     }
     return this._kbController
+  }
+
+  public getImageGenerationStorage(): ImageGenerationStorage {
+    if (!this._imageGenerationStorage) {
+      this._imageGenerationStorage = new IndexedDBImageGenerationStorage()
+    }
+    return this._imageGenerationStorage
   }
 
   public minimize() {

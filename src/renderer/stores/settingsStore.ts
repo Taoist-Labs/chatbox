@@ -1,15 +1,28 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: any */
 /** biome-ignore-all lint/suspicious/noFallthroughSwitchClause: migrate */
 
+import * as defaults from '@shared/defaults'
+import { type ProviderSettings, type Settings, SettingsSchema } from '@shared/types'
+import type { DocumentParserConfig } from '@shared/types/settings'
 import deepmerge from 'deepmerge'
 import type { WritableDraft } from 'immer'
-import * as defaults from 'src/shared/defaults'
-import { type ProviderSettings, type Settings, SettingsSchema } from 'src/shared/types'
 import { createStore, useStore } from 'zustand'
 import { createJSONStorage, persist, subscribeWithSelector } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { getLogger } from '@/lib/utils'
 import platform from '@/platform'
 import storage from '@/storage'
+
+const log = getLogger('settings-store')
+
+/**
+ * Returns platform-specific default document parser configuration.
+ * - Desktop: 'local' (has full Node.js environment for local parsing)
+ * - Mobile/Web: 'none' (only basic text file support by default, user can enable chatbox-ai)
+ */
+export function getPlatformDefaultDocumentParser(): DocumentParserConfig {
+  return platform.type === 'desktop' ? { type: 'local' } : { type: 'none' }
+}
 
 type Action = {
   setSettings: (nextStateOrUpdater: Partial<Settings> | ((state: WritableDraft<Settings>) => void)) => void
@@ -79,6 +92,14 @@ export const settingsStore = createStore<Settings & Action>()(
               break
           }
 
+          // Apply platform-specific default for documentParser if not set
+          if (!settings.extension?.documentParser) {
+            settings.extension = {
+              ...settings.extension,
+              documentParser: getPlatformDefaultDocumentParser(),
+            }
+          }
+
           return SettingsSchema.parse(settings)
         },
         skipHydration: true,
@@ -92,6 +113,12 @@ export const initSettingsStore = async () => {
   if (!_initSettingsStorePromise) {
     _initSettingsStorePromise = new Promise<Settings>((resolve) => {
       const unsub = settingsStore.persist.onFinishHydration((val) => {
+        const providers = val?.providers
+        const providersCount =
+          providers && typeof providers === 'object' && !Array.isArray(providers) ? Object.keys(providers).length : 0
+        if (providersCount === 0) {
+          log.info(`[CONFIG_DEBUG] onFinishHydration: providersCount=0`)
+        }
         unsub()
         resolve(val)
       })

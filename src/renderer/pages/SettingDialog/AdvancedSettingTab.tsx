@@ -10,13 +10,13 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
+import type { Settings } from '@shared/types'
 import { uniqBy } from 'lodash'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings } from 'src/shared/types'
 import { Accordion, AccordionDetails, AccordionSummary } from '@/components/Accordion'
+import TextFieldReset from '@/components/common/TextFieldReset'
 import { ShortcutConfig } from '@/components/Shortcut'
-import TextFieldReset from '@/components/TextFieldReset'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import platform from '@/platform'
 import storage, { StorageKey } from '@/storage'

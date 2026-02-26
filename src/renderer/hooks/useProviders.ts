@@ -1,6 +1,6 @@
+import { SystemProviders } from '@shared/defaults'
+import { ModelProviderEnum, type ProviderInfo } from '@shared/types'
 import { useCallback, useMemo } from 'react'
-import { SystemProviders } from 'src/shared/defaults'
-import { ModelProviderEnum, type ProviderInfo } from 'src/shared/types'
 import { useSettingsStore } from '@/stores/settingsStore'
 import useChatboxAIModels from './useChatboxAIModels'
 
@@ -10,7 +10,7 @@ export const useProviders = () => {
   const providerSettingsMap = settings.providers
 
   const allProviderBaseInfos = useMemo(
-    () => [...SystemProviders, ...(settings.customProviders || [])],
+    () => [...SystemProviders(), ...(settings.customProviders || [])],
     [settings.customProviders]
   )
   const providers = useMemo(

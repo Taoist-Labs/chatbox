@@ -297,7 +297,7 @@ vi.mock('../platform/storages', () => ({
 
 vi.mock('../../shared/defaults', () => ({
   settings: vi.fn(() => ({})),
-  SystemProviders: [],
+  SystemProviders: vi.fn(() => []),
 }))
 
 vi.mock('../lib/utils', () => ({
@@ -354,7 +354,7 @@ vi.mock('@/packages/initial_data', () => ({
   mermaidSessionEN: { id: 'mermaid-en' },
 }))
 
-vi.mock('src/shared/utils/cache', () => ({
+vi.mock('@shared/utils/cache', () => ({
   cache: vi.fn((_key: string, fn: () => Promise<unknown>) => fn()),
 }))
 

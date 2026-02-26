@@ -1,19 +1,28 @@
+import * as defaults from '@shared/defaults'
+import type { Config, Settings, ShortcutSetting } from '@shared/types'
 import localforage from 'localforage'
-import * as defaults from 'src/shared/defaults'
-import type { Config, Settings, ShortcutSetting } from 'src/shared/types'
 import { v4 as uuidv4 } from 'uuid'
 import { parseLocale } from '@/i18n/parser'
+import { type ImageGenerationStorage, IndexedDBImageGenerationStorage } from '@/storage/ImageGenerationStorage'
 import { getBrowser, getOS } from '../packages/navigator'
 import type { Platform, PlatformType } from './interfaces'
 import type { KnowledgeBaseController } from './knowledge-base/interface'
 import { IndexedDBStorage } from './storages'
 import WebExporter from './web_exporter'
+import webLogger from './web_logger'
 import { parseTextFileLocally } from './web_platform_utils'
 
 export default class WebPlatform extends IndexedDBStorage implements Platform {
   public type: PlatformType = 'web'
 
   public exporter = new WebExporter()
+
+  private imageGenerationStorage: ImageGenerationStorage | null = null
+
+  constructor() {
+    super()
+    webLogger.init().catch((e) => console.error('Failed to init web logger:', e))
+  }
 
   public async getVersion(): Promise<string> {
     return 'web'
@@ -36,6 +45,9 @@ export default class WebPlatform extends IndexedDBStorage implements Platform {
   public onWindowShow(callback: () => void): () => void {
     return () => null
   }
+  public onWindowFocused(callback: () => void): () => void {
+    return () => null
+  }
   public onUpdateDownloaded(callback: () => void): () => void {
     return () => null
   }
@@ -44,7 +56,7 @@ export default class WebPlatform extends IndexedDBStorage implements Platform {
   }
   public async getDeviceName(): Promise<string> {
     // Web 平台返回浏览器名称
-    return getBrowser()
+    return await Promise.resolve(getBrowser()!)
   }
   public async getInstanceName(): Promise<string> {
     return `${getOS()} / ${getBrowser()}`
@@ -122,7 +134,15 @@ export default class WebPlatform extends IndexedDBStorage implements Platform {
   }
 
   public async appLog(level: string, message: string): Promise<void> {
-    console.log(`APP_LOG: [${level}] ${message}`)
+    webLogger.log(level, message)
+  }
+
+  public async exportLogs(): Promise<string> {
+    return webLogger.exportLogs()
+  }
+
+  public async clearLogs(): Promise<void> {
+    return webLogger.clearLogs()
   }
 
   public async ensureAutoLaunch(enable: boolean) {
@@ -157,6 +177,13 @@ export default class WebPlatform extends IndexedDBStorage implements Platform {
 
   public getKnowledgeBaseController(): KnowledgeBaseController {
     throw new Error('Method not implemented.')
+  }
+
+  public getImageGenerationStorage(): ImageGenerationStorage {
+    if (!this.imageGenerationStorage) {
+      this.imageGenerationStorage = new IndexedDBImageGenerationStorage()
+    }
+    return this.imageGenerationStorage
   }
 
   public minimize() {

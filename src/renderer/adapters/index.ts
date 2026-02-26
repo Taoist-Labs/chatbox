@@ -1,5 +1,5 @@
-import { createAfetch } from 'src/shared/request/request'
-import type { ApiRequestOptions, ModelDependencies } from 'src/shared/types/adapters'
+import { createAfetch } from '@shared/request/request'
+import type { ApiRequestOptions, ModelDependencies } from '@shared/types/adapters'
 import { getOS } from '@/packages/navigator'
 import platform from '@/platform'
 import storage from '@/storage'
@@ -28,7 +28,8 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
       },
       async getImage(storageKey: string): Promise<string> {
         const blob = await storage.getBlob(storageKey)
-        return blob || ''
+        if (!blob) return ''
+        return blob.startsWith('data:') ? blob : `data:image/png;base64,${blob}`
       },
     },
     request: {

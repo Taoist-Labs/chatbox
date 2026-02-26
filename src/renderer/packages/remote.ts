@@ -1,6 +1,7 @@
+import { getLogger } from '@/lib/utils'
 import platform from '@/platform'
 import { authInfoStore } from '@/stores/authInfoStore'
-import { USE_BETA_API, USE_LOCAL_API } from '@/variables'
+import { USE_BETA_API, USE_BETA_CHATBOX, USE_LOCAL_API, USE_LOCAL_CHATBOX } from '@/variables'
 import { ofetch } from 'ofetch'
 import { z } from 'zod'
 import * as cache from 'src/shared/utils/cache'
@@ -17,10 +18,7 @@ import {
 } from '../../shared/types'
 import { getOS } from './navigator'
 
-interface AuthTokens {
-  accessToken: string
-  refreshToken: string
-}
+const log = getLogger('remote-api')
 
 let _afetch: ReturnType<typeof createAfetch> | null = null
 let afetchPromise: Promise<ReturnType<typeof createAfetch>> | null = null
@@ -98,6 +96,16 @@ function getAPIOrigin() {
     return 'http://localhost:8002'
   } else {
     return chatboxaiAPI.getChatboxAPIOrigin()
+  }
+}
+
+export function getChatboxOrigin() {
+  if (USE_LOCAL_CHATBOX) {
+    return 'http://localhost:3002'
+  } else if (USE_BETA_CHATBOX) {
+    return 'https://beta.chatboxai.app'
+  } else {
+    return 'https://chatboxai.app'
   }
 }
 
@@ -229,18 +237,49 @@ export async function getLicenseDetail(params: { licenseKey: string }) {
   return res['data'] || null
 }
 
-export async function getLicenseDetailRealtime(params: { licenseKey: string }) {
+export interface LicenseDetailError {
+  code: string
+  detail: string
+  status: number
+  title: string
+}
+
+export interface LicenseDetailResponse {
+  data: ChatboxAILicenseDetail | null
+  error?: LicenseDetailError
+}
+
+export async function getLicenseDetailRealtime(params: { licenseKey: string }): Promise<LicenseDetailResponse> {
   type Response = {
     data: ChatboxAILicenseDetail | null
+    error?: LicenseDetailError
   }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/license/detail/realtime`, {
-    retry: 5,
-    headers: {
-      Authorization: params.licenseKey,
-      ...(await getChatboxHeaders()),
-    },
-  })
-  return res['data'] || null
+  // 用于捕获错误响应体
+  let capturedError: LicenseDetailError | undefined
+  try {
+    const res = await ofetch<Response>(`${getAPIOrigin()}/api/license/detail/realtime`, {
+      retry: 5,
+      headers: {
+        Authorization: params.licenseKey,
+        ...(await getChatboxHeaders()),
+      },
+      onResponseError({ response }) {
+        // 在错误响应时捕获 error 对象
+        const body = response._data as { error?: LicenseDetailError } | undefined
+        if (body?.error) {
+          capturedError = body.error
+        }
+      },
+    })
+    return { data: res.data || null, error: res.error }
+  } catch (e: any) {
+    // 如果捕获到了错误响应体，返回它
+    if (capturedError) {
+      return { data: null, error: capturedError }
+    }
+    // 重新抛出原始错误
+    throw e
+  }
 }
 
 export async function generateUploadUrl(params: { licenseKey: string; filename: string }) {
@@ -303,13 +342,16 @@ export async function uploadAndCreateUserFile(licenseKey: string, file: File) {
     licenseKey,
     filename: file.name,
   })
+  log.debug(`Uploading user file to URL: ${url}`)
   await uploadFile(file, url)
+  log.debug(`Uploaded user file: ${file.name}`)
   const result = await createUserFile({
     licenseKey,
     filename,
     filetype: file.type,
     returnContent: true,
   })
+  log.debug(`Created user file with UUID: ${result.uuid}`)
   const storageKey = `parseFile-${file.name}_${result.uuid}.${file.type.split('/')[1]}.txt`
 
   await platform.setStoreBlob(storageKey, result.content)
@@ -519,8 +561,8 @@ export async function getModelManifest(params: { aiProvider: ModelProvider; lice
   )
   const { success, data, error } = ModelManifestResponseSchema.safeParse(await res.json())
   if (!success) {
-    console.log('getModelManifest error', error)
-    return []
+    log.error('getModelManifest error', error)
+    throw error
   }
   return data.data
 }
@@ -584,8 +626,9 @@ export async function requestLoginTicketId() {
   const appVersion = await platform.getVersion()
   const deviceName = await platform.getDeviceName()
 
+  console.log('getChatboxOrigin()', getChatboxOrigin())
   const res = await afetch(
-    `https://chatboxai.app/api/auth/request_login_ticket`,
+    `${getChatboxOrigin()}/api/auth/request_login_ticket`,
     {
       method: 'POST',
       headers: {
@@ -618,7 +661,7 @@ export async function checkLoginStatus(ticketId: string) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `https://chatboxai.app/api/auth/login_status`,
+    `${getChatboxOrigin()}/api/auth/login_status`,
     {
       method: 'POST',
       headers: {
@@ -659,7 +702,7 @@ export async function refreshAccessToken(params: { refreshToken: string }) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `https://chatboxai.app/api/auth/token_refresh`,
+    `${getChatboxOrigin()}/api/auth/token_refresh`,
     {
       method: 'POST',
       headers: {
@@ -673,13 +716,13 @@ export async function refreshAccessToken(params: { refreshToken: string }) {
     }
   )
   const json: Response = await res.json()
-  // console.log('✅ refreshAccessToken response', json)
+  // log.info('✅ refreshAccessToken response', json)
 
   const accessToken = res.headers.get('x-chatbox-access-token')
   const refreshToken = res.headers.get('x-chatbox-refresh-token')
 
   if (!accessToken || !refreshToken) {
-    console.error('❌ Missing tokens in response headers:', {
+    log.error('❌ Missing tokens in response headers:', {
       accessToken: accessToken ? 'present' : 'missing',
       refreshToken: refreshToken ? 'present' : 'missing',
     })
@@ -702,7 +745,7 @@ export async function getUserProfile() {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    'https://chatboxai.app/api/user/profile',
+    `${getChatboxOrigin()}/api/user/profile`,
     {
       method: 'GET',
       headers: {
@@ -748,7 +791,7 @@ export async function listLicensesByUser(): Promise<UserLicense[]> {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    'https://chatboxai.app/api/license/list_by_user',
+    `${getChatboxOrigin()}/api/license/list_by_user`,
     {
       method: 'GET',
       headers: {

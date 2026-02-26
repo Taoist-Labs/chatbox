@@ -1,5 +1,11 @@
 import { ActionIcon, alpha, Box, Code, Collapse, Group, Paper, SimpleGrid, Space, Stack, Text } from '@mantine/core'
 import {
+  type Message,
+  type MessageReasoningPart,
+  type MessageToolCallPart,
+  MessageToolCallPartSchema,
+} from '@shared/types'
+import {
   IconArrowRight,
   IconBulb,
   IconChevronRight,
@@ -13,18 +19,12 @@ import {
 import clsx from 'clsx'
 import { type FC, type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  type Message,
-  type MessageReasoningPart,
-  type MessageToolCallPart,
-  MessageToolCallPartSchema,
-} from 'src/shared/types'
 import z from 'zod'
 import { formatElapsedTime, useThinkingTimer } from '@/hooks/useThinkingTimer'
 import { cn } from '@/lib/utils'
 import { getToolName } from '@/packages/tools'
 import type { SearchResultItem } from '@/packages/web-search'
-import { ScalableIcon } from '../ScalableIcon'
+import { ScalableIcon } from '../common/ScalableIcon'
 
 const ToolCallHeader: FC<{ part: MessageToolCallPart; action: ReactNode; onClick: () => void }> = (props) => {
   return (

@@ -1,8 +1,9 @@
-import { Button, Flex, PasswordInput, Select, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { Button, Flex, PasswordInput, Stack, Text, Title } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { ofetch } from 'ofetch'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import platform from '@/platform'
 import { useSettingsStore } from '@/stores/settingsStore'
 
@@ -48,7 +49,7 @@ export function RouteComponent() {
     <Stack p="md" gap="xxl">
       <Title order={5}>{t('Web Search')}</Title>
 
-      <Select
+      <AdaptiveSelect
         comboboxProps={{ withinPortal: true, withArrow: true }}
         data={[
           { value: 'build-in', label: 'Chatbox Search (Pro)' },
@@ -106,7 +107,13 @@ export function RouteComponent() {
               }}
               error={tavilyAvaliable === false}
             />
-            <Button color="chatbox-gray" variant="light" onClick={checkTavily} loading={checkingTavily}>
+            <Button
+              color="blue"
+              variant="light"
+              onClick={checkTavily}
+              loading={checkingTavily}
+              disabled={!extension.webSearch.tavilyApiKey?.trim()}
+            >
               {t('Check')}
             </Button>
           </Flex>

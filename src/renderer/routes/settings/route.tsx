@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Flex, Stack, Text } from '@mantine/core'
+import { ActionIcon, Box, Flex, Indicator, Stack, Text } from '@mantine/core'
 import {
   IconAdjustmentsHorizontal,
   IconBook,
@@ -7,21 +7,30 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconCircleDottedLetterM,
+  IconFileText,
   IconKeyboard,
   IconMessages,
-  IconWorldWww
+  IconSparkles,
+  IconWorldWww,
 } from '@tabler/icons-react'
 import { createFileRoute, Link, Outlet, useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'sonner'
-import Page from '@/components/Page'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import Divider from '@/components/common/Divider'
+import Page from '@/components/layout/Page'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
+import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import platform from '@/platform'
 import { featureFlags } from '@/utils/feature-flags'
 
 const ITEMS = [
+  {
+    key: 'chatbox-ai',
+    label: 'Chatbox AI',
+    icon: <IconSparkles className="w-full h-full" />,
+  },
   {
     key: 'provider',
     label: 'Model Provider',
@@ -55,6 +64,11 @@ const ITEMS = [
         },
       ]
     : []),
+  {
+    key: 'document-parser',
+    label: 'Document Parser',
+    icon: <IconFileText className="w-full h-full" />,
+  },
   {
     key: 'chat',
     label: 'Chat Settings',
@@ -116,6 +130,8 @@ export function SettingsRoot() {
   const routerState = useRouterState()
   const key = routerState.location.pathname.split('/')[2]
   const isSmallScreen = useIsSmallScreen()
+  const { providers: availableProviders } = useProviders()
+  const isChatboxAIActivated = availableProviders.some((p) => p.id === 'chatbox-ai')
 
   return (
     <Flex flex={1} h="100%" miw={isSmallScreen ? undefined : 800}>
@@ -131,13 +147,13 @@ export function SettingsRoot() {
         >
           {ITEMS.map((item) => (
             <Link
-              disabled={routerState.location.pathname.startsWith(`/settings/${item.key}`)}
+              disabled={
+                routerState.location.pathname === `/settings/${item.key}` ||
+                routerState.location.pathname.startsWith(`/settings/${item.key}/`)
+              }
               key={item.key}
               to={`/settings/${item.key}` as any}
-              className={clsx(
-                'no-underline w-full',
-                isSmallScreen ? 'border-solid border-0 border-b border-chatbox-border-primary' : ''
-              )}
+              className={'block no-underline w-full'}
             >
               <Flex
                 component="span"
@@ -164,10 +180,15 @@ export function SettingsRoot() {
                 >
                   {t(item.label)}
                 </Text>
+                {item.key === 'chatbox-ai' && isChatboxAIActivated && (
+                  <Indicator size={8} color="chatbox-success" className="ml-auto" />
+                )}
                 {isSmallScreen && (
                   <ScalableIcon icon={IconChevronRight} size={20} className="!text-chatbox-tint-tertiary" />
                 )}
               </Flex>
+
+              {isSmallScreen && <Divider />}
             </Link>
           ))}
         </Stack>

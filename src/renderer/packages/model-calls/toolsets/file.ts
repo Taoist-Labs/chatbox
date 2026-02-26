@@ -1,9 +1,10 @@
 import { tool } from 'ai'
 import z from 'zod'
+import { MAX_INLINE_FILE_LINES, PREVIEW_LINES } from '@/packages/context-management/attachment-payload'
 import platform from '@/platform'
 
 const DEFAULT_LINES = 200
-const MAX_LINES = 500
+const MAX_LINES = MAX_INLINE_FILE_LINES
 const MAX_LINE_LENGTH = 2000
 
 const truncateLine = (line: string) => {
@@ -26,34 +27,32 @@ const formatLineWithNumber = (line: string, lineNumber: number) => {
 const GREP_MAX_RESULTS = 100
 
 const toolSetDescription = `
-Two tools are provided to interact with files uploaded by the user.
-Make sure you follow the description of each tool parameter.
+Use these tools to read and search large user-uploaded files (marked with <ATTACHMENT_FILE></ATTACHMENT_FILE>).
 
-read_file:
-Read file content from the given file name
+IMPORTANT:
+- Files with ≤${MAX_LINES} lines have their FULL content in <FILE_CONTENT> tags - read them directly without tools.
+- Files with >${MAX_LINES} lines only show the first ${PREVIEW_LINES} lines as preview in <FILE_CONTENT>, with a <TRUNCATED> tag indicating more content is available. Use these tools to read additional content beyond the preview.
 
-Content will be returned with a line number before each line like cat -n format.
-Use lineOffset and maxLines parameters when you only need to read a part of the file.
-The maximum number of lines that can be read at once is ${MAX_LINES}, default is ${DEFAULT_LINES}, prevent excessive memory usage.
-Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated, ending with "...".
-This tool is a tool that you typically want to use in parallel. Always read multiple files in one response when possible.
-If the file doesn't exist, an error will be returned.
-If you want to search for a certain content/pattern, prefer grepFile tool over readFile.
+## read_file
+Reads file content with line numbers (like \`cat -n\`).
+- Returns up to ${DEFAULT_LINES} lines by default, max ${MAX_LINES} lines per call
+- Lines exceeding ${MAX_LINE_LENGTH} characters are truncated with "..."
+- Use \`lineOffset\` and \`maxLines\` to read specific portions
+- Prefer \`search_file_content\` when searching for specific content
+- Call in parallel when reading multiple files
 
-grep_file:
-Searches for a keyword or phrase within a file uploaded by the user.
-
-For each match, the line number, line content, and surrounding context lines will be returned.
-Use beforeContextLines and afterContextLines to specify how many context lines to include.
-The maximum number of results that can be returned at once is ${GREP_MAX_RESULTS}.
-This tool is a tool that you typically want to use in parallel. Always search multiple files in one response when possible.
-If the file doesn't exist, an error will be returned.
+## search_file_content
+Searches for text patterns within a file.
+- Returns matching lines with line numbers and optional context
+- Use \`beforeContextLines\` / \`afterContextLines\` to include surrounding lines
+- Returns up to ${GREP_MAX_RESULTS} matches maximum
+- Call in parallel when searching multiple files
 `
 
 const readFileTool = tool({
   description: 'Reads the content of a file uploaded by the user.',
   inputSchema: z.object({
-    fileName: z.string().describe('The identifier of the file to read.'),
+    fileKey: z.string().describe('The identifier of the file to read within tag `<FILE_KEY>`.'),
     lineOffset: z
       .number()
       .int()
@@ -70,10 +69,13 @@ const readFileTool = tool({
       .describe(`Optional maximum number of lines to read. Defaults to ${DEFAULT_LINES}.`),
   }),
   execute: async (
-    input: { fileName: string; lineOffset?: number; maxLines?: number },
+    input: { fileKey: string; lineOffset?: number; maxLines?: number },
     _context: { abortSignal?: AbortSignal }
   ) => {
-    const fileContent = (await platform.getStoreBlob(input.fileName)) || ''
+    const fileContent = await platform.getStoreBlob(input.fileKey)
+    if (fileContent === null) {
+      return 'File not found or inaccessible. Ensure the fileKey is the correct identifier within <FILE_KEY> tags.'
+    }
     const lines = fileContent.split('\n')
     const lineOffset = input.lineOffset ?? 0
     const maxLines = input.maxLines ?? DEFAULT_LINES
@@ -81,7 +83,7 @@ const readFileTool = tool({
     const truncatedLines = selectedLines.map(truncateLine)
     const numberedLines = truncatedLines.map((line, index) => formatLineWithNumber(line, lineOffset + index + 1))
     return {
-      fileName: input.fileName,
+      fileKey: input.fileKey,
       content: numberedLines.join('\n'),
       lineOffset,
       linesRead: selectedLines.length,
@@ -90,10 +92,10 @@ const readFileTool = tool({
   },
 })
 
-const grepFileTool = tool({
+const searchFileTool = tool({
   description: 'Searches for a keyword or phrase within a file uploaded by the user.',
   inputSchema: z.object({
-    fileName: z.string().describe('The identifier of the file to search.'),
+    fileKey: z.string().describe('The identifier of the file to read within tag `<FILE_KEY>`.'),
     query: z.string().describe('The keyword or phrase to search for within the file.'),
     beforeContextLines: z
       .number()
@@ -118,7 +120,7 @@ const grepFileTool = tool({
   }),
   execute: async (
     input: {
-      fileName: string
+      fileKey: string
       query: string
       beforeContextLines?: number
       afterContextLines?: number
@@ -126,7 +128,10 @@ const grepFileTool = tool({
     },
     _context: { abortSignal?: AbortSignal }
   ) => {
-    const fileContent = (await platform.getStoreBlob(input.fileName)) || ''
+    const fileContent = await platform.getStoreBlob(input.fileKey)
+    if (fileContent === null) {
+      return 'File not found or inaccessible. Ensure the fileKey is the correct identifier within <FILE_KEY> tags.'
+    }
     const lines = fileContent.split('\n')
     const results: Array<{ lineNumber: number; lineContent: string; context: string[] }> = []
 
@@ -147,7 +152,7 @@ const grepFileTool = tool({
     }
 
     return {
-      fileName: input.fileName,
+      fileKey: input.fileKey,
       query: input.query,
       results,
       totalMatches: results.length,
@@ -159,6 +164,6 @@ export default {
   description: toolSetDescription,
   tools: {
     read_file: readFileTool,
-    grep_file: grepFileTool,
+    search_file_content: searchFileTool,
   },
 }

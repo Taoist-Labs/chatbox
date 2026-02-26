@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from '@ai-sdk/provider'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import {
   APICallError,
   type EmbeddingModel,
@@ -19,6 +19,7 @@ import {
   type TypedToolResult,
   wrapLanguageModel,
 } from 'ai'
+import { createRetryable, isErrorAttempt, type RetryContext } from 'ai-retry'
 import type {
   MessageContentParts,
   MessageReasoningPart,
@@ -30,6 +31,31 @@ import type {
 import type { ModelDependencies } from '../types/adapters'
 import { ApiError, ChatboxAIAPIError } from './errors'
 import type { CallChatCompletionOptions, ModelInterface } from './types'
+
+const RETRY_CONFIG = {
+  MAX_ATTEMPTS: 5,
+  INITIAL_DELAY_MS: 1000,
+  BACKOFF_FACTOR: 2,
+} as const
+
+function is5xxError(error: unknown): boolean {
+  if (APICallError.isInstance(error)) {
+    const statusCode = error.statusCode
+    return statusCode !== undefined && statusCode >= 500 && statusCode < 600
+  }
+  if (error && typeof error === 'object' && 'statusCode' in error) {
+    const statusCode = (error as { statusCode: unknown }).statusCode
+    return typeof statusCode === 'number' && statusCode >= 500 && statusCode < 600
+  }
+  if (error instanceof ApiError && error.message) {
+    const match = error.message.match(/Status Code (\d+)/)
+    if (match) {
+      const statusCode = parseInt(match[1], 10)
+      return statusCode >= 500 && statusCode < 600
+    }
+  }
+  return false
+}
 
 // ai sdk CallSettings类型的子集
 export interface CallSettings {
@@ -73,18 +99,18 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
 
   protected abstract getProvider(
     options: CallChatCompletionOptions
-  ): Pick<Provider, 'languageModel'> & Partial<Pick<Provider, 'textEmbeddingModel' | 'imageModel'>>
+  ): Pick<Provider, 'languageModel'> & Partial<Pick<Provider, 'embeddingModel' | 'imageModel'>>
 
-  protected abstract getChatModel(options: CallChatCompletionOptions): LanguageModelV2
+  protected abstract getChatModel(options: CallChatCompletionOptions): LanguageModelV3
 
   protected getImageModel(): ImageModel | null {
     return null
   }
 
-  protected getTextEmbeddingModel(options: CallChatCompletionOptions): EmbeddingModel<string> | null {
+  protected getTextEmbeddingModel(options: CallChatCompletionOptions): EmbeddingModel | null {
     const provider = this.getProvider(options)
-    if (provider.textEmbeddingModel) {
-      return provider.textEmbeddingModel(this.options.model.modelId)
+    if (provider.embeddingModel) {
+      return provider.embeddingModel(this.options.model.modelId)
     }
     return null
   }
@@ -130,10 +156,14 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
   }
 
   public async paint(
-    prompt: string,
-    num: number,
-    callback?: (picBase64: string) => void,
-    signal?: AbortSignal
+    params: {
+      prompt: string
+      images?: { imageUrl: string }[]
+      num: number
+      aspectRatio?: string
+    },
+    signal?: AbortSignal,
+    callback?: (picBase64: string) => void
   ): Promise<string[]> {
     const imageModel = this.getImageModel()
     if (!imageModel) {
@@ -141,8 +171,9 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
     }
     const result = await generateImage({
       model: imageModel,
-      prompt,
-      n: num,
+      prompt: params.prompt,
+      // images 暂时不支持
+      n: params.num,
       abortSignal: signal,
     })
     const dataUrls = result.images.map((image) => `data:${image.mediaType};base64,${image.base64}`)
@@ -449,7 +480,7 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
   }
 
   private async handleStreamingCompletion<T extends ToolSet>(
-    model: LanguageModelV2,
+    model: LanguageModelV3,
     coreMessages: ModelMessage[],
     options: CallChatCompletionOptions<T>,
     callSettings: CallSettings
@@ -460,10 +491,6 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
       stopWhen: stepCountIs(options.maxSteps || Number.MAX_SAFE_INTEGER),
       tools: options.tools,
       abortSignal: options.signal,
-      // experimental_transform: smoothStream({
-      //   delayInMs: 10, // optional: defaults to 10ms
-      //   chunking: 'word', // optional: defaults to 'word'
-      // }),
       ...callSettings,
     })
 
@@ -514,16 +541,69 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
     coreMessages: ModelMessage[],
     options: CallChatCompletionOptions<T>
   ): Promise<StreamTextResult> {
-    let model = this.getChatModel(options)
+    let baseModel = this.getChatModel(options)
     const callSettings = this.getCallSettings(options)
 
     if (this.options.stream === false) {
-      model = wrapLanguageModel({
-        model,
+      baseModel = wrapLanguageModel({
+        model: baseModel,
         middleware: simulateStreamingMiddleware(),
       })
     }
 
-    return await this.handleStreamingCompletion(model, coreMessages, options, callSettings)
+    const retryable5xx = (context: RetryContext<LanguageModelV3>) => {
+      if (isErrorAttempt(context.current)) {
+        const { error } = context.current
+        if (is5xxError(error)) {
+          return {
+            model: baseModel,
+            maxAttempts: RETRY_CONFIG.MAX_ATTEMPTS,
+            delay: RETRY_CONFIG.INITIAL_DELAY_MS,
+            backoffFactor: RETRY_CONFIG.BACKOFF_FACTOR,
+          }
+        }
+      }
+      return undefined
+    }
+
+    const model = createRetryable({
+      model: baseModel,
+      retries: [retryable5xx],
+      onError: (context) => {
+        if (isErrorAttempt(context.current)) {
+          const { error } = context.current
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          console.debug(`[ai-retry] Error on attempt ${context.attempts.length}:`, errorMessage)
+        }
+      },
+      onRetry: (context) => {
+        const attemptNumber = context.attempts.length + 1
+        const lastError = context.attempts[context.attempts.length - 1]
+        const errorMessage =
+          lastError && 'error' in lastError
+            ? lastError.error instanceof Error
+              ? lastError.error.message
+              : String(lastError.error)
+            : 'Unknown error'
+
+        console.debug(`[ai-retry] Retrying attempt ${attemptNumber}/${RETRY_CONFIG.MAX_ATTEMPTS}`)
+
+        options.onStatusChange?.({
+          type: 'retrying',
+          attempt: attemptNumber,
+          maxAttempts: RETRY_CONFIG.MAX_ATTEMPTS,
+          error: errorMessage,
+        })
+      },
+    })
+
+    try {
+      const result = await this.handleStreamingCompletion(model, coreMessages, options, callSettings)
+      options.onStatusChange?.(null)
+      return result
+    } catch (error) {
+      options.onStatusChange?.(null)
+      throw error
+    }
   }
 }

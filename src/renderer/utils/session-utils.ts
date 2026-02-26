@@ -1,6 +1,6 @@
+import type { Session, SessionMeta } from '@shared/types'
 import { mapValues } from 'lodash'
-import type { Session, SessionMeta } from 'src/shared/types'
-import { migrateMessage } from './message'
+import { migrateMessage } from '../../shared/utils/message'
 
 export function migrateSession(session: Session): Session {
   return {
@@ -30,6 +30,10 @@ export function sortSessions(sessions: SessionMeta[]): SessionMeta[] {
   const reversed: SessionMeta[] = []
   const pinned: SessionMeta[] = []
   for (const sess of sessions) {
+    // Skip hidden sessions (e.g., migrated picture sessions)
+    if (sess.hidden) {
+      continue
+    }
     if (sess.starred) {
       pinned.push(sess)
       continue

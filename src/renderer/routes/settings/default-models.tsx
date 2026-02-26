@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <todo> */
 import { Flex, Stack, Text, Title } from '@mantine/core'
+import { SystemProviders } from '@shared/defaults'
 import { IconSelector } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { forwardRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SystemProviders } from 'src/shared/defaults'
 import ModelSelector from '@/components/ModelSelector'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export const Route = createFileRoute('/settings/default-models')({
@@ -181,11 +181,11 @@ const ModelSelectContent = forwardRef<
     () =>
       !provider || !model
         ? autoText || t('Auto')
-        : ([...SystemProviders, ...(customProviders || [])].find((p) => p.id === provider)?.name || provider) +
+        : ([...SystemProviders(), ...(customProviders || [])].find((p) => p.id === provider)?.name || provider) +
           '/' +
-          ((providers?.[provider]?.models || SystemProviders[provider as any]?.defaultSettings?.models)?.find(
-            (m) => m.modelId === model
-          )?.nickname || model),
+          ((
+            providers?.[provider]?.models || SystemProviders().find((p) => p.id === provider)?.defaultSettings?.models
+          )?.find((m) => m.modelId === model)?.nickname || model),
     [provider, model, autoText, t, customProviders, providers]
   )
   return (

@@ -1,6 +1,6 @@
 import type { ComboboxProps } from '@mantine/core'
+import type { ModelProvider, ProviderModelInfo } from '@shared/types'
 import { forwardRef, type PropsWithChildren, useMemo, useState } from 'react'
-import type { ModelProvider, ProviderModelInfo } from 'src/shared/types'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { DesktopModelSelector } from './DesktopModelSelector'
@@ -59,16 +59,6 @@ export const ModelSelector = forwardRef<HTMLDivElement, ModelSelectorProps>(
           models,
         }
       })
-
-      // If showing only favorites, filter providers to only those with favorited models
-      if (activeTab === 'favorite') {
-        return filtered
-          .map((provider) => ({
-            ...provider,
-            models: provider.models?.filter((model) => isFavoritedModel(provider.id, model.modelId)),
-          }))
-          .filter((provider) => provider.models && provider.models.length > 0)
-      }
 
       return filtered
     }, [providers, search, modelFilter, activeTab, isFavoritedModel])

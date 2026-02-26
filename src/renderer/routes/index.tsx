@@ -1,18 +1,19 @@
 import NiceModal from '@ebay/nice-modal-react'
 import { ActionIcon, Avatar, Box, Button, Divider, Flex, Paper, ScrollArea, Space, Stack, Text } from '@mantine/core'
+import type { CopilotDetail, Session } from '@shared/types'
+import { ModelProviderEnum } from '@shared/types'
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react'
 import { createFileRoute, useRouterState } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import clsx from 'clsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CopilotDetail, Session } from 'src/shared/types'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
-import InputBox, { type InputBoxPayload } from '@/components/InputBox'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
+import InputBox, { type InputBoxPayload } from '@/components/InputBox/InputBox'
 import HomepageIcon from '@/components/icons/HomepageIcon'
-import Page from '@/components/Page'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import Page from '@/components/layout/Page'
 import { useMyCopilots, useRemoteCopilots } from '@/hooks/useCopilots'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
@@ -40,6 +41,9 @@ function Index() {
   const addSessionKnowledgeBase = useUIStore((s) => s.addSessionKnowledgeBase)
   const showCopilotsInNewSession = useUIStore((s) => s.showCopilotsInNewSession)
   const widthFull = useUIStore((s) => s.widthFull)
+  const sessionWebBrowsingMap = useUIStore((s) => s.sessionWebBrowsingMap)
+  const setSessionWebBrowsing = useUIStore((s) => s.setSessionWebBrowsing)
+  const clearSessionWebBrowsing = useUIStore((s) => s.clearSessionWebBrowsing)
   const [session, setSession] = useState<Session>({
     id: 'new',
     ...initEmptyChatSession(),
@@ -94,7 +98,7 @@ function Index() {
   }, [routerState.location.search])
 
   const handleSubmit = useCallback(
-    async ({ constructedMessage, needGenerating = true }: InputBoxPayload) => {
+    async ({ constructedMessage, needGenerating = true, onUserMessageReady }: InputBoxPayload) => {
       const newSession = await createSessionStore({
         name: session.name,
         type: 'chat',
@@ -112,14 +116,30 @@ function Index() {
         setNewSessionState({})
       }
 
+      // Transfer web browsing setting from "new" session to the actual session
+      const newSessionWebBrowsing = sessionWebBrowsingMap['new']
+      if (newSessionWebBrowsing !== undefined) {
+        setSessionWebBrowsing(newSession.id, newSessionWebBrowsing)
+        clearSessionWebBrowsing('new')
+      }
+
       switchCurrentSession(newSession.id)
 
       void submitNewUserMessage(newSession.id, {
         newUserMsg: constructedMessage,
         needGenerating,
+        onUserMessageReady,
       })
     },
-    [session, addSessionKnowledgeBase, newSessionState.knowledgeBase, setNewSessionState]
+    [
+      session,
+      addSessionKnowledgeBase,
+      newSessionState.knowledgeBase,
+      setNewSessionState,
+      sessionWebBrowsingMap,
+      setSessionWebBrowsing,
+      clearSessionWebBrowsing,
+    ]
   )
 
   const onSelectModel = useCallback((p: string, m: string) => {
@@ -191,7 +211,7 @@ function Index() {
                     flex="0 1 auto"
                     onClick={() => {
                       router.navigate({
-                        to: isSmallScreen ? '/settings/provider' : '/settings/provider/chatbox-ai',
+                        to: isSmallScreen ? '/settings/provider' : '/settings/chatbox-ai',
                       })
                     }}
                   >

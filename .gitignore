@@ -101,6 +101,7 @@ build-web.sh
 
 # testing
 /coverage
+/test/output
 
 # next.js
 /.next/
@@ -169,9 +170,11 @@ dist
 
 electron-builder.env
 
-.vscode
+# Share VS Code settings
+# .vscode
 
 
 **/routeTree.gen.ts
 
 .env.sentry-build-plugin
+.sisyphus/

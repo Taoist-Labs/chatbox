@@ -7,7 +7,7 @@ import { useAtomValue } from 'jotai'
 import 'photoswipe/dist/photoswipe.css'
 import { StrictMode, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 import i18n from './i18n'
 import { getLogger } from './lib/utils'
 import platform from './platform'
@@ -44,6 +44,9 @@ import { initSettingsStore } from './stores/settingsStore'
 // if (process.env.NODE_ENV === 'development') {
 //   import('./utils/error-testing')
 // }
+
+// Token estimation system initialization (runs in all environments)
+import('./setup/token_estimation_init')
 
 // 引入移动端安全区域代码，主要为了解决异形屏幕的问题
 if (CHATBOX_BUILD_TARGET === 'mobile_app' && CHATBOX_BUILD_PLATFORM === 'ios') {

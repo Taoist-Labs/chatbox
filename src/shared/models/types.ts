@@ -1,6 +1,7 @@
 import type { ModelMessage, ToolSet } from 'ai'
 import {
   type MessageContentParts,
+  type MessageStatus,
   type ProviderOptions,
   ProviderOptionsSchema,
   type StreamTextResult,
@@ -20,6 +21,7 @@ export interface ModelInterface {
       prompt: string
       images?: { imageUrl: string }[]
       num: number
+      aspectRatio?: string
     },
     signal?: AbortSignal,
     callback?: (picBase64: string) => void
@@ -38,6 +40,7 @@ export interface CallChatCompletionOptions<Tools extends ToolSet = ToolSet> {
   sessionId?: string
   signal?: AbortSignal
   onResultChange?: OnResultChange
+  onStatusChange?: OnStatusChange
   tools?: Tools
   providerOptions?: ProviderOptions
   maxSteps?: number
@@ -54,3 +57,4 @@ export interface ResultChange {
 
 export type OnResultChangeWithCancel = (data: ResultChange & { cancel?: () => void }) => void
 export type OnResultChange = (data: ResultChange) => void
+export type OnStatusChange = (status: MessageStatus | null) => void

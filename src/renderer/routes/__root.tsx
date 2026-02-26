@@ -1,7 +1,7 @@
-import { type RemoteConfig, Theme } from '@/../shared/types'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import ExitFullscreenButton from '@/components/ExitFullscreenButton'
-import Toasts from '@/components/Toasts'
+import { type RemoteConfig, Theme } from '@shared/types'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import Toasts from '@/components/common/Toasts'
+import ExitFullscreenButton from '@/components/layout/ExitFullscreenButton'
 import useAppTheme from '@/hooks/useAppTheme'
 import { useSystemLanguageWhenInit } from '@/hooks/useDefaultSystemLanguage'
 import { useI18nEffect } from '@/hooks/useI18nEffect'
@@ -27,6 +27,7 @@ import {
   Popover,
   rem,
   Select,
+  Slider,
   Switch,
   Text,
   TextInput,
@@ -459,6 +460,12 @@ const creteMantineTheme = (scale = 1) =>
       Popover: Popover.extend({
         defaultProps: {
           zIndex: 3000,
+        },
+      }),
+      Slider: Slider.extend({
+        classNames: {
+          trackContainer: 'max-sm:pointer-events-none',
+          thumb: 'max-sm:pointer-events-auto',
         },
       }),
     },

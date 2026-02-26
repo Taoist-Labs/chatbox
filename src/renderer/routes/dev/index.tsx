@@ -1,7 +1,7 @@
 import { Badge, Button, Card, Container, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { IconCode, IconExternalLink, IconEye } from '@tabler/icons-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 
 export const Route = createFileRoute('/dev/')({
   component: DevIndexPage,
@@ -26,7 +26,12 @@ const devPages = [
     description: 'CSS Variables Preview',
     tags: ['UI'],
   },
-  // Add more dev pages here as they are created
+  {
+    path: '/dev/context-generator',
+    name: 'Context Generator',
+    description: 'Generate fake conversation context for testing context management and token estimation',
+    tags: ['Tool', 'Testing'],
+  },
 ]
 
 function DevIndexPage() {

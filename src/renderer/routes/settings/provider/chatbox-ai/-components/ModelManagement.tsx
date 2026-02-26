@@ -1,11 +1,11 @@
 import { Button, Flex, Stack, Text } from '@mantine/core'
+import type { ProviderModelInfo } from '@shared/types'
 import { IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ProviderModelInfo } from 'src/shared/types'
+import { AdaptiveModal } from '@/components/common/AdaptiveModal'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { ModelList } from '@/components/ModelList'
-import { Modal } from '@/components/Overlay'
-import { ScalableIcon } from '@/components/ScalableIcon'
 
 interface ModelManagementProps {
   chatboxAIModels: ProviderModelInfo[]
@@ -71,16 +71,13 @@ export function ModelManagement({
         <ModelList models={chatboxAIModels} showActions={true} onDeleteModel={onDeleteModel} showSearch={false} />
       </Stack>
 
-      <Modal
+      <AdaptiveModal
         keepMounted={false}
         opened={showFetchedModels}
         onClose={() => setShowFetchedModels(false)}
-        title={t('Edit Model')}
+        title={t('Models')}
         centered={true}
         size="lg"
-        classNames={{
-          content: '!max-h-[95vh]',
-        }}
       >
         <ModelList
           models={allChatboxAIModels}
@@ -90,7 +87,7 @@ export function ModelManagement({
           displayedModelIds={chatboxAIModels.map((m) => m.modelId)}
           showSearch={true}
         />
-      </Modal>
+      </AdaptiveModal>
     </>
   )
 }

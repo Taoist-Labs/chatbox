@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <any> */
-import type { Config, Language, Settings, ShortcutSetting } from 'src/shared/types'
+import type { Config, Language, Settings, ShortcutSetting } from '@shared/types'
+import type { ImageGenerationStorage } from '@/storage/ImageGenerationStorage'
 import type { KnowledgeBaseController } from './knowledge-base/interface'
 
 export type PlatformType = 'web' | 'desktop' | 'mobile'
@@ -27,6 +28,7 @@ export interface Platform extends Storage {
   shouldUseDarkColors(): Promise<boolean>
   onSystemThemeChange(callback: () => void): () => void
   onWindowShow(callback: () => void): () => void
+  onWindowFocused(callback: () => void): () => void
   onUpdateDownloaded(callback: () => void): () => void
   onNavigate?(callback: (path: string) => void): () => void
   openLink(url: string): Promise<void>
@@ -59,9 +61,22 @@ export interface Platform extends Storage {
 
   appLog(level: string, message: string): Promise<void>
 
+  // 日志导出与管理
+  exportLogs(): Promise<string> // 返回日志内容
+  clearLogs(): Promise<void> // 清空日志
+
   ensureAutoLaunch(enable: boolean): Promise<void>
 
   parseFileLocally(file: File): Promise<{ key?: string; isSupported: boolean }>
+
+  // Parse file using MinerU service (Desktop only)
+  parseFileWithMineru?(
+    file: File,
+    apiToken: string
+  ): Promise<{ success: boolean; content?: string; error?: string; cancelled?: boolean }>
+
+  // Cancel MinerU parsing task (Desktop only)
+  cancelMineruParse?(filePath: string): Promise<{ success: boolean; error?: string }>
 
   // parseUrl(url: string): Promise<{ key: string, title: string }>
 
@@ -70,6 +85,8 @@ export interface Platform extends Storage {
   installUpdate(): Promise<void>
 
   getKnowledgeBaseController(): KnowledgeBaseController
+
+  getImageGenerationStorage(): ImageGenerationStorage
 
   // window controls
   minimize(): Promise<void>

@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Button, Divider, Flex, Image, NavLink, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Box, Button, Flex, Image, NavLink, Stack, Text, Tooltip } from '@mantine/core'
 import SwipeableDrawer from '@mui/material/SwipeableDrawer'
 import {
   IconCirclePlus,
@@ -13,17 +13,18 @@ import { useNavigate } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Divider from './components/common/Divider'
+import { ScalableIcon } from './components/common/ScalableIcon'
 import ThemeSwitchButton from './components/dev/ThemeSwitchButton'
-import { ScalableIcon } from './components/ScalableIcon'
-import SessionList from './components/SessionList'
+import SessionList from './components/session/SessionList'
 import { FORCE_ENABLE_DEV_PAGES } from './dev/devToolsConfig'
 import useNeedRoomForMacWinControls from './hooks/useNeedRoomForWinControls'
 import { useIsSmallScreen, useSidebarWidth } from './hooks/useScreenChange'
 import useVersion from './hooks/useVersion'
 import { navigateToSettings } from './modals/Settings'
 import { trackingEvent } from './packages/event'
+import platform from './platform'
 import icon from './static/icon.png'
-import { createEmpty } from './stores/sessionActions'
 import { useLanguage } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { CHATBOX_BUILD_PLATFORM } from './variables'
@@ -59,15 +60,12 @@ export default function Sidebar() {
   }, [navigate, setShowSidebar, isSmallScreen])
 
   const handleCreateNewPictureSession = useCallback(() => {
-    void createEmpty('picture')
-    if (sessionListViewportRef.current) {
-      sessionListViewportRef.current.scrollTo(0, 0)
-    }
+    navigate({ to: '/image-creator' })
     if (isSmallScreen) {
       setShowSidebar(false)
     }
-    trackingEvent('create_new_picture_conversation', { event_category: 'user' })
-  }, [isSmallScreen, setShowSidebar])
+    trackingEvent('open_image_creator', { event_category: 'user' })
+  }, [isSmallScreen, setShowSidebar, navigate])
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
@@ -139,10 +137,17 @@ export default function Sidebar() {
         {needRoomForMacWindowControls && <Box className="title-bar flex-[0_0_44px]" />}
         <Flex align="center" justify="space-between" px="md" py="sm">
           <Flex align="center" gap="sm">
-            <Image src={icon} w={20} h={20} />
-            <Text span c="chatbox-secondary" size="xl" lh={1.2} fw="700">
-              Chatbox
-            </Text>
+            <Flex
+              align="center"
+              gap="sm"
+              onClick={() => platform.openLink('https://chatboxai.app/')}
+              style={{ cursor: 'pointer' }}
+            >
+              <Image src={icon} w={20} h={20} />
+              <Text span c="chatbox-secondary" size="xl" lh={1.2} fw="700">
+                Chatbox
+              </Text>
+            </Flex>
             {FORCE_ENABLE_DEV_PAGES && <ThemeSwitchButton size="xs" />}
           </Flex>
 
@@ -157,15 +162,16 @@ export default function Sidebar() {
 
         <Stack gap={0} px="xs" pb="xs">
           <Divider />
-          <Flex gap="xs" pt="xs" mb="xs">
-            <Button variant="light" flex={1} onClick={handleCreateNewSession}>
+          <Stack gap="xs" pt="xs" mb="xs">
+            <Button variant="light" fullWidth onClick={handleCreateNewSession}>
               <ScalableIcon icon={IconCirclePlus} className="mr-2" />
               {t('New Chat')}
             </Button>
-            <Button variant="light" px="sm" onClick={handleCreateNewPictureSession}>
-              <ScalableIcon icon={IconPhotoPlus} />
+            <Button variant="light" fullWidth onClick={handleCreateNewPictureSession}>
+              <ScalableIcon icon={IconPhotoPlus} className="mr-2" />
+              {t('Create Image')}
             </Button>
-          </Flex>
+          </Stack>
           <NavLink
             c="chatbox-secondary"
             className="rounded"
@@ -217,7 +223,14 @@ export default function Sidebar() {
           <NavLink
             c="chatbox-tertiary"
             className="rounded"
-            label={`${t('About')} ${/\d/.test(versionHook.version) ? `(${versionHook.version})` : ''}`}
+            label={
+              <Flex align="center" gap={6}>
+                <span>{`${t('About')} ${/\d/.test(versionHook.version) ? `(${versionHook.version})` : ''}`}</span>
+                {CHATBOX_BUILD_PLATFORM === 'android' && versionHook.needCheckUpdate && (
+                  <Box w={8} h={8} miw={8} bg="chatbox-brand" style={{ borderRadius: '50%' }} />
+                )}
+              </Flex>
+            }
             leftSection={<ScalableIcon icon={IconInfoCircle} size={20} />}
             onClick={() => {
               navigate({

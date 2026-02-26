@@ -10,16 +10,16 @@ import {
   TextInput,
   useCombobox,
 } from '@mantine/core'
+import type { ProviderModelInfo } from '@shared/types'
 import { IconSearch } from '@tabler/icons-react'
 import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import { cloneElement, forwardRef, isValidElement, type MouseEvent, type ReactElement, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ProviderModelInfo } from 'src/shared/types'
 import { useProviders } from '@/hooks/useProviders'
 import { navigateToSettings } from '@/modals/Settings'
 import { collapsedProvidersAtom } from '@/stores/atoms/uiAtoms'
-import { ScalableIcon } from '../ScalableIcon'
+import { ScalableIcon } from '../common/ScalableIcon'
 import { ProviderHeader } from './ProviderHeader'
 import { groupFavoriteModels, ModelItem, SELECTED_BG_CLASS } from './shared'
 
@@ -290,8 +290,8 @@ export const DesktopModelSelector = forwardRef<HTMLDivElement, DesktopModelSelec
                         return (
                           <ModelItem
                             key={`${fm.provider.id}/${fm.model.modelId}`}
-                            showIcon={true}
                             providerId={fm.provider.id}
+                            providerName={fm.provider.name}
                             model={fm.model}
                             isFavorited={true}
                             isSelected={selectedProviderId === fm.provider.id && selectedModelId === fm.model.modelId}

@@ -1,15 +1,15 @@
-import { Alert, Button, Flex, Menu, Paper, Progress, Select, Stack, Text, Title, UnstyledButton } from '@mantine/core'
+import { Alert, Button, Flex, Menu, Paper, Select, Stack, Text, Title, UnstyledButton } from '@mantine/core'
 import { IconArrowRight, IconDots, IconExclamationCircle, IconExternalLink, IconLogout } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { forwardRef, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { trackingEvent } from '@/packages/event'
 import { getLicenseDetailRealtime, getUserProfile, listLicensesByUser } from '@/packages/remote'
 import platform from '@/platform'
 import * as premiumActions from '@/stores/premiumActions'
 import { settingsStore, useSettingsStore } from '@/stores/settingsStore'
-import { formatUsage } from '@/utils/format'
+import { LicenseDetailCard } from './LicenseDetailCard'
 
 interface LoggedInViewProps {
   onLogout: () => void
@@ -51,9 +51,9 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
     })
 
     const {
-      data: licenseDetail,
+      data: licenseDetailResponse,
       isLoading: loadingLicenseDetail,
-      error: licenseDetailError,
+      error: queryError,
     } = useQuery({
       queryKey: ['licenseDetail', selectedLicenseKey],
       queryFn: () => getLicenseDetailRealtime({ licenseKey: selectedLicenseKey! }),
@@ -63,6 +63,11 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
       refetchOnWindowFocus: true,
       placeholderData: (previousData) => previousData, // 使用之前的数据作为占位符
     })
+
+    const licenseDetail = licenseDetailResponse?.data
+    // 合并两种错误来源：1) API 返回 200 但带有 error 字段  2) API 返回 4xx/5xx 被 ofetch 抛出
+    const licenseDetailError =
+      licenseDetailResponse?.error || (queryError as any)?.data?.error || (queryError as any)?.error
 
     // 自动激活逻辑
     useEffect(() => {
@@ -399,12 +404,21 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
               {!activationError && !loadingLicenseDetail && licenseDetailError && (
                 <Stack gap="sm">
                   <Text fw={600} c="chatbox-error">
-                    {(licenseDetailError as any)?.error?.title || t('Failed to load license details')}
-                  </Text>
-                  <Text size="sm" c="chatbox-error">
-                    {(licenseDetailError as any)?.error?.detail ||
-                      (licenseDetailError as any)?.message ||
-                      t('Unable to fetch license information. Please try again later.')}
+                    {(() => {
+                      switch (licenseDetailError.code) {
+                        case 'not_found':
+                          return t('License not found, please check your license key')
+                        case 'expired':
+                        case 'expired_license':
+                          return t('License expired, please check your license key')
+                        case 'reached_activation_limit':
+                          return t('This license key has reached the activation limit.')
+                        case 'quota_exceeded':
+                          return t('You have no more Chatbox AI quota left this month.')
+                        default:
+                          return t('Failed to load license details')
+                      }
+                    })()}
                   </Text>
                   <Button size="xs" variant="outline" onClick={() => window.location.reload()}>
                     {t('Retry')}
@@ -414,90 +428,11 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
 
               {/* License Detail Content */}
               {!activationError && !loadingLicenseDetail && !licenseDetailError && licenseDetail && (
-                <Stack gap="lg">
-                  {/* Chatbox AI Quota & Expansion Pack Quota & Image Quota */}
-                  {(
-                    [
-                      [
-                        t('Chatbox AI Quota'),
-                        licenseDetail.remaining_quota_unified * 100,
-                        formatUsage(
-                          (licenseDetail.unified_token_limit || 0) - (licenseDetail.unified_token_usage || 0),
-                          licenseDetail.unified_token_limit || 0,
-                          2
-                        ),
-                      ],
-                      ...(licenseDetail.expansion_pack_limit
-                        ? [
-                            [
-                              t('Expansion Pack Quota'),
-                              ((licenseDetail.expansion_pack_limit - (licenseDetail.expansion_pack_usage || 0)) /
-                                licenseDetail.expansion_pack_limit) *
-                                100,
-                              formatUsage(
-                                licenseDetail.expansion_pack_limit - (licenseDetail.expansion_pack_usage || 0),
-                                licenseDetail.expansion_pack_limit,
-                                2
-                              ),
-                            ],
-                          ]
-                        : []),
-                      [
-                        t('Chatbox AI Image Quota'),
-                        licenseDetail.image_total_quota > 0
-                          ? ((licenseDetail.image_total_quota - licenseDetail.image_used_count) /
-                              licenseDetail.image_total_quota) *
-                            100
-                          : 0,
-                        `${licenseDetail.image_total_quota - licenseDetail.image_used_count}/${
-                          licenseDetail.image_total_quota
-                        }`,
-                      ],
-                    ] as const
-                  ).map(([key, val, text]) => (
-                    <Stack key={key} gap="xxs">
-                      <Flex align="center" justify="space-between">
-                        <Text>{key}</Text>
-                        <Text c="chatbox-brand" fw="600">
-                          {text}
-                        </Text>
-                      </Flex>
-                      <Progress value={Number(val)} />
-                    </Stack>
-                  ))}
-
-                  {/* Quota Reset & License Expiry */}
-                  <Flex gap="lg">
-                    {[
-                      [t('Quota Reset'), new Date(licenseDetail.token_next_refresh_time!).toLocaleDateString()],
-                      [
-                        t('License Expiry'),
-                        licenseDetail.token_expire_time
-                          ? new Date(licenseDetail.token_expire_time).toLocaleDateString()
-                          : '',
-                      ],
-                    ].map(([key, val]) => (
-                      <Stack key={key} flex={1} gap="xxs">
-                        <Text size="xs" c="dimmed">
-                          {key}
-                        </Text>
-                        <Text size="md" fw="600">
-                          {val}
-                        </Text>
-                      </Stack>
-                    ))}
-                  </Flex>
-
-                  {/* License Plan Overview */}
-                  <Stack flex={1} gap="xxs">
-                    <Text size="xs" c="dimmed">
-                      {t('License Plan Overview')}
-                    </Text>
-                    <Text size="md" fw="600">
-                      {licenseDetail.name}
-                    </Text>
-                  </Stack>
-                </Stack>
+                <LicenseDetailCard
+                  licenseDetail={licenseDetail}
+                  language={language}
+                  utmContent="provider_cb_login_quota_details"
+                />
               )}
 
               {/* No licenses found */}
@@ -523,7 +458,7 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
                 </Text>
 
                 <a
-                  href={`https://chatboxai.app/redirect_app/manage_license/${language}/`}
+                  href={`https://chatboxai.app/redirect_app/manage_license/${language}/?utm_source=app&utm_content=provider_cb_login_activate_error`}
                   target="_blank"
                   className="ml-auto flex flex-row items-center gap-xxs"
                 >
@@ -549,7 +484,7 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
                   <Text>{t('You have no more Chatbox AI quota left this month.')}</Text>
 
                   <a
-                    href={`https://chatboxai.app/redirect_app/manage_license/${language}/`}
+                    href={`https://chatboxai.app/redirect_app/manage_license/${language}/?utm_source=app&utm_content=provider_cb_login_no_quota`}
                     target="_blank"
                     className="ml-auto flex flex-row items-center gap-xxs"
                   >
@@ -566,7 +501,9 @@ export const LoggedInView = forwardRef<HTMLDivElement, LoggedInViewProps>(
           <Button
             variant="outline"
             onClick={() => {
-              platform.openLink('https://chatboxai.app/redirect_app/view_more_plans')
+              platform.openLink(
+                'https://chatboxai.app/redirect_app/view_more_plans?utm_source=app&utm_content=provider_cb_login_more_plans'
+              )
               trackingEvent('click_view_more_plans_button', { event_category: 'user' })
             }}
           >
