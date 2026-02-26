@@ -522,4 +522,11 @@ describe('chatbox deep prune', () => {
     expect(source).toMatch(/store-blobs/)
     expect(source).not.toMatch(/const filename = path\.resolve\(app\.getPath\('userData'\), 'chatbox-blobs', sanitizeFilename\(key\)\)/)
   })
+
+  it('removes legacy release-origin comments and chatbox-ai api wording from sources', () => {
+    const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    const imageGenerationSource = readFileSync(new URL('../../../shared/types/image-generation.ts', import.meta.url), 'utf8')
+    expect(remoteSource).not.toMatch(/\bRELEASE_ORIGIN\b/)
+    expect(imageGenerationSource).not.toMatch(/ChatboxAI API error code/)
+  })
 })

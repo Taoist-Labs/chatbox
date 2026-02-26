@@ -24,7 +24,7 @@ export const ImageGenerationSchema = z.object({
   status: ImageGenerationStatusSchema,
   parentIds: z.array(z.string()).optional(), // for tracking iteration DAG (multiple parents possible)
   error: z.string().optional(),
-  errorCode: z.number().optional(), // ChatboxAI API error code
+  errorCode: z.number().optional(), // Remote API error code
 })
 export type ImageGeneration = z.infer<typeof ImageGenerationSchema>
 

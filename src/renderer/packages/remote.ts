@@ -127,7 +127,6 @@ export async function checkNeedUpdate(version: string, os: string, config: Confi
   type Response = {
     need_update?: boolean
   }
-  // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/chatbox_need_update/${version}`, {
   const res = await ofetch<Response>(`${getAPIOrigin()}/chatbox_need_update/${version}`, {
     method: 'POST',
     retry: 3,
@@ -144,7 +143,6 @@ export async function checkNeedUpdate(version: string, os: string, config: Confi
 //     type Response = {
 //         data: null | SponsorAd
 //     }
-//     // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/sponsor_ad`, {
 //     const res = await ofetch<Response>(`${API_ORIGIN}/sponsor_ad`, {
 //         retry: 3,
 //     })
@@ -155,7 +153,6 @@ export async function checkNeedUpdate(version: string, os: string, config: Confi
 //     type Response = {
 //         data: SponsorAboutBanner[]
 //     }
-//     // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/sponsor_about_banner`, {
 //     const res = await ofetch<Response>(`${API_ORIGIN}/sponsor_ad`, {
 //         retry: 3,
 //     })
