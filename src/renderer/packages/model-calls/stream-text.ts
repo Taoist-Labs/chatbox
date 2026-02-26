@@ -1,5 +1,5 @@
 import { getModel } from '@shared/models'
-import { ChatboxAIAPIError, OCRError } from '@shared/models/errors'
+import { RemoteAPIError, OCRError } from '@shared/models/errors'
 import { sequenceMessages } from '@shared/utils/message'
 import { getModelSettings } from '@shared/utils/model_settings'
 import type { ModelMessage, ToolSet } from 'ai'
@@ -93,7 +93,7 @@ async function ocrMessages(messages: Message[]) {
   const hasUserOcrModel = settings.ocrModel?.provider && settings.ocrModel?.model
 
   if (!hasUserOcrModel) {
-    throw ChatboxAIAPIError.fromCodeName('model_not_support_image_2', 'model_not_support_image_2')
+    throw RemoteAPIError.fromCodeName('model_not_support_image_2', 'model_not_support_image_2')
   }
 
   const ocrProviderName = settings.ocrModel!.provider

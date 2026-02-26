@@ -1,5 +1,5 @@
 import { Button, Flex, Paper, Text } from '@mantine/core'
-import { ChatboxAIAPIError } from '@shared/models/errors'
+import { RemoteAPIError } from '@shared/models/errors'
 import type { ImageGeneration } from '@shared/types'
 import { IconRefresh, IconX } from '@tabler/icons-react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -17,7 +17,7 @@ export interface ImageGenerationErrorTipsProps {
 export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageGenerationErrorTipsProps) {
   const { t } = useTranslation()
 
-  const chatboxAIErrorDetail = record.errorCode ? ChatboxAIAPIError.getDetail(record.errorCode) : null
+  const chatboxAIErrorDetail = record.errorCode ? RemoteAPIError.getDetail(record.errorCode) : null
   const showDetailedError = !chatboxAIErrorDetail
 
   return (

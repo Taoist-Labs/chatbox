@@ -29,7 +29,7 @@ import type {
   StreamTextResult,
 } from '../types'
 import type { ModelDependencies } from '../types/adapters'
-import { ApiError, ChatboxAIAPIError } from './errors'
+import { ApiError, RemoteAPIError } from './errors'
 import type { CallChatCompletionOptions, ModelInterface } from './types'
 
 const RETRY_CONFIG = {
@@ -127,7 +127,7 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
     try {
       return await this._callChatCompletion(messages, options)
     } catch (e) {
-      if (e instanceof ChatboxAIAPIError) {
+      if (e instanceof RemoteAPIError) {
         throw e
       }
       // 如果当前模型不支持图片输入，抛出对应的错误
@@ -135,7 +135,7 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
         e instanceof ApiError &&
         e.message.includes('Invalid content type. image_url is only supported by certain models.')
       ) {
-        throw ChatboxAIAPIError.fromCodeName('model_not_support_image', 'model_not_support_image_2')
+        throw RemoteAPIError.fromCodeName('model_not_support_image', 'model_not_support_image_2')
       }
 
       // 添加请求信息到 Sentry
@@ -433,7 +433,7 @@ export default abstract class AbstractAISDKModel implements ModelInterface {
     if (error instanceof ApiError) {
       throw error
     }
-    if (error instanceof ChatboxAIAPIError) {
+    if (error instanceof RemoteAPIError) {
       throw error
     }
     throw new ApiError(`Error from ${this.name}${context}: ${error}`)

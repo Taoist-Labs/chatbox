@@ -1,5 +1,5 @@
 import { getModel } from '@shared/models'
-import { AIProviderNoImplementedPaintError, ChatboxAIAPIError } from '@shared/models/errors'
+import { AIProviderNoImplementedPaintError, RemoteAPIError } from '@shared/models/errors'
 import type { ImageGeneration, ImageGenerationModel } from '@shared/types'
 import { createModelDependencies } from '@/adapters'
 import { getLogger } from '@/lib/utils'
@@ -132,7 +132,7 @@ async function generateImages(recordId: string, params: GenerateImageParams): Pr
     const error = !(err instanceof Error) ? new Error(`${err}`) : err
     log.error('Image generation failed:', error)
 
-    const errorCode = err instanceof ChatboxAIAPIError ? err.code : undefined
+    const errorCode = err instanceof RemoteAPIError ? err.code : undefined
     const updatedRecord = await updateRecord(recordId, {
       status: 'error',
       error: error.message,

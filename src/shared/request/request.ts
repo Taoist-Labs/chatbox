@@ -1,4 +1,4 @@
-import { ApiError, BaseError, ChatboxAIAPIError, NetworkError } from '../models/errors'
+import { ApiError, BaseError, RemoteAPIError, NetworkError } from '../models/errors'
 import { parseJsonOrEmpty } from '../utils/json_utils'
 import { isChatboxAPI } from './chatboxai_pool'
 
@@ -40,9 +40,9 @@ export function createAfetch(platformInfo: PlatformInfo) {
           const response = await res.text().catch((e) => '')
           if (options.parseChatboxRemoteError) {
             const errorCodeName = parseJsonOrEmpty(response)?.error?.code
-            const chatboxAIError = ChatboxAIAPIError.fromCodeName(response, errorCodeName)
-            if (chatboxAIError) {
-              throw chatboxAIError
+            const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
+            if (remoteAPIError) {
+              throw remoteAPIError
             }
           }
           throw new ApiError(`Status Code ${res.status}, ${response}`)
@@ -206,9 +206,9 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
             const response = await retryRes.text().catch(() => '')
             if (options.parseChatboxRemoteError) {
               const errorCodeName = parseJsonOrEmpty(response)?.error?.code
-              const chatboxAIError = ChatboxAIAPIError.fromCodeName(response, errorCodeName)
-              if (chatboxAIError) {
-                throw chatboxAIError
+              const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
+              if (remoteAPIError) {
+                throw remoteAPIError
               }
             }
             throw new ApiError(`Status Code ${retryRes.status}, ${response}`)
@@ -222,9 +222,9 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
           const response = await res.text().catch(() => '')
           if (options.parseChatboxRemoteError) {
             const errorCodeName = parseJsonOrEmpty(response)?.error?.code
-            const chatboxAIError = ChatboxAIAPIError.fromCodeName(response, errorCodeName)
-            if (chatboxAIError) {
-              throw chatboxAIError
+            const remoteAPIError = RemoteAPIError.fromCodeName(response, errorCodeName)
+            if (remoteAPIError) {
+              throw remoteAPIError
             }
           }
           throw new ApiError(`Status Code ${res.status}, ${response}`)

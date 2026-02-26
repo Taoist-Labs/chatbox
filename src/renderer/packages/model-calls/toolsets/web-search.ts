@@ -1,4 +1,4 @@
-import { ChatboxAIAPIError } from '@shared/models/errors'
+import { RemoteAPIError } from '@shared/models/errors'
 import { tool } from 'ai'
 import z from 'zod'
 import * as localParser from '@/packages/local-parser'

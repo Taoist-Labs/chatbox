@@ -2,7 +2,7 @@ import { cachified } from '@epic-web/cachified'
 import type { SearchResultItem } from '@shared/types'
 import { truncate } from 'lodash'
 import { getExtensionSettings, getLanguage } from '@/stores/settingActions'
-import { ChatboxAIAPIError } from '../../../shared/models/errors'
+import { RemoteAPIError } from '../../../shared/models/errors'
 import type WebSearch from './base'
 import { BingSearch } from './bing'
 import { BingNewsSearch } from './bing-news'
@@ -28,7 +28,7 @@ function getSearchProviders() {
       break
     case 'tavily':
       if (!settings.webSearch.tavilyApiKey) {
-        throw ChatboxAIAPIError.fromCodeName('tavily_api_key_required', 'tavily_api_key_required')
+        throw RemoteAPIError.fromCodeName('tavily_api_key_required', 'tavily_api_key_required')
       }
       selectedProviders.push(
         new TavilySearch(

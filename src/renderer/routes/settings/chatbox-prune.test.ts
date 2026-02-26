@@ -259,6 +259,7 @@ describe('chatbox deep prune', () => {
   it('removes chatbox api error mapping dependency from kb file loader source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxAIAPIError/)
+    expect(source).not.toMatch(/RemoteAPIError/)
     expect(source).not.toMatch(/codeNameMap/)
   })
 
@@ -396,5 +397,16 @@ describe('chatbox deep prune', () => {
   it('removes chatbox domain defaults from shared api pool source', () => {
     const source = readFileSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
+  })
+
+  it('removes chatbox api error class usage from shared request source', () => {
+    const source = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ChatboxAIAPIError/)
+  })
+
+  it('removes chatbox api error class declaration from shared errors source', () => {
+    const source = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/class ChatboxAIAPIError/)
+    expect(source).not.toMatch(/interface ChatboxAIAPIErrorDetail/)
   })
 })

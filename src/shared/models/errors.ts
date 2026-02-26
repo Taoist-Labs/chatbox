@@ -55,8 +55,8 @@ export class OCRError extends BaseError {
 // Chatbox AI 服务错误
 // 注意，在开发时 i18nKey 中的标签和参数，都需要在 MessageErrTips 中定义
 // NOTE： 这个文件不会被 translate script 扫描到，为了能提取 key，把这里新增的 key 去 `src/renderer/i18n/for-key-scan.ts` 也添加一份
-export class ChatboxAIAPIError extends BaseError {
-  static codeNameMap: { [codename: string]: ChatboxAIAPIErrorDetail } = {
+export class RemoteAPIError extends BaseError {
+  static codeNameMap: { [codename: string]: RemoteAPIErrorDetail } = {
     // 超出配额
     token_quota_exhausted: {
       name: 'token_quota_exhausted',
@@ -280,8 +280,8 @@ export class ChatboxAIAPIError extends BaseError {
     if (!codeName) {
       return null
     }
-    if (ChatboxAIAPIError.codeNameMap[codeName]) {
-      return new ChatboxAIAPIError(response, ChatboxAIAPIError.codeNameMap[codeName])
+    if (RemoteAPIError.codeNameMap[codeName]) {
+      return new RemoteAPIError(response, RemoteAPIError.codeNameMap[codeName])
     }
     return null
   }
@@ -289,23 +289,23 @@ export class ChatboxAIAPIError extends BaseError {
     if (!code) {
       return null
     }
-    for (const name in ChatboxAIAPIError.codeNameMap) {
-      if (ChatboxAIAPIError.codeNameMap[name].code === code) {
-        return ChatboxAIAPIError.codeNameMap[name]
+    for (const name in RemoteAPIError.codeNameMap) {
+      if (RemoteAPIError.codeNameMap[name].code === code) {
+        return RemoteAPIError.codeNameMap[name]
       }
     }
     return null
   }
 
-  public detail: ChatboxAIAPIErrorDetail
-  constructor(message: string, detail: ChatboxAIAPIErrorDetail) {
+  public detail: RemoteAPIErrorDetail
+  constructor(message: string, detail: RemoteAPIErrorDetail) {
     super(message)
     this.detail = detail
     this.code = detail.code
   }
 }
 
-interface ChatboxAIAPIErrorDetail {
+interface RemoteAPIErrorDetail {
   name: string
   code: number
   i18nKey: string

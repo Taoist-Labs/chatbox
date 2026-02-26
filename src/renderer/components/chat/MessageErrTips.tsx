@@ -2,7 +2,7 @@ import { ActionIcon, Collapse, Flex, Tooltip } from '@mantine/core'
 import { Link } from '@mui/material'
 import Alert from '@mui/material/Alert'
 import { aiProviderNameHash } from '@shared/models'
-import { ChatboxAIAPIError } from '@shared/models/errors'
+import { RemoteAPIError } from '@shared/models/errors'
 import type { Message } from '@shared/types'
 import { IconCheck, IconChevronDown, IconChevronUp, IconCopy } from '@tabler/icons-react'
 import type React from 'react'
@@ -158,13 +158,13 @@ export default function MessageErrTips(props: { msg: Message }) {
         ]}
       />
     )
-  } else if (msg.errorCode && ChatboxAIAPIError.getDetail(msg.errorCode)) {
-    const chatboxAIErrorDetail = ChatboxAIAPIError.getDetail(msg.errorCode)
-    if (chatboxAIErrorDetail) {
+  } else if (msg.errorCode && RemoteAPIError.getDetail(msg.errorCode)) {
+    const remoteAPIErrorDetail = RemoteAPIError.getDetail(msg.errorCode)
+    if (remoteAPIErrorDetail) {
       onlyShowTips = true
       tips.push(
         <Trans
-          i18nKey={chatboxAIErrorDetail.i18nKey}
+          i18nKey={remoteAPIErrorDetail.i18nKey}
           values={{
             model: msg.model,
             supported_web_browsing_models: 'gemini-2.0-flash(API), perplexity API',

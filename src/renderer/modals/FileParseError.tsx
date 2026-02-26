@@ -1,6 +1,6 @@
 import NiceModal, { useModal } from '@ebay/nice-modal-react'
 import { Alert, Stack, Text } from '@mantine/core'
-import { ChatboxAIAPIError } from '@shared/models/errors'
+import { RemoteAPIError } from '@shared/models/errors'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { Trans, useTranslation } from 'react-i18next'
 import { AdaptiveModal } from '@/components/common/AdaptiveModal'
@@ -25,7 +25,7 @@ const FileParseError = NiceModal.create(({ errorCode, fileName }: FileParseError
   }
 
   // 根据错误码获取错误详情
-  const errorDetail = ChatboxAIAPIError.codeNameMap[errorCode]
+  const errorDetail = RemoteAPIError.codeNameMap[errorCode]
 
   // 错误提示内容
   const renderErrorTips = () => {

@@ -1,6 +1,6 @@
 import NiceModal from '@ebay/nice-modal-react'
 import { Tooltip, Typography } from '@mui/material'
-import { ChatboxAIAPIError } from '@shared/models/errors'
+import { RemoteAPIError } from '@shared/models/errors'
 import { AlertCircle, CheckCircle, Eye, Link, Link2, Loader2, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import MiniButton from '../common/MiniButton'
@@ -10,7 +10,7 @@ import { ImageInStorage } from '../Image'
 // 根据错误码获取翻译后的错误消息
 function getTranslatedErrorMessage(errorCode: string | undefined, t: (key: string) => string): string | undefined {
   if (!errorCode) return undefined
-  const errorDetail = ChatboxAIAPIError.codeNameMap[errorCode]
+  const errorDetail = RemoteAPIError.codeNameMap[errorCode]
   if (errorDetail) {
     // 使用 i18nKey 进行翻译，去掉其中的 HTML 标签以便在 Tooltip 中显示纯文本
     const translated = t(errorDetail.i18nKey)

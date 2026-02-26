@@ -4,7 +4,7 @@ import {
   AIProviderNoImplementedPaintError,
   ApiError,
   BaseError,
-  ChatboxAIAPIError,
+  RemoteAPIError,
   NetworkError,
 } from '@shared/models/errors'
 import { createMessage, type Message } from '@shared/types'
@@ -174,7 +174,7 @@ export async function submitNewUserMessage(
     const dependencies = await createModelDependencies()
     const model = getModel(settings, globalSettings, { uuid: '' }, dependencies)
     if (webBrowsing && platform.type === 'web' && !model.isSupportToolUse()) {
-      throw ChatboxAIAPIError.fromCodeName('model_not_support_web_browsing_2', 'model_not_support_web_browsing_2')
+      throw RemoteAPIError.fromCodeName('model_not_support_web_browsing_2', 'model_not_support_web_browsing_2')
     }
 
     // Files and links are now preprocessed in InputBox with storage keys, so no need to process them here
