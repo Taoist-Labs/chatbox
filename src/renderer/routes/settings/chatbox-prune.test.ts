@@ -441,4 +441,16 @@ describe('chatbox deep prune', () => {
   it('removes orphaned chatbox-specific provider model file', () => {
     expect(existsSync(new URL('../../../shared/providers/definitions/models/chatboxai.ts', import.meta.url))).toBe(false)
   })
+
+  it('removes chatbox license detail type naming from shared settings source', () => {
+    const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ChatboxAILicenseDetailSchema/)
+    expect(source).not.toMatch(/export type ChatboxAILicenseDetail/)
+  })
+
+  it('removes chatbox license detail type usage from remote api source', () => {
+    const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/type ChatboxAILicenseDetail/)
+    expect(source).not.toMatch(/ChatboxAILicenseDetail \| null/)
+  })
 })

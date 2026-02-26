@@ -141,7 +141,7 @@ const UnifiedTokenUsageDetailSchema = z.object({
   token_limit: z.number(),
 })
 
-const ChatboxAILicenseDetailSchema = z.object({
+const RemoteLicenseDetailSchema = z.object({
   type: z.enum(['chatboxai-3.5', 'chatboxai-4']).optional(),
   name: z.string(),
   status: z.string().optional(),
@@ -310,10 +310,10 @@ export const SettingsSchema = GlobalSessionSettingsSchema.extend({
     .optional()
     .catch(undefined),
 
-  // chatboxai
+  // license settings
   licenseKey: z.string().optional(),
   licenseInstances: z.record(z.string(), z.string()).optional().catch(undefined),
-  licenseDetail: ChatboxAILicenseDetailSchema.optional().catch(undefined),
+  licenseDetail: RemoteLicenseDetailSchema.optional().catch(undefined),
   licenseActivationMethod: z.enum(['login', 'manual']).optional(),
   lastSelectedLicenseByUser: z.record(z.string(), z.string()).optional().catch(undefined),
   // 在 licensekeyview UI中显示/记忆的key，以免用户使用 login 方式后老 key 被清除，他也不记得
@@ -399,7 +399,7 @@ export type OpenAIParams = z.infer<typeof OpenAIParamsSchema>
 export type GoogleParams = z.infer<typeof GoogleParamsSchema>
 export type ProviderOptions = z.infer<typeof ProviderOptionsSchema>
 export type GlobalSessionSettings = z.infer<typeof GlobalSessionSettingsSchema>
-export type ChatboxAILicenseDetail = z.infer<typeof ChatboxAILicenseDetailSchema>
+export type RemoteLicenseDetail = z.infer<typeof RemoteLicenseDetailSchema>
 export type UnifiedTokenUsageDetail = z.infer<typeof UnifiedTokenUsageDetailSchema>
 export type ShortcutSendValue = z.infer<typeof ShortcutSendValueSchema>
 export type ShortcutToggleWindowValue = z.infer<typeof ShortcutToggleWindowValueSchema>

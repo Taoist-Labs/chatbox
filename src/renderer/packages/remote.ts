@@ -8,7 +8,7 @@ import * as cache from 'src/shared/utils/cache'
 import * as chatboxaiAPI from '../../shared/request/remote_api_pool'
 import { createAfetch, createAuthenticatedAfetch, uploadFile } from '../../shared/request/request'
 import {
-  type ChatboxAILicenseDetail,
+  type RemoteLicenseDetail,
   type Config,
   type CopilotDetail,
   type ModelProvider,
@@ -228,7 +228,7 @@ export async function getDialogConfig(params: { uuid: string; language: string; 
 
 export async function getLicenseDetail(params: { licenseKey: string }) {
   type Response = {
-    data: ChatboxAILicenseDetail | null
+    data: RemoteLicenseDetail | null
   }
   const res = await ofetch<Response>(`${getAPIOrigin()}/api/license/detail`, {
     retry: 3,
@@ -248,13 +248,13 @@ export interface LicenseDetailError {
 }
 
 export interface LicenseDetailResponse {
-  data: ChatboxAILicenseDetail | null
+  data: RemoteLicenseDetail | null
   error?: LicenseDetailError
 }
 
 export async function getLicenseDetailRealtime(params: { licenseKey: string }): Promise<LicenseDetailResponse> {
   type Response = {
-    data: ChatboxAILicenseDetail | null
+    data: RemoteLicenseDetail | null
     error?: LicenseDetailError
   }
   // 用于捕获错误响应体
