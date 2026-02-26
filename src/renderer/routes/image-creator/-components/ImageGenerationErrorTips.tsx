@@ -17,8 +17,8 @@ export interface ImageGenerationErrorTipsProps {
 export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageGenerationErrorTipsProps) {
   const { t } = useTranslation()
 
-  const chatboxAIErrorDetail = record.errorCode ? RemoteAPIError.getDetail(record.errorCode) : null
-  const showDetailedError = !chatboxAIErrorDetail
+  const remoteErrorDetail = record.errorCode ? RemoteAPIError.getDetail(record.errorCode) : null
+  const showDetailedError = !remoteErrorDetail
 
   return (
     <Paper
@@ -35,10 +35,10 @@ export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageG
           {t('Generation Failed')}
         </Text>
 
-        {chatboxAIErrorDetail ? (
+        {remoteErrorDetail ? (
           <Text size="sm" c="dimmed" ta="center" maw={400}>
             <Trans
-              i18nKey={chatboxAIErrorDetail.i18nKey}
+              i18nKey={remoteErrorDetail.i18nKey}
               values={{
                 model: record.model.modelId,
               }}
@@ -76,7 +76,7 @@ export function ImageGenerationErrorTips({ record, onRetry, isRetrying }: ImageG
           </Text>
         )}
 
-        {showDetailedError && record.error && chatboxAIErrorDetail && (
+        {showDetailedError && record.error && remoteErrorDetail && (
           <Text size="xs" c="dimmed" ta="center" className="whitespace-pre-wrap opacity-60" maw={400}>
             {record.error}
           </Text>

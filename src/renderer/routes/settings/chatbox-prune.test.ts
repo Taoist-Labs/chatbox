@@ -492,4 +492,11 @@ describe('chatbox deep prune', () => {
       expect(source).not.toMatch(/\bCHATBOX_BUILD_PLATFORM\b/)
     }
   })
+
+  it('removes chatboxAI-named local identifiers from renderer and defaults source', () => {
+    const errorTipsSource = readFileSync(new URL('../../routes/image-creator/-components/ImageGenerationErrorTips.tsx', import.meta.url), 'utf8')
+    const defaultsSource = readFileSync(new URL('../../../shared/defaults.ts', import.meta.url), 'utf8')
+    expect(errorTipsSource).not.toMatch(/\bchatboxAIErrorDetail\b/)
+    expect(defaultsSource).not.toMatch(/\bchatboxAIModel\b/)
+  })
 })
