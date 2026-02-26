@@ -592,4 +592,19 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_image_creator/)
   })
+
+  it('removes chatbox analytics domain residue from renderer index templates', () => {
+    const desktopSource = readFileSync(new URL('../../index.ejs', import.meta.url), 'utf8')
+    const desktopDevSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
+    const webSource = readFileSync(new URL('../../index.web.ejs', import.meta.url), 'utf8')
+
+    expect(desktopSource).not.toMatch(/app\.chatboxai\.app/)
+    expect(desktopSource).not.toMatch(/plausible\.midway\.run/)
+
+    expect(desktopDevSource).not.toMatch(/app\.chatboxai\.app/)
+    expect(desktopDevSource).not.toMatch(/plausible\.midway\.run/)
+
+    expect(webSource).not.toMatch(/web\.chatboxai\.app/)
+    expect(webSource).not.toMatch(/plausible\.midway\.run/)
+  })
 })
