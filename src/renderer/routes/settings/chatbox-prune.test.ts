@@ -607,4 +607,9 @@ describe('chatbox deep prune', () => {
     expect(webSource).not.toMatch(/web\.chatboxai\.app/)
     expect(webSource).not.toMatch(/plausible\.midway\.run/)
   })
+
+  it('removes chatbox docs domain residue from provider settings source', () => {
+    const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/docs\.chatboxai\.app/)
+  })
 })
