@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import { Button, Flex, Image, Indicator, ScrollArea, Stack, Text } from '@mantine/core'
-import type { ProviderBaseInfo } from '@shared/types'
+import { ModelProviderEnum, type ProviderBaseInfo } from '@shared/types'
 import { IconChevronRight, IconFileImport, IconPlus } from '@tabler/icons-react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
@@ -62,7 +62,13 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
           {providers.map((provider) => (
             <Link
               key={provider.id}
-              to={provider.id === 'chatbox-ai' ? `/settings/provider/chatbox-ai` : `/settings/provider/$providerId`}
+              to={
+                provider.id === ModelProviderEnum.ChatboxAI
+                  ? '/settings/provider/chatbox-ai'
+                  : provider.id === ModelProviderEnum.Wanjie
+                    ? '/settings/provider/wanjie'
+                    : '/settings/provider/$providerId'
+              }
               params={{ providerId: provider.id }}
               className={'block no-underline'}
             >

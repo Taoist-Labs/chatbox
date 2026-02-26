@@ -298,9 +298,7 @@ export async function streamText(
     }
     if (webBrowsing) {
       tools.web_search = webSearchTool
-      if (settingActions.isPro()) {
-        tools.parse_link = parseLinkTool
-      }
+      tools.parse_link = parseLinkTool
     }
     if (kbToolSet) {
       tools = {

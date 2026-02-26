@@ -178,3 +178,5 @@ electron-builder.env
 
 .env.sentry-build-plugin
 .sisyphus/
+android
+ios

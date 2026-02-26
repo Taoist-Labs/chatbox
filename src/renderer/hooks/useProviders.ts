@@ -10,8 +10,8 @@ export const useProviders = () => {
   const providerSettingsMap = settings.providers
 
   const allProviderBaseInfos = useMemo(
-    () => [...SystemProviders(), ...(settings.customProviders || [])],
-    [settings.customProviders]
+    () => SystemProviders().filter((provider) => provider.id === ModelProviderEnum.Wanjie),
+    []
   )
   const providers = useMemo(
     () =>
