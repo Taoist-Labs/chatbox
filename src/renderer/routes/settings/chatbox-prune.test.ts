@@ -296,4 +296,19 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/setting_chatboxai_first:/)
   })
+
+  it('removes chatbox provider default web browsing branch from input box source', () => {
+    const source = readFileSync(new URL('../../components/InputBox/InputBox.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/model\?\.provider === ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes chatbox provider default web browsing branch from generation source', () => {
+    const source = readFileSync(new URL('../../stores/session/generation.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/return provider === ModelProviderEnum\.ChatboxAI/)
+  })
+
+  it('removes chatbox provider default web browsing branch from session messages source', () => {
+    const source = readFileSync(new URL('../../stores/session/messages.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/return provider === ModelProviderEnum\.ChatboxAI/)
+  })
 })

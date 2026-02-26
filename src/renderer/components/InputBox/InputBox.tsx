@@ -78,7 +78,6 @@ import { trackEvent } from '@/utils/track'
 import {
   type KnowledgeBase,
   type Message,
-  ModelProviderEnum,
   type SessionType,
   type ShortcutSendValue,
 } from '../../../shared/types'
@@ -167,15 +166,14 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
     const sessionWebBrowsingMap = useUIStore((s) => s.sessionWebBrowsingMap)
     const setSessionWebBrowsing = useUIStore((s) => s.setSessionWebBrowsing)
     const updateCurrentWebBrowsingDisplay = useUIStore((s) => s.updateCurrentWebBrowsingDisplay)
-    // Get session-specific value, or use default based on provider (ChatboxAI defaults to true)
+    // Get session-specific value, default to false when session has no explicit setting
     const webBrowsingMode = useMemo(() => {
       const sessionValue = sessionWebBrowsingMap[currentSessionId || 'new']
       if (sessionValue !== undefined) {
         return sessionValue
       }
-      // Default: true for ChatboxAI, false for others
-      return model?.provider === ModelProviderEnum.ChatboxAI
-    }, [sessionWebBrowsingMap, currentSessionId, model?.provider])
+      return false
+    }, [sessionWebBrowsingMap, currentSessionId])
 
     // this is used for keyboard shortcut. if we don't provide this, kbd wont know what to set when it's a new session(it doesnt have provider info)
     useEffect(() => {

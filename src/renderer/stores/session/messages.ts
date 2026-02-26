@@ -7,7 +7,7 @@ import {
   ChatboxAIAPIError,
   NetworkError,
 } from '@shared/models/errors'
-import { createMessage, type Message, ModelProviderEnum } from '@shared/types'
+import { createMessage, type Message } from '@shared/types'
 import { countMessageWords } from '@shared/utils/message'
 import { createModelDependencies } from '@/adapters'
 import { runCompactionWithUIState } from '@/packages/context-management'
@@ -21,15 +21,14 @@ import { uiStore } from '../uiStore'
 
 /**
  * Get session-level web browsing setting
- * Returns user's explicit setting if set, otherwise returns default based on provider
+ * Returns user's explicit setting if set, otherwise returns false
  */
-function getSessionWebBrowsing(sessionId: string, provider: string | undefined): boolean {
+function getSessionWebBrowsing(sessionId: string): boolean {
   const sessionValue = uiStore.getState().sessionWebBrowsingMap[sessionId]
   if (sessionValue !== undefined) {
     return sessionValue
   }
-  // Default: true for ChatboxAI, false for others
-  return provider === ModelProviderEnum.ChatboxAI
+  return false
 }
 
 /**
@@ -136,7 +135,7 @@ export async function submitNewUserMessage(
   params.onUserMessageReady?.()
 
   const { newUserMsg, needGenerating } = params
-  const webBrowsing = getSessionWebBrowsing(sessionId, settings.provider)
+  const webBrowsing = getSessionWebBrowsing(sessionId)
 
   // 先在聊天列表中插入发送的用户消息
   await insertMessage(sessionId, newUserMsg)

@@ -8,7 +8,6 @@ import {
   type Message,
   type MessageImagePart,
   type MessagePicture,
-  ModelProviderEnum,
   type SessionSettings,
   type SessionType,
   type Settings,
@@ -39,15 +38,14 @@ import { insertMessageAfter, modifyMessage } from './messages'
 
 /**
  * Get session-level web browsing setting
- * Returns user's explicit setting if set, otherwise returns default based on provider
+ * Returns user's explicit setting if set, otherwise returns false
  */
-export function getSessionWebBrowsing(sessionId: string, provider: string | undefined): boolean {
+export function getSessionWebBrowsing(sessionId: string): boolean {
   const sessionValue = uiStore.getState().sessionWebBrowsingMap[sessionId]
   if (sessionValue !== undefined) {
     return sessionValue
   }
-  // Default: true for ChatboxAI, false for others
-  return provider === ModelProviderEnum.ChatboxAI
+  return false
 }
 
 /**
@@ -77,7 +75,7 @@ function trackGenerateEvent(
     }
   }
 
-  const webBrowsing = getSessionWebBrowsing(sessionId, settings.provider)
+  const webBrowsing = getSessionWebBrowsing(sessionId)
 
   trackEvent('generate', {
     provider: providerIdentifier,
@@ -172,7 +170,7 @@ export async function generate(
     const model = getModel(settings, globalSettings, configs, dependencies)
     const sessionKnowledgeBaseMap = uiStore.getState().sessionKnowledgeBaseMap
     const knowledgeBase = sessionKnowledgeBaseMap[sessionId]
-    const webBrowsing = getSessionWebBrowsing(sessionId, settings.provider)
+    const webBrowsing = getSessionWebBrowsing(sessionId)
     switch (session.type) {
       // Chat message generation
       case 'chat':
