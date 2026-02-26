@@ -177,3 +177,4 @@ electron-builder.env
 .env.sentry-build-plugin
 android
 ios
+.worktrees
