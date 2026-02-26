@@ -1,7 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { MDocument } from '@mastra/rag'
 import { embedMany } from 'ai'
-import { ChatboxAIAPIError } from '../../shared/models/errors'
 import type { DocumentParserConfig } from '../../shared/types/settings'
 import { rerank } from '../../shared/models/rerank'
 import { sentry } from '../adapters/sentry'
@@ -14,26 +13,14 @@ const log = getLogger('knowledge-base:file-loaders')
 
 /**
  * Parse error message to extract user-friendly message
- * Handles JSON error responses from Chatbox AI API
- * Uses i18nKey from ChatboxAIAPIError.codeNameMap for known error codes
+ * Handles JSON error responses from parser providers
  */
 function parseErrorMessage(errorMessage: string): string {
-  // Try to extract error code from JSON error response
-  // Format: "Status Code 500, {"error":{"code":"system_error","detail":"Server error...","status":500,"title":"Server Error"}}"
   try {
-    // Find JSON part in the message
     const jsonMatch = errorMessage.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       const jsonStr = jsonMatch[0]
       const parsed = JSON.parse(jsonStr)
-      const errorCode = parsed.error?.code
-
-      // Try to get i18nKey from ChatboxAIAPIError.codeNameMap
-      if (errorCode && ChatboxAIAPIError.codeNameMap[errorCode]) {
-        return ChatboxAIAPIError.codeNameMap[errorCode].i18nKey
-      }
-
-      // Fallback to detail or title
       if (parsed.error?.detail) {
         return parsed.error.detail
       }

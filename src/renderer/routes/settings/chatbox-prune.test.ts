@@ -257,4 +257,16 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/parseUserLinkPro/)
     expect(source).not.toMatch(/ChatboxAI 方案/)
   })
+
+  it('removes chatbox-specific remote config fields from shared types source', () => {
+    const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/knowledge_base_models\?:/)
+    expect(source).not.toMatch(/export type ChatboxAIModel/)
+  })
+
+  it('removes chatbox api error mapping dependency from kb file loader source', () => {
+    const source = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/ChatboxAIAPIError/)
+    expect(source).not.toMatch(/codeNameMap/)
+  })
 })

@@ -93,14 +93,7 @@ export interface RemoteConfig {
   setting_chatboxai_first: boolean
   current_version: string
   product_ids: number[]
-  knowledge_base_models?: {
-    embedding: string
-    vision: string
-    rerank: string
-  }
 }
-
-export type ChatboxAIModel = 'chatboxai-3.5' | 'chatboxai-4' | string
 
 export function copyMessage(source: Message): Message {
   return {
