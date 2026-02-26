@@ -2,13 +2,12 @@ import uniq from 'lodash/uniq'
 import { ofetch } from 'ofetch'
 import { cache } from '../utils/cache'
 
-let API_ORIGIN = 'https://api.chatboxai.app'
+let API_ORIGIN = 'https://api.ai-chatbox.com'
 
 let POOL = [
-  'https://api.chatboxai.app',
-  'https://chatboxai.app',
   'https://api.ai-chatbox.com',
   'https://api.chatboxapp.xyz',
+  'https://api.chatboxai.com',
 ]
 
 export function isChatboxAPI(input: RequestInfo | URL) {

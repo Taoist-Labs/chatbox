@@ -90,7 +90,6 @@ async function getAuthenticatedAfetch() {
 
 // ========== API ORIGIN 根据可用性维护 ==========
 
-// const RELEASE_ORIGIN = 'https://releases.chatboxai.app'
 function getAPIOrigin() {
   if (USE_LOCAL_API) {
     return 'http://localhost:8002'
@@ -99,13 +98,17 @@ function getAPIOrigin() {
   }
 }
 
+function deriveWebOriginFromAPIOrigin(apiOrigin: string) {
+  return apiOrigin.replace('://api.', '://')
+}
+
 export function getChatboxOrigin() {
   if (USE_LOCAL_CHATBOX) {
     return 'http://localhost:3002'
   } else if (USE_BETA_CHATBOX) {
-    return 'https://beta.chatboxai.app'
+    return 'https://beta.ai-chatbox.com'
   } else {
-    return 'https://chatboxai.app'
+    return deriveWebOriginFromAPIOrigin(getAPIOrigin())
   }
 }
 
@@ -404,7 +407,7 @@ export async function parseUserLinkFree(params: { url: string }) {
     text: string
   }
   const afetch = await getAfetch()
-  const res = await afetch(`https://cors-proxy.chatboxai.app/api/fetch-webpage`, {
+  const res = await afetch(`${getAPIOrigin()}/api/fetch-webpage`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

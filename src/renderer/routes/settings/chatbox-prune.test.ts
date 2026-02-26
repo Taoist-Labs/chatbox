@@ -387,4 +387,14 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/shell\.openExternal\('https:\/\/chatboxai\.app'\)/)
   })
+
+  it('removes chatbox domain defaults from remote api source', () => {
+    const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+  })
+
+  it('removes chatbox domain defaults from shared api pool source', () => {
+    const source = readFileSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai\.app/)
+  })
 })
