@@ -31,7 +31,7 @@
     "dev:local": "cross-env USE_LOCAL_API=true pnpm start",
     "dev:web": "cross-env DEV_WEB_ONLY=true CHATBOX_BUILD_PLATFORM=web pnpm start",
     "dev:debug": "cross-env MAIN_ARGS=\"--inspect=5858\" pnpm start",
-    "start": "electron-vite dev",
+    "start": "node .erb/scripts/start-dev.cjs",
     "start:main": "cross-env NODE_ENV=development electronmon -r ts-node/register/transpile-only .",
     "start:preload": "electron-vite build --preload --watch",
     "start:renderer": "electron-vite",
@@ -334,6 +334,7 @@
       "zipfile"
     ],
     "overrides": {
+      "conf@10.2.0>semver": "7.7.3",
       "@tanstack/router-generator": "1.120.15",
       "@tanstack/router-plugin": "1.120.15",
       "@mastra/libsql": "0.13.2",
