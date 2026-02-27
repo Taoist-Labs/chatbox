@@ -58,8 +58,8 @@ const getAssetPath = (...paths: string[]): string => {
   return path.join(RESOURCES_PATH, ...paths)
 }
 
-// 开发环境使用 chatbox-dev:// 协议，避免和正式版冲突
-const PROTOCOL_SCHEME = process.defaultApp ? 'chatbox-dev' : 'chatbox'
+// 开发环境使用 aiclient-dev:// 协议，避免和正式版冲突
+const PROTOCOL_SCHEME = process.defaultApp ? 'aiclient-dev' : 'aiclient'
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -388,7 +388,7 @@ if (!gotTheLock) {
 } else {
   app.on('second-instance', async (event, commandLine, workingDirectory) => {
     // on windows and linux, the deep link is passed in the command line
-    const url = commandLine.find((arg) => arg.startsWith('chatbox://') || arg.startsWith('chatbox-dev://'))
+    const url = commandLine.find((arg) => arg.startsWith('aiclient://') || arg.startsWith('aiclient-dev://'))
 
     if (url) {
       // Deep Link 场景：总是显示并聚焦窗口
@@ -442,7 +442,7 @@ if (!gotTheLock) {
       // 处理启动时的 Deep Link (Windows/Linux)
       // macOS 会通过 open-url 事件处理，不需要在这里处理
       if (process.platform !== 'darwin') {
-        const url = process.argv.find((arg) => arg.startsWith('chatbox://') || arg.startsWith('chatbox-dev://'))
+        const url = process.argv.find((arg) => arg.startsWith('aiclient://') || arg.startsWith('aiclient-dev://'))
         if (url && mainWindow) {
           // 确保窗口加载完成后再处理 Deep Link
           if (mainWindow.webContents.isLoading()) {

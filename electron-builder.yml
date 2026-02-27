@@ -1,5 +1,5 @@
-productName: Chatbox
-appId: xyz.chatboxapp.app
+productName: AIClientCE
+appId: xyz.aiclient.app
 asar: true
 asarUnpack:
   - "**\\*.{node,dll}"

@@ -1,6 +1,6 @@
 {
-  "name": "xyz.chatboxapp.ce",
-  "productName": "xyz.chatboxapp.ce",
+  "name": "xyz.aiclient.ce",
+  "productName": "AIClientCE",
   "version": "1.19.0",
   "description": "A desktop client for multiple cutting-edge AI models",
   "author": {

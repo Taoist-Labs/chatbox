@@ -183,7 +183,7 @@ eyJpZCI6Im1pbmltYWwtcHJvdmlkZXIiLCJuYW1lIjoiTWluaW1hbCBQcm92aWRlciIsInR5cGUiOiJv
 
 **Deep Link URL:**
 ```
-chatbox://provider/import?config=eyJpZCI6Im1pbmltYWwtcHJvdmlkZXIiLCJuYW1lIjoiTWluaW1hbCBQcm92aWRlciIsInR5cGUiOiJvcGVuYWkiLCJzZXR0aW5ncyI6eyJhcGlIb3N0IjoiaHR0cHM6Ly9hcGkubWluaW1hbC5jb20ifX0=
+aiclient://provider/import?config=eyJpZCI6Im1pbmltYWwtcHJvdmlkZXIiLCJuYW1lIjoiTWluaW1hbCBQcm92aWRlciIsInR5cGUiOiJvcGVuYWkiLCJzZXR0aW5ncyI6eyJhcGlIb3N0IjoiaHR0cHM6Ly9hcGkubWluaW1hbC5jb20ifX0=
 ```
 
 **Expected Result:**
@@ -330,7 +330,7 @@ To create Base64 encoded configs for deep link testing:
 // Encode
 const config = { /* your config object */ };
 const encoded = btoa(JSON.stringify(config));
-console.log(`chatbox://provider/import?config=${encoded}`);
+console.log(`aiclient://provider/import?config=${encoded}`);
 
 // Decode
 const encoded = "your-base64-string";

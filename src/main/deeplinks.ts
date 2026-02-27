@@ -1,18 +1,18 @@
 import type { BrowserWindow } from 'electron'
 
 export function handleDeepLink(mainWindow: BrowserWindow, link: string) {
-  const normalizedLink = link.replace(/^chatbox-dev:\/\//, 'chatbox://')
+  const normalizedLink = link.replace(/^aiclient-dev:\/\//, 'aiclient://')
   const url = new URL(normalizedLink)
 
   console.log('🔗 Parsed URL:', { hostname: url.hostname, pathname: url.pathname, params: url.searchParams.toString() })
 
-  // handle `chatbox://mcp/install?server=`
+  // handle `aiclient://mcp/install?server=`
   if (url.hostname === 'mcp' && url.pathname === '/install') {
     const encodedConfig = url.searchParams.get('server') || ''
     mainWindow.webContents.send('navigate-to', `/settings/mcp?install=${encodeURIComponent(encodedConfig)}`)
   }
 
-  // handle `chatbox://provider/import?config=`
+  // handle `aiclient://provider/import?config=`
   if (url.hostname === 'provider' && url.pathname === '/import') {
     const encodedConfig = url.searchParams.get('config') || ''
     mainWindow.webContents.send('navigate-to', `/settings/provider?import=${encodeURIComponent(encodedConfig)}`)

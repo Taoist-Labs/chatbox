@@ -1,6 +1,6 @@
 {
-  "appId": "xyz.chatboxapp.ce",
-  "appName": "Chatbox",
+  "appId": "xyz.aiclient.ce",
+  "appName": "AIClientCE",
   "webDir": "release/app/dist/renderer",
   "plugins": {
     "SplashScreen": {
