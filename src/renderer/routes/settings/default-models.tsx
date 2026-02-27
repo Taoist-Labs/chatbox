@@ -58,7 +58,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will use this model as the default for new chats.')}
+          {t('The app will use this model as the default for new chats.')}
         </Text>
       </Stack>
 
@@ -93,7 +93,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will automatically use this model to rename threads.')}
+          {t('The app will automatically use this model to rename threads.')}
         </Text>
       </Stack>
 
@@ -128,7 +128,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will automatically use this model to construct search term.')}
+          {t('The app will automatically use this model to construct search terms.')}
         </Text>
       </Stack>
       <Stack gap="xs">
@@ -163,7 +163,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox OCRs images with this model and sends the text to models without image support.')}
+          {t('The app OCRs images with this model and sends the text to models without image support.')}
         </Text>
       </Stack>
     </Stack>

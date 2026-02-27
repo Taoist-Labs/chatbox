@@ -695,4 +695,28 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/AIHubMix integration in Chatbox offers 10% discount/)
   })
+
+  it('removes chatbox-branded demo copy from initial data source', () => {
+    const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/Chatbox AI 4/)
+    expect(source).not.toMatch(/latest version of Chatbox has been released/)
+    expect(source).not.toMatch(/Chatbox 最新版本发布啦/)
+    expect(source).not.toMatch(/Chatbox Image Creator/)
+  })
+
+  it('removes chatbox branding copy from default-models, app-store rating and welcome modals', () => {
+    const defaultModelsSource = readFileSync(new URL('../settings/default-models.tsx', import.meta.url), 'utf8')
+    const ratingSource = readFileSync(new URL('../../modals/AppStoreRating.tsx', import.meta.url), 'utf8')
+    const welcomeSource = readFileSync(new URL('../../modals/Welcome.tsx', import.meta.url), 'utf8')
+
+    expect(defaultModelsSource).not.toMatch(/Chatbox will use this model as the default for new chats/)
+    expect(defaultModelsSource).not.toMatch(/Chatbox will automatically use this model to rename threads/)
+    expect(defaultModelsSource).not.toMatch(/Chatbox will automatically use this model to construct search term/)
+    expect(defaultModelsSource).not.toMatch(/Chatbox OCRs images with this model/)
+
+    expect(ratingSource).not.toMatch(/Enjoying Chatbox\?/)
+    expect(ratingSource).not.toMatch(/help make Chatbox even better/)
+
+    expect(welcomeSource).not.toMatch(/<Title order=\{3\}>Chatbox<\/Title>/)
+  })
 })
