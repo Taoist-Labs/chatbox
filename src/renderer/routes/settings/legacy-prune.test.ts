@@ -804,10 +804,11 @@ describe('legacy deep prune', () => {
 
   it('removes legacy branding copy from sidebar title and web-search class naming', () => {
     const sidebarSource = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
-    const chatboxSearchSource = readFileSync(new URL('../../packages/web-search/chatbox-search.ts', import.meta.url), 'utf8')
+    const builtInSearchSource = readFileSync(new URL('../../packages/web-search/built-in-search.ts', import.meta.url), 'utf8')
 
     expect(sidebarSource).not.toMatch(/>\s*Chatbox\s*</)
-    expect(chatboxSearchSource).not.toMatch(/export class ChatboxSearch/)
+    expect(existsSync(new URL('../../packages/web-search/chatbox-search.ts', import.meta.url))).toBe(false)
+    expect(builtInSearchSource).toMatch(/export class BuiltInSearch/)
   })
 
   it('removes legacy branding copy from locale translation sources', () => {
@@ -825,4 +826,3 @@ describe('legacy deep prune', () => {
     }
   })
 })
-
