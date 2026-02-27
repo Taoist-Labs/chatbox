@@ -5,10 +5,11 @@ describe('provider bootstrap', () => {
     vi.resetModules()
   })
 
-  it('does not auto-register chatbox-ai provider', async () => {
+  it('does not auto-register legacy-ai provider', async () => {
     const { getSystemProviders } = await import('./index')
     const providers = getSystemProviders()
 
     expect(providers.some((provider) => provider.id === 'chatbox-ai')).toBe(false)
   })
 })
+

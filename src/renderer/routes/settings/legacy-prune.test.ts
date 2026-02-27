@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-describe('chatbox deep prune', () => {
-  it('removes chatbox settings routes from modal router source', () => {
+describe('legacy deep prune', () => {
+  it('removes legacy settings routes from modal router source', () => {
     const source = readFileSync(new URL('../../modals/Settings.tsx', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/SettingsChatboxAiRouteComponent/)
@@ -11,14 +11,14 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/path:\s*'\/chatbox-ai'/)
   })
 
-  it('removes chatbox provider special-case link path in provider list source', () => {
+  it('removes legacy provider special-case link path in provider list source', () => {
     const source = readFileSync(new URL('../../components/settings/provider/ProviderList.tsx', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/provider\.id === ModelProviderEnum\.ChatboxAI/)
     expect(source).not.toMatch(/\/settings\/provider\/chatbox-ai/)
   })
 
-  it('removes chatbox models hook dependency from useProviders source', () => {
+  it('removes legacy models hook dependency from useProviders source', () => {
     const source = readFileSync(new URL('../../hooks/useProviders.ts', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/useChatboxAIModels/)
@@ -32,15 +32,15 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/settings\.provider \?\? ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes dedicated chatbox settings route file', () => {
+  it('removes dedicated legacy settings route file', () => {
     expect(existsSync(new URL('./chatbox-ai.tsx', import.meta.url))).toBe(false)
   })
 
-  it('removes provider-level chatbox settings route file', () => {
+  it('removes provider-level legacy settings route file', () => {
     expect(existsSync(new URL('./provider/chatbox-ai/index.tsx', import.meta.url))).toBe(false)
   })
 
-  it('removes chatbox provider as image creator default source', () => {
+  it('removes legacy provider as image creator default source', () => {
     const source = readFileSync(new URL('../image-creator/index.tsx', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/useState<string>\(ModelProviderEnum\.ChatboxAI\)/)
@@ -48,7 +48,7 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/providerId:\s*ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox group from image model selector source', () => {
+  it('removes legacy group from image model selector source', () => {
     const source = readFileSync(new URL('../../components/ImageModelSelect.tsx', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/CHATBOXAI_IMAGE_MODEL_IDS/)
@@ -63,67 +63,67 @@ describe('chatbox deep prune', () => {
     expect(source).toMatch(/provider:\s*session\.settings\?\.provider \|\| ModelProviderEnum\.Wanjie/)
   })
 
-  it('removes chatbox ocr fallback model source', () => {
+  it('removes legacy ocr fallback model source', () => {
     const source = readFileSync(new URL('../../packages/model-calls/stream-text.ts', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/chatbox-ocr-1/)
     expect(source).not.toMatch(/Fallback to Chatbox AI built-in OCR model/)
   })
 
-  it('removes obsolete chatbox settings component directory', () => {
+  it('removes obsolete legacy settings component directory', () => {
     expect(existsSync(new URL('./provider/chatbox-ai/-components', import.meta.url))).toBe(false)
   })
 
-  it('removes obsolete chatbox models hook file', () => {
+  it('removes obsolete legacy models hook file', () => {
     expect(existsSync(new URL('../../hooks/useChatboxAIModels.ts', import.meta.url))).toBe(false)
   })
 
-  it('removes auth store type dependency on chatbox settings route', () => {
+  it('removes auth store type dependency on legacy settings route', () => {
     const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/routes\/settings\/provider\/chatbox-ai\/-components\/types/)
   })
 
-  it('removes chatbox parser option from document parser settings source', () => {
+  it('removes legacy parser option from document parser settings source', () => {
     const source = readFileSync(new URL('../../components/settings/DocumentParserSettings.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/value:\s*'chatbox-ai'/)
     expect(source).not.toMatch(/'chatbox-ai':/)
   })
 
-  it('removes chatbox parser implementation from knowledge-base router source', () => {
+  it('removes legacy parser implementation from knowledge-base router source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/parsers/index.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxParser/)
     expect(source).not.toMatch(/case 'chatbox-ai':/)
   })
 
-  it('removes chatbox parser branches from session helper source', () => {
+  it('removes legacy parser branches from session helper source', () => {
     const source = readFileSync(new URL('../../stores/sessionHelpers.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/parseFileWithChatboxAI/)
     expect(source).not.toMatch(/case 'chatbox-ai':/)
   })
 
-  it('removes chatbox parser branches from kb file loader source', () => {
+  it('removes legacy parser branches from kb file loader source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/type === 'chatbox-ai'/)
     expect(source).not.toMatch(/\{\s*type:\s*'chatbox-ai'\s*\}/)
   })
 
-  it('removes obsolete chatbox parser files', () => {
+  it('removes obsolete legacy parser files', () => {
     expect(existsSync(new URL('../../../main/knowledge-base/parsers/chatbox-parser.ts', import.meta.url))).toBe(false)
     expect(existsSync(new URL('../../../main/knowledge-base/remote-file-parser.ts', import.meta.url))).toBe(false)
   })
 
-  it('removes chatbox parser enum from shared settings types source', () => {
+  it('removes legacy parser enum from shared settings types source', () => {
     const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/DocumentParserType = 'none' \| 'local' \| 'chatbox-ai' \| 'mineru'/)
     expect(source).not.toMatch(/z\.enum\(\['none', 'local', 'chatbox-ai', 'mineru'\]\)/)
   })
 
-  it('removes chatbox parser option from knowledge base form source', () => {
+  it('removes legacy parser option from knowledge base form source', () => {
     const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBaseForm.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/Cloud-based document parsing service, supports PDF, Office files, EPUB and many other file types/)
   })
 
-  it('removes chatbox parser label branches from knowledge base ui source', () => {
+  it('removes legacy parser label branches from knowledge base ui source', () => {
     const kbSource = readFileSync(new URL('../../components/knowledge-base/KnowledgeBase.tsx', import.meta.url), 'utf8')
     const docsSource = readFileSync(
       new URL('../../components/knowledge-base/KnowledgeBaseDocuments.tsx', import.meta.url),
@@ -157,7 +157,7 @@ describe('chatbox deep prune', () => {
     expect(existsSync(new URL('../../components/knowledge-base/RemoteRetryModal.tsx', import.meta.url))).toBe(false)
   })
 
-  it('removes knowledge-base chatbox provider mode controls from form source', () => {
+  it('removes knowledge-base legacy provider mode controls from form source', () => {
     const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBaseForm.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/KnowledgeBaseChatboxAIInfo/)
     expect(source).not.toMatch(/KnowledgeBaseProviderModeSelect/)
@@ -165,7 +165,7 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/'chatbox-ai' \| 'custom'/)
   })
 
-  it('removes knowledge-base chatbox provider mode branches from page source', () => {
+  it('removes knowledge-base legacy provider mode branches from page source', () => {
     const source = readFileSync(new URL('../../components/knowledge-base/KnowledgeBase.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/newProviderMode/)
     expect(source).not.toMatch(/chatboxAIModels/)
@@ -174,17 +174,17 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/knowledge_base_models/)
   })
 
-  it('removes chatbox provider mode enum from shared types source', () => {
+  it('removes legacy provider mode enum from shared types source', () => {
     const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/KnowledgeBaseProviderMode = 'chatbox-ai' \| 'custom'/)
   })
 
-  it('removes chatbox provider mode type union from kb ipc source', () => {
+  it('removes legacy provider mode type union from kb ipc source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/ipc-handlers.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/providerMode\?: 'chatbox-ai' \| 'custom'/)
   })
 
-  it('removes chatbox rerank provider host override source', () => {
+  it('removes legacy rerank provider host override source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/model-providers.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/providerId === 'chatbox-ai'/)
     expect(source).not.toMatch(/getChatboxAPIOrigin/)
@@ -250,180 +250,180 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/ChatboxAI 方案/)
   })
 
-  it('removes chatbox-specific remote config fields from shared types source', () => {
+  it('removes legacy-specific remote config fields from shared types source', () => {
     const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/knowledge_base_models\?:/)
     expect(source).not.toMatch(/export type ChatboxAIModel/)
   })
 
-  it('removes chatbox api error mapping dependency from kb file loader source', () => {
+  it('removes legacy api error mapping dependency from kb file loader source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/file-loaders.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxAIAPIError/)
     expect(source).not.toMatch(/RemoteAPIError/)
     expect(source).not.toMatch(/codeNameMap/)
   })
 
-  it('removes chatbox-first remote config bootstrap from root route source', () => {
+  it('removes legacy-first remote config bootstrap from root route source', () => {
     const source = readFileSync(new URL('../__root.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/getRemoteConfig\('setting_chatboxai_first'\)/)
     expect(source).not.toMatch(/setting_chatboxai_first/)
   })
 
-  it('removes chatbox-first local mode upsell from message loading source', () => {
+  it('removes legacy-first local mode upsell from message loading source', () => {
     const source = readFileSync(new URL('../../components/chat/MessageLoading.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/setting_chatboxai_first/)
     expect(source).not.toMatch(/Chatbox AI Service/)
   })
 
-  it('removes chatbox-first web browsing error branch from session messages source', () => {
+  it('removes legacy-first web browsing error branch from session messages source', () => {
     const source = readFileSync(new URL('../../stores/session/messages.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/setting_chatboxai_first/)
   })
 
-  it('removes chatbox-first image error branch from abstract ai sdk source', () => {
+  it('removes legacy-first image error branch from abstract ai sdk source', () => {
     const source = readFileSync(new URL('../../../shared/models/abstract-ai-sdk.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/setting_chatboxai_first/)
   })
 
-  it('removes chatbox-first remote config flag from shared types source', () => {
+  it('removes legacy-first remote config flag from shared types source', () => {
     const source = readFileSync(new URL('../../../shared/types.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/setting_chatboxai_first:/)
   })
 
-  it('removes chatbox provider default web browsing branch from input box source', () => {
+  it('removes legacy provider default web browsing branch from input box source', () => {
     const source = readFileSync(new URL('../../components/InputBox/InputBox.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/model\?\.provider === ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox provider default web browsing branch from generation source', () => {
+  it('removes legacy provider default web browsing branch from generation source', () => {
     const source = readFileSync(new URL('../../stores/session/generation.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/return provider === ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox provider default web browsing branch from session messages source', () => {
+  it('removes legacy provider default web browsing branch from session messages source', () => {
     const source = readFileSync(new URL('../../stores/session/messages.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/return provider === ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox-only stream output visibility branch from session settings source', () => {
+  it('removes legacy-only stream output visibility branch from session settings source', () => {
     const source = readFileSync(new URL('../../modals/SessionSettings.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/settings\?\.provider !== ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox provider icon branch from provider icon source', () => {
+  it('removes legacy provider icon branch from provider icon source', () => {
     const source = readFileSync(new URL('../../components/icons/ProviderIcon.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/provider === ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox-ai openai-compatibility special branch from llm utils source', () => {
+  it('removes legacy-ai openai-compatibility special branch from llm utils source', () => {
     const source = readFileSync(new URL('../../../shared/utils/llm_utils.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/providerId === 'chatbox-ai'/)
   })
 
-  it('removes chatbox-ai parser normalization from settings schema source', () => {
+  it('removes legacy-ai parser normalization from settings schema source', () => {
     const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/value === 'chatbox-ai' \? 'local' : value/)
   })
 
-  it('removes chatbox provider enum entries from shared provider types source', () => {
+  it('removes legacy provider enum entries from shared provider types source', () => {
     const source = readFileSync(new URL('../../../shared/types/provider.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxAI = 'chatbox-ai'/)
   })
 
-  it('removes chatbox provider name mapping from shared models source', () => {
+  it('removes legacy provider name mapping from shared models source', () => {
     const source = readFileSync(new URL('../../../shared/models/index.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox provider enum usage from migration source', () => {
+  it('removes legacy provider enum usage from migration source', () => {
     const source = readFileSync(new URL('../../stores/migration.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox provider enum usage from initial data source', () => {
+  it('removes legacy provider enum usage from initial data source', () => {
     const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes obsolete chatbox provider definition file', () => {
+  it('removes obsolete legacy provider definition file', () => {
     expect(existsSync(new URL('../../../shared/providers/definitions/chatboxai.ts', import.meta.url))).toBe(false)
   })
 
-  it('removes chatbox aiProvider literals from initial data source', () => {
+  it('removes legacy aiProvider literals from initial data source', () => {
     const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/aiProvider:\s*'chatbox-ai'/)
   })
 
-  it('removes chatbox-specific auth store persistence key source', () => {
+  it('removes legacy-specific auth store persistence key source', () => {
     const source = readFileSync(new URL('../../stores/authInfoStore.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/name:\s*'chatbox-ai-auth-info'/)
   })
 
-  it('removes chatbox auth callback deep link route residue from main deeplinks source', () => {
+  it('removes legacy auth callback deep link route residue from main deeplinks source', () => {
     const source = readFileSync(new URL('../../../main/deeplinks.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/\/settings\/provider\/chatbox-ai\?ticket_id=\$\{ticketId\}&status=\$\{status\}/)
   })
 
-  it('removes chatbox ai model key migration residue from migration source', () => {
+  it('removes legacy ai model key migration residue from migration source', () => {
     const source = readFileSync(new URL('../../stores/migration.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxAIModel/)
   })
 
-  it('removes chatbox provider token config residue comments source', () => {
+  it('removes legacy provider token config residue comments source', () => {
     const source = readFileSync(new URL('../../packages/token_config.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ModelProviderEnum\.ChatboxAI/)
   })
 
-  it('removes chatbox ai service faqs link from about source', () => {
+  it('removes legacy ai service faqs link from about source', () => {
     const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatbox-ai-service-faqs/)
   })
 
-  it('removes chatbox official domain and support email links from about source', () => {
+  it('removes legacy official domain and support email links from about source', () => {
     const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/hi@chatboxai\.com/)
   })
 
-  it('removes chatbox domain updater feed urls from main app-updater source', () => {
+  it('removes legacy domain updater feed urls from main app-updater source', () => {
     const source = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app\/api\/auto_upgrade/)
   })
 
-  it('removes chatbox domain help links from main menu source', () => {
+  it('removes legacy domain help links from main menu source', () => {
     const source = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/shell\.openExternal\('https:\/\/chatboxai\.app'\)/)
   })
 
-  it('removes chatbox domain defaults from remote api source', () => {
+  it('removes legacy domain defaults from remote api source', () => {
     const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
-  it('removes chatbox domain defaults from shared api pool source', () => {
+  it('removes legacy domain defaults from shared api pool source', () => {
     const source = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
-  it('removes chatbox api error class usage from shared request source', () => {
+  it('removes legacy api error class usage from shared request source', () => {
     const source = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxAIAPIError/)
   })
 
-  it('removes chatbox api error class declaration from shared errors source', () => {
+  it('removes legacy api error class declaration from shared errors source', () => {
     const source = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/class ChatboxAIAPIError/)
     expect(source).not.toMatch(/interface ChatboxAIAPIErrorDetail/)
   })
 
-  it('removes chatbox-named remote error parse option from request and adapter sources', () => {
+  it('removes legacy-named remote error parse option from request and adapter sources', () => {
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const adapterTypesSource = readFileSync(new URL('../../../shared/types/adapters.ts', import.meta.url), 'utf8')
     expect(requestSource).not.toMatch(/parseChatboxRemoteError/)
     expect(adapterTypesSource).not.toMatch(/parseChatboxRemoteError/)
   })
 
-  it('removes chatbox-named api pool helpers from request and remote sources', () => {
+  it('removes legacy-named api pool helpers from request and remote sources', () => {
     const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
@@ -433,41 +433,41 @@ describe('chatbox deep prune', () => {
     expect(remoteSource).not.toMatch(/getChatboxAPIOrigin/)
   })
 
-  it('removes chatbox-named shared request pool file', () => {
+  it('removes legacy-named shared request pool file', () => {
     expect(existsSync(new URL('../../../shared/request/chatboxai_pool.ts', import.meta.url))).toBe(false)
   })
 
-  it('removes chatbox-named shared request pool import paths', () => {
+  it('removes legacy-named shared request pool import paths', () => {
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(requestSource).not.toMatch(/chatboxai_pool/)
     expect(remoteSource).not.toMatch(/chatboxai_pool/)
   })
 
-  it('removes orphaned chatbox-specific provider model file', () => {
+  it('removes orphaned legacy-specific provider model file', () => {
     expect(existsSync(new URL('../../../shared/providers/definitions/models/chatboxai.ts', import.meta.url))).toBe(false)
   })
 
-  it('removes chatbox license detail type naming from shared settings source', () => {
+  it('removes legacy license detail type naming from shared settings source', () => {
     const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/ChatboxAILicenseDetailSchema/)
     expect(source).not.toMatch(/export type ChatboxAILicenseDetail/)
   })
 
-  it('removes chatbox license detail type usage from remote api source', () => {
+  it('removes legacy license detail type usage from remote api source', () => {
     const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/type ChatboxAILicenseDetail/)
     expect(source).not.toMatch(/ChatboxAILicenseDetail \| null/)
   })
 
-  it('removes chatbox-named helper identifiers from remote api source', () => {
+  it('removes legacy-named helper identifiers from remote api source', () => {
     const source = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/\bchatboxaiAPI\b/)
     expect(source).not.toMatch(/\bgetChatboxOrigin\b/)
     expect(source).not.toMatch(/\bgetChatboxHeaders\b/)
   })
 
-  it('removes chatbox-named web env switches from renderer variables and remote source', () => {
+  it('removes legacy-named web env switches from renderer variables and remote source', () => {
     const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     expect(variablesSource).not.toMatch(/\bUSE_LOCAL_CHATBOX\b/)
@@ -476,7 +476,7 @@ describe('chatbox deep prune', () => {
     expect(remoteSource).not.toMatch(/\bUSE_BETA_CHATBOX\b/)
   })
 
-  it('removes chatbox-named build constants from renderer source usage', () => {
+  it('removes legacy-named build constants from renderer source usage', () => {
     const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
     expect(variablesSource).not.toMatch(/export const CHATBOX_BUILD_TARGET\b/)
     expect(variablesSource).not.toMatch(/export const CHATBOX_BUILD_PLATFORM\b/)
@@ -499,44 +499,44 @@ describe('chatbox deep prune', () => {
     }
   })
 
-  it('removes chatboxAI-named local identifiers from renderer and defaults source', () => {
+  it('removes legacyAI-named local identifiers from renderer and defaults source', () => {
     const errorTipsSource = readFileSync(new URL('../../routes/image-creator/-components/ImageGenerationErrorTips.tsx', import.meta.url), 'utf8')
     const defaultsSource = readFileSync(new URL('../../../shared/defaults.ts', import.meta.url), 'utf8')
     expect(errorTipsSource).not.toMatch(/\bchatboxAIErrorDetail\b/)
     expect(defaultsSource).not.toMatch(/\bchatboxAIModel\b/)
   })
 
-  it('removes chatboxAI-named session attachment uuid fields from shared session schema', () => {
+  it('removes legacyAI-named session attachment uuid fields from shared session schema', () => {
     const source = readFileSync(new URL('../../../shared/types/session.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/\bchatboxAIFileUUID\b/)
     expect(source).not.toMatch(/\bchatboxAILinkUUID\b/)
   })
 
-  it('removes chatbox-named temp image filename prefix from main adapters source', () => {
+  it('removes legacy-named temp image filename prefix from main adapters source', () => {
     const source = readFileSync(new URL('../../../main/adapters/index.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/`chatbox_\$\{folder\}_/)
   })
 
-  it('removes chatbox-named primary kb db filename from main knowledge-base source', () => {
+  it('removes legacy-named primary kb db filename from main knowledge-base source', () => {
     const source = readFileSync(new URL('../../../main/knowledge-base/db.ts', import.meta.url), 'utf8')
     expect(source).toMatch(/knowledge_base\.db/)
     expect(source).not.toMatch(/const dbPath = .*chatbox_kb\.db/)
   })
 
-  it('removes chatbox-named primary blob directory from main store source', () => {
+  it('removes legacy-named primary blob directory from main store source', () => {
     const source = readFileSync(new URL('../../../main/store-node.ts', import.meta.url), 'utf8')
     expect(source).toMatch(/store-blobs/)
     expect(source).not.toMatch(/const filename = path\.resolve\(app\.getPath\('userData'\), 'chatbox-blobs', sanitizeFilename\(key\)\)/)
   })
 
-  it('removes legacy release-origin comments and chatbox-ai api wording from sources', () => {
+  it('removes legacy release-origin comments and legacy-ai api wording from sources', () => {
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
     const imageGenerationSource = readFileSync(new URL('../../../shared/types/image-generation.ts', import.meta.url), 'utf8')
     expect(remoteSource).not.toMatch(/\bRELEASE_ORIGIN\b/)
     expect(imageGenerationSource).not.toMatch(/ChatboxAI API error code/)
   })
 
-  it('removes chatbox-domain comment residue from internal config and protect sources', () => {
+  it('removes legacy-domain comment residue from internal config and protect sources', () => {
     const variablesSource = readFileSync(new URL('../../variables.ts', import.meta.url), 'utf8')
     const protectSource = readFileSync(new URL('../../setup/protect.ts', import.meta.url), 'utf8')
     const defaultsSource = readFileSync(new URL('../../../shared/defaults.ts', import.meta.url), 'utf8')
@@ -545,13 +545,13 @@ describe('chatbox deep prune', () => {
     expect(defaultsSource).not.toMatch(/chatboxai-3\.5/)
   })
 
-  it('removes chatbox domain and branding residue from format-chat export source', () => {
+  it('removes legacy domain and branding residue from format-chat export source', () => {
     const source = readFileSync(new URL('../../lib/format-chat.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/Chatbox AI/)
   })
 
-  it('removes chatbox-branded openrouter metadata headers from model providers', () => {
+  it('removes legacy-branded openrouter metadata headers from model providers', () => {
     const openRouterSource = readFileSync(
       new URL('../../../shared/providers/definitions/models/openrouter.ts', import.meta.url),
       'utf8'
@@ -586,14 +586,14 @@ describe('chatbox deep prune', () => {
     expect(customOpenAIResponsesSource).not.toMatch(/'X-Title':\s*'Chatbox AI'/)
   })
 
-  it('removes chatbox-specific image generation upgrade links from error tips source', () => {
+  it('removes legacy-specific image generation upgrade links from error tips source', () => {
     const source = readFileSync(new URL('../image-creator/-components/ImageGenerationErrorTips.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_image_creator/)
   })
 
-  it('removes chatbox analytics domain residue from renderer index templates', () => {
+  it('removes legacy analytics domain residue from renderer index templates', () => {
     const desktopSource = readFileSync(new URL('../../index.ejs', import.meta.url), 'utf8')
     const desktopDevSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
     const webSource = readFileSync(new URL('../../index.web.ejs', import.meta.url), 'utf8')
@@ -608,64 +608,64 @@ describe('chatbox deep prune', () => {
     expect(webSource).not.toMatch(/plausible\.midway\.run/)
   })
 
-  it('removes chatbox docs domain residue from provider settings source', () => {
+  it('removes legacy docs domain residue from provider settings source', () => {
     const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/docs\.chatboxai\.app/)
   })
 
-  it('removes chatbox home domain residue from sidebar source', () => {
+  it('removes legacy home domain residue from sidebar source', () => {
     const source = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
-  it('removes chatbox domain and upsell tracking residue from file-parse error modal source', () => {
+  it('removes legacy domain and upsell tracking residue from file-parse error modal source', () => {
     const source = readFileSync(new URL('../../modals/FileParseError.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_file_parse_error/)
   })
 
-  it('removes chatbox domain and upsell tracking residue from message error tips source', () => {
+  it('removes legacy domain and upsell tracking residue from message error tips source', () => {
     const source = readFileSync(new URL('../../components/chat/MessageErrTips.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
     expect(source).not.toMatch(/view_more_plans/)
     expect(source).not.toMatch(/click_view_more_plans_button_from_upgrade_error_tips/)
   })
 
-  it('removes chatbox proxy domain residue from renderer request utility source', () => {
+  it('removes legacy proxy domain residue from renderer request utility source', () => {
     const source = readFileSync(new URL('../../utils/request.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/cors-proxy\.chatboxai\.app/)
   })
 
-  it('removes chatbox artifact preview domain residue from artifact component source', () => {
+  it('removes legacy artifact preview domain residue from artifact component source', () => {
     const source = readFileSync(new URL('../../components/Artifact.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/artifact-preview\.chatboxai\.app/)
   })
 
-  it('removes chatbox mcp domain residue from builtin mcp server source', () => {
+  it('removes legacy mcp domain residue from builtin mcp server source', () => {
     const source = readFileSync(new URL('../../packages/mcp/builtin.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/mcp\.chatboxai\.app/)
   })
 
-  it('removes chatbox asset domains from initial session data source', () => {
+  it('removes legacy asset domains from initial session data source', () => {
     const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/static\.chatboxai\.app/)
     expect(source).not.toMatch(/download\.chatboxai\.app/)
   })
 
-  it('removes chatbox api domain residue from remote pool and updater sources', () => {
+  it('removes legacy api domain residue from remote pool and updater sources', () => {
     const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     const updaterSource = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
     expect(poolSource).not.toMatch(/api\.chatboxai\.com/)
     expect(updaterSource).not.toMatch(/api\.chatboxai\.com/)
   })
 
-  it('removes chatbox support email residue from shared error messages source', () => {
+  it('removes legacy support email residue from shared error messages source', () => {
     const source = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/hi@chatboxai\.com/)
   })
 
-  it('removes chatbox branding residue from shared error i18n sources', () => {
+  it('removes legacy branding residue from shared error i18n sources', () => {
     const errorsSource = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
     const keyScanSource = readFileSync(new URL('../../i18n/for-key-scan.ts', import.meta.url), 'utf8')
 
@@ -674,29 +674,29 @@ describe('chatbox deep prune', () => {
     expect(keyScanSource).not.toMatch(/Chatbox AI/)
   })
 
-  it('removes chatboxai-named license model enums from shared settings source', () => {
+  it('removes legacyai-named license model enums from shared settings source', () => {
     const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai-3\.5/)
     expect(source).not.toMatch(/chatboxai-4/)
   })
 
-  it('removes chatbox branding copy from wanjie settings flow source', () => {
+  it('removes legacy branding copy from wanjie settings flow source', () => {
     const source = readFileSync(new URL('./provider/wanjie/index.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/then Chatbox will automatically pull API Key/)
   })
 
-  it('removes chatbox branding copy from builtin mcp servers settings source', () => {
+  it('removes legacy branding copy from builtin mcp servers settings source', () => {
     const source = readFileSync(new URL('../../components/settings/mcp/BuiltinServersSection.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/Chatbox \{t\('Builtin MCP Servers'\)\}/)
     expect(source).not.toMatch(/One-click MCP servers for Chatbox AI subscribers/)
   })
 
-  it('removes chatbox branding copy from provider discount hint source', () => {
+  it('removes legacy branding copy from provider discount hint source', () => {
     const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/AIHubMix integration in Chatbox offers 10% discount/)
   })
 
-  it('removes chatbox-branded demo copy from initial data source', () => {
+  it('removes legacy-branded demo copy from initial data source', () => {
     const source = readFileSync(new URL('../../packages/initial_data.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/Chatbox AI 4/)
     expect(source).not.toMatch(/latest version of Chatbox has been released/)
@@ -704,7 +704,7 @@ describe('chatbox deep prune', () => {
     expect(source).not.toMatch(/Chatbox Image Creator/)
   })
 
-  it('removes chatbox branding copy from default-models, app-store rating and welcome modals', () => {
+  it('removes legacy branding copy from default-models, app-store rating and welcome modals', () => {
     const defaultModelsSource = readFileSync(new URL('../settings/default-models.tsx', import.meta.url), 'utf8')
     const ratingSource = readFileSync(new URL('../../modals/AppStoreRating.tsx', import.meta.url), 'utf8')
     const welcomeSource = readFileSync(new URL('../../modals/Welcome.tsx', import.meta.url), 'utf8')
@@ -720,7 +720,7 @@ describe('chatbox deep prune', () => {
     expect(welcomeSource).not.toMatch(/<Title order=\{3\}>Chatbox<\/Title>/)
   })
 
-  it('removes chatbox branding copy from changelog sources', () => {
+  it('removes legacy branding copy from changelog sources', () => {
     const changelogEnSource = readFileSync(new URL('../../i18n/changelogs/changelog_en.ts', import.meta.url), 'utf8')
     const changelogZhHansSource = readFileSync(
       new URL('../../i18n/changelogs/changelog_zh_Hans.ts', import.meta.url),
@@ -739,7 +739,7 @@ describe('chatbox deep prune', () => {
     expect(changelogZhHantSource).not.toMatch(/ChatboxAI/)
   })
 
-  it('removes chatbox branding copy from main shell, about and copilots sources', () => {
+  it('removes legacy branding copy from main shell, about and copilots sources', () => {
     const mainSource = readFileSync(new URL('../../../main/main.ts', import.meta.url), 'utf8')
     const menuSource = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf8')
     const autoLauncherSource = readFileSync(new URL('../../../main/autoLauncher.ts', import.meta.url), 'utf8')
@@ -764,7 +764,7 @@ describe('chatbox deep prune', () => {
     expect(copilotsSource).not.toMatch(/Share with Chatbox/)
   })
 
-  it('removes chatbox branding copy from shell metadata, settings copy and message editor gates', () => {
+  it('removes legacy branding copy from shell metadata, settings copy and message editor gates', () => {
     const indexEjsSource = readFileSync(new URL('../../index.ejs', import.meta.url), 'utf8')
     const indexHtmlSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
     const indexWebEjsSource = readFileSync(new URL('../../index.web.ejs', import.meta.url), 'utf8')
@@ -802,7 +802,7 @@ describe('chatbox deep prune', () => {
     expect(sessionStoreSource).not.toMatch(/for Chatbox\./)
   })
 
-  it('removes chatbox branding copy from sidebar title and web-search class naming', () => {
+  it('removes legacy branding copy from sidebar title and web-search class naming', () => {
     const sidebarSource = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
     const chatboxSearchSource = readFileSync(new URL('../../packages/web-search/chatbox-search.ts', import.meta.url), 'utf8')
 
@@ -810,7 +810,7 @@ describe('chatbox deep prune', () => {
     expect(chatboxSearchSource).not.toMatch(/export class ChatboxSearch/)
   })
 
-  it('removes chatbox branding copy from locale translation sources', () => {
+  it('removes legacy branding copy from locale translation sources', () => {
     const localesDir = new URL('../../i18n/locales/', import.meta.url)
     const brandingPattern = /(ChatboxAI|Chatbox AI|Chatbox|chatbox-ai|chatboxai-3\.5|chatboxai-4)/
     const localeDirs = readdirSync(localesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory())
@@ -825,3 +825,4 @@ describe('chatbox deep prune', () => {
     }
   })
 })
+
