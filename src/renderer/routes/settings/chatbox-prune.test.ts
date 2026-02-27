@@ -719,4 +719,94 @@ describe('chatbox deep prune', () => {
 
     expect(welcomeSource).not.toMatch(/<Title order=\{3\}>Chatbox<\/Title>/)
   })
+
+  it('removes chatbox branding copy from changelog sources', () => {
+    const changelogEnSource = readFileSync(new URL('../../i18n/changelogs/changelog_en.ts', import.meta.url), 'utf8')
+    const changelogZhHansSource = readFileSync(
+      new URL('../../i18n/changelogs/changelog_zh_Hans.ts', import.meta.url),
+      'utf8'
+    )
+    const changelogZhHantSource = readFileSync(
+      new URL('../../i18n/changelogs/changelog_zh_Hant.ts', import.meta.url),
+      'utf8'
+    )
+
+    expect(changelogEnSource).not.toMatch(/Chatbox/)
+    expect(changelogZhHansSource).not.toMatch(/Chatbox/)
+    expect(changelogZhHantSource).not.toMatch(/Chatbox/)
+    expect(changelogEnSource).not.toMatch(/ChatboxAI/)
+    expect(changelogZhHansSource).not.toMatch(/ChatboxAI/)
+    expect(changelogZhHantSource).not.toMatch(/ChatboxAI/)
+  })
+
+  it('removes chatbox branding copy from main shell, about and copilots sources', () => {
+    const mainSource = readFileSync(new URL('../../../main/main.ts', import.meta.url), 'utf8')
+    const menuSource = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf8')
+    const autoLauncherSource = readFileSync(new URL('../../../main/autoLauncher.ts', import.meta.url), 'utf8')
+    const aboutSource = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
+    const copilotsSource = readFileSync(new URL('../copilots.tsx', import.meta.url), 'utf8')
+
+    expect(mainSource).not.toMatch(/electron\.app\.Chatbox/)
+    expect(mainSource).not.toMatch(/tray\.setToolTip\('Chatbox'\)/)
+
+    expect(menuSource).not.toMatch(/label:\s*'Chatbox'/)
+    expect(menuSource).not.toMatch(/label:\s*'About Chatbox'/)
+    expect(menuSource).not.toMatch(/label:\s*'Hide Chatbox'/)
+
+    expect(autoLauncherSource).not.toMatch(/new AutoLaunch\(\{ name: 'Chatbox' \}\)/)
+
+    expect(aboutSource).not.toMatch(/title=\{`Chatbox v\$\{version\.version\}`\}/)
+    expect(aboutSource).not.toMatch(/附带 Chatbox/)
+    expect(aboutSource).not.toMatch(/Chatbox客户端/)
+
+    expect(copilotsSource).not.toMatch(/Chatbox Featured Section/)
+    expect(copilotsSource).not.toMatch(/Chatbox Featured/)
+    expect(copilotsSource).not.toMatch(/Share with Chatbox/)
+  })
+
+  it('removes chatbox branding copy from shell metadata, settings copy and message editor gates', () => {
+    const indexEjsSource = readFileSync(new URL('../../index.ejs', import.meta.url), 'utf8')
+    const indexHtmlSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
+    const indexWebEjsSource = readFileSync(new URL('../../index.web.ejs', import.meta.url), 'utf8')
+    const generalSource = readFileSync(new URL('../settings/general.tsx', import.meta.url), 'utf8')
+    const advancedSettingSource = readFileSync(
+      new URL('../../pages/SettingDialog/AdvancedSettingTab.tsx', import.meta.url),
+      'utf8'
+    )
+    const webSearchSource = readFileSync(new URL('../settings/web-search.tsx', import.meta.url), 'utf8')
+    const messageSource = readFileSync(new URL('../../components/chat/Message.tsx', import.meta.url), 'utf8')
+    const messageErrTipsSource = readFileSync(new URL('../../components/chat/MessageErrTips.tsx', import.meta.url), 'utf8')
+    const sessionStoreSource = readFileSync(new URL('../../stores/session/index.ts', import.meta.url), 'utf8')
+
+    expect(indexEjsSource).not.toMatch(/apple-mobile-web-app-title\"\s+content=\"chatbox\"/)
+    expect(indexHtmlSource).not.toMatch(/apple-mobile-web-app-title\"\s+content=\"chatbox\"/)
+    expect(indexWebEjsSource).not.toMatch(/apple-mobile-web-app-title\"\s+content=\"chatbox\"/)
+    expect(indexEjsSource).not.toMatch(/<title>Chatbox<\/title>/)
+    expect(indexHtmlSource).not.toMatch(/<title>Chatbox<\/title>/)
+    expect(indexWebEjsSource).not.toMatch(/<title>Chatbox网页版<\/title>/)
+    expect(indexWebEjsSource).not.toMatch(/>Chatbox<\/h1>/)
+
+    expect(generalSource).not.toMatch(/Chatbox respects your privacy/)
+    expect(generalSource).not.toMatch(/chatbox-exported-data-/)
+    expect(generalSource).not.toMatch(/chatbox-logs-/)
+    expect(advancedSettingSource).not.toMatch(/Chatbox respects your privacy/)
+    expect(advancedSettingSource).not.toMatch(/chatbox-exported-data-/)
+
+    expect(webSearchSource).not.toMatch(/query:\s*'Chatbox'/)
+    expect(webSearchSource).not.toMatch(/utm_source=chatbox/)
+
+    expect(messageSource).not.toMatch(/startsWith\('Chatbox-AI'\)/)
+    expect(messageSource).not.toMatch(/Chatbox-AI 模型不支持编辑消息/)
+    expect(messageErrTipsSource).not.toMatch(/Chatbox AI License/)
+
+    expect(sessionStoreSource).not.toMatch(/for Chatbox\./)
+  })
+
+  it('removes chatbox branding copy from sidebar title and web-search class naming', () => {
+    const sidebarSource = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
+    const chatboxSearchSource = readFileSync(new URL('../../packages/web-search/chatbox-search.ts', import.meta.url), 'utf8')
+
+    expect(sidebarSource).not.toMatch(/>\s*Chatbox\s*</)
+    expect(chatboxSearchSource).not.toMatch(/export class ChatboxSearch/)
+  })
 })

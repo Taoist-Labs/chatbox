@@ -2,7 +2,7 @@ import type { SearchResult } from '@shared/types'
 import { webBrowsing } from '@/packages/remote'
 import WebSearch from './base'
 
-export class ChatboxSearch extends WebSearch {
+export class BuiltInSearch extends WebSearch {
   private licenseKey: string
 
   constructor(licenseKey: string) {

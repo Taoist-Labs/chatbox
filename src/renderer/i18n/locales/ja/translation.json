@@ -193,7 +193,7 @@
   "Connection failed!": "接続失敗！",
   "Connection successful": "接続に成功しました",
   "Connection successful!": "接続成功！",
-  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "{{aiProvider}}への接続に失敗しました。これは通常、設定の誤りや{{aiProvider}}アカウントの問題によるものです。設定を確認して{{aiProvider}}アカウントのステータスを確認するか、<LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>を購入して、すべての高度なモデルを即座に設定なしでロック解除してください。",
+  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Hosted AI service license</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "{{aiProvider}}への接続に失敗しました。これは通常、設定の誤りや{{aiProvider}}アカウントの問題によるものです。設定を確認して{{aiProvider}}アカウントのステータスを確認するか、<LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>を購入して、すべての高度なモデルを即座に設定なしでロック解除してください。",
   "Content": "コンテンツ",
   "Context": "コンテキスト",
   "Context Management": "コンテキスト管理",

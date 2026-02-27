@@ -174,7 +174,7 @@ export function RouteComponent() {
           <Title order={5}>{t('Error Reporting')}</Title>
           <Text c="chatbox-tertiary">
             {t(
-              'Chatbox respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
+              'This app respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
             )}
           </Text>
         </Stack>
@@ -333,7 +333,7 @@ const ImportExportDataSection = () => {
     data['__exported_items'] = exportItems
     data['__exported_at'] = date.toISOString()
     const dateStr = dayjs(date).format('YYYY-M-D')
-    platform.exporter.exportTextFile(`chatbox-exported-data-${dateStr}.json`, JSON.stringify(data))
+    platform.exporter.exportTextFile(`app-exported-data-${dateStr}.json`, JSON.stringify(data))
   }
 
   const onImport = (file: File | null) => {
@@ -517,7 +517,7 @@ const ExportLogsSection = () => {
 
       const date = new Date()
       const dateStr = dayjs(date).format('YYYY-M-D_H-m')
-      await platform.exporter.exportTextFile(`chatbox-logs-${dateStr}.txt`, logs)
+      await platform.exporter.exportTextFile(`app-logs-${dateStr}.txt`, logs)
       setExportResult({ success: true })
     } catch (error) {
       console.error('Failed to export logs:', error)

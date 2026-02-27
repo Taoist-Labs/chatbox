@@ -44,7 +44,7 @@ const knowledgeBaseInitPromise = import('./knowledge-base/index.js')
     log.error('[KB] Failed to initialize knowledge base during bootstrap:', error)
   })
 
-// 这行代码是解决 Windows 通知的标题和图标不正确的问题，标题会错误显示成 electron.app.Chatbox
+// 这行代码是解决 Windows 通知的标题和图标不正确的问题，标题会错误显示成 electron.app.<AppName>
 // 参考：https://stackoverflow.com/questions/65859634/notification-from-electron-shows-electron-app-electron
 if (process.platform === 'win32') {
   app.setAppUserModelId(app.name)
@@ -180,7 +180,7 @@ function createTray() {
       accelerator: 'Command+Q',
     },
   ])
-  tray.setToolTip('Chatbox')
+  tray.setToolTip('AI Client')
   tray.setContextMenu(contextMenu)
   tray.on('double-click', showOrHideWindow)
   return tray

@@ -269,8 +269,7 @@ const _Message: FC<Props> = (props) => {
               icon: IconArrowDown,
               onClick: onGenerateMore,
             },
-            !msg.model?.startsWith('Chatbox-AI') &&
-              !(msg.role === 'assistant' && props.sessionType === 'picture') && {
+            !(msg.role === 'assistant' && props.sessionType === 'picture') && {
                 text: t('edit'),
                 icon: IconPencil,
                 onClick: onEditClick,
@@ -553,12 +552,10 @@ const _Message: FC<Props> = (props) => {
                   )}
 
                   {
-                    // Chatbox-AI 模型不支持编辑消息
-                    !msg.model?.startsWith('Chatbox-AI') &&
-                      // 图片会话中，助手消息无需编辑
-                      !(msg.role === 'assistant' && props.sessionType === 'picture') && (
-                        <MessageActionIcon icon={IconPencil} tooltip={t('edit')} onClick={onEditClick} />
-                      )
+                    // 图片会话中，助手消息无需编辑
+                    !(msg.role === 'assistant' && props.sessionType === 'picture') && (
+                      <MessageActionIcon icon={IconPencil} tooltip={t('edit')} onClick={onEditClick} />
+                    )
                   }
 
                   {!(props.sessionType === 'picture' && msg.role === 'assistant') && (

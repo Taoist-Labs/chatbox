@@ -40,8 +40,8 @@ function RouteComponent() {
             <Image h={100} w={100} mah={'20vw'} maw={'20vw'} src={iconPNG} />
             <Stack flex={1} gap="xxs">
               <Flex justify="space-between" align="center" wrap="wrap" gap={isSmallScreen ? 'xs' : 'sm'} rowGap="xs">
-                <Title order={5} lh={1.5} lineClamp={1} title={`Chatbox v${version.version}`}>
-                  Chatbox {/\d/.test(version.version) ? `(v${version.version})` : ''}
+                <Title order={5} lh={1.5} lineClamp={1} title={`AI Client v${version.version}`}>
+                  AI Client {/\d/.test(version.version) ? `(v${version.version})` : ''}
                 </Title>
 
                 <Button
@@ -87,8 +87,8 @@ function RouteComponent() {
                 <Title order={5}>正版提示</Title>
               </Flex>
               <Text>
-                近期出现了附带 Chatbox 的所谓一键本地部署 DeepSeek 的付费捆绑软件安装包。
-                Chatbox客户端本身是开源免费软件，托管AI服务请以官方渠道说明为准。
+                近期出现了附带本应用的所谓一键本地部署 DeepSeek 的付费捆绑软件安装包。
+                本应用客户端本身是开源免费软件，托管 AI 服务请以官方渠道说明为准。
                 如果发现上当受骗，请尽快在对应支付平台如微信、支付宝申请退款。
               </Text>
             </Stack>

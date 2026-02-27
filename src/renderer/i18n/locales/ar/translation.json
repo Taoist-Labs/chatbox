@@ -193,7 +193,7 @@
   "Connection failed!": "فشل الاتصال!",
   "Connection successful": "اتصال ناجح",
   "Connection successful!": "تم الاتصال بنجاح!",
-  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "فشل الاتصال بـ {{aiProvider}}. يحدث هذا عادةً بسبب تكوين غير صحيح أو مشكلات في حساب {{aiProvider}}. يرجى <buttonOpenSettings>التحقق من الإعدادات</buttonOpenSettings> والتحقق من حالة حسابك في {{aiProvider}}، أو شراء <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> لفتح جميع النماذج المتقدمة على الفور دون أي تكوين.",
+  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Hosted AI service license</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "فشل الاتصال بـ {{aiProvider}}. يحدث هذا عادةً بسبب تكوين غير صحيح أو مشكلات في حساب {{aiProvider}}. يرجى <buttonOpenSettings>التحقق من الإعدادات</buttonOpenSettings> والتحقق من حالة حسابك في {{aiProvider}}، أو شراء <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> لفتح جميع النماذج المتقدمة على الفور دون أي تكوين.",
   "Content": "المحتوى",
   "Context": "السياق",
   "Context Management": "إدارة السياق",

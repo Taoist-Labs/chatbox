@@ -193,7 +193,7 @@
   "Connection failed!": "연결 실패!",
   "Connection successful": "연결 성공",
   "Connection successful!": "연결 성공!",
-  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "{{aiProvider}}에 연결하지 못했습니다. 일반적으로 잘못된 구성 또는 {{aiProvider}} 계정 문제로 발생합니다. <buttonOpenSettings>설정을 확인</buttonOpenSettings>하고 {{aiProvider}} 계정 상태를 확인하거나 <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>를 구매하여 모든 고급 모델을 즉시 구성 없이 잠금 해제하세요.",
+  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Hosted AI service license</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "{{aiProvider}}에 연결하지 못했습니다. 일반적으로 잘못된 구성 또는 {{aiProvider}} 계정 문제로 발생합니다. <buttonOpenSettings>설정을 확인</buttonOpenSettings>하고 {{aiProvider}} 계정 상태를 확인하거나 <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>를 구매하여 모든 고급 모델을 즉시 구성 없이 잠금 해제하세요.",
   "Content": "콘텐츠",
   "Context": "컨텍스트",
   "Context Management": "컨텍스트 관리",

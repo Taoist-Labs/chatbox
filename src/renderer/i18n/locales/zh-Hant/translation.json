@@ -191,7 +191,7 @@
   "Connection failed!": "連接失敗！",
   "Connection successful": "連線成功",
   "Connection successful!": "連接成功！",
-  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "與 {{aiProvider}} 的連接失敗。這通常是由於配置不正確或 {{aiProvider}} 帳戶問題引起的。請<OpenSettingsButton>檢查您的設置</OpenSettingsButton>並驗證您的 {{aiProvider}} 帳戶狀態，或購買<LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>即可立即解鎖所有高級模型，無需任何配置。",
+  "Connection to {{aiProvider}} failed. This typically occurs due to incorrect configuration or {{aiProvider}} account issues. Please <buttonOpenSettings>check your settings</buttonOpenSettings> and verify your {{aiProvider}} account status, or purchase a <LinkToLicensePricing>Hosted AI service license</LinkToLicensePricing> to unlock all advanced models instantly without any configuration.": "與 {{aiProvider}} 的連接失敗。這通常是由於配置不正確或 {{aiProvider}} 帳戶問題引起的。請<OpenSettingsButton>檢查您的設置</OpenSettingsButton>並驗證您的 {{aiProvider}} 帳戶狀態，或購買<LinkToLicensePricing>Chatbox AI License</LinkToLicensePricing>即可立即解鎖所有高級模型，無需任何配置。",
   "Content": "內容",
   "Context": "上下文",
   "Context Management": "上下文管理",

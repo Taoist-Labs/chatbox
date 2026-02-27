@@ -31,7 +31,7 @@ export function RouteComponent() {
             Authorization: `Bearer ${extension.webSearch.tavilyApiKey}`,
           },
           body: {
-            query: 'Chatbox',
+            query: 'AI client',
             search_depth: 'basic',
             include_domains: [],
             exclude_domains: [],
@@ -130,7 +130,7 @@ export function RouteComponent() {
             size="compact-xs"
             px={0}
             className="self-start"
-            onClick={() => platform.openLink('https://app.tavily.com?utm_source=chatbox')}
+            onClick={() => platform.openLink('https://app.tavily.com?utm_source=app')}
           >
             {t('Get API Key')}
           </Button>
