@@ -12,7 +12,20 @@ export type SystemAvatarProps = {
   sessionType?: 'chat' | 'picture'
 } & PolymorphicComponentProps<'div', AvatarProps>
 
-export const SystemAvatar: FC<SystemAvatarProps> = ({ size = 'md', className, ...avatarProps }) => {
+export const SystemAvatar: FC<SystemAvatarProps> = ({
+  size = 'md',
+  className,
+  sessionType: _sessionType,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  onContextMenu,
+  id,
+  title,
+  style,
+  classNames,
+  styles,
+}) => {
   const realSize = typeof size === 'number' ? size : { xs: 18, sm: 20, md: 28, lg: 32, xl: 36 }[size]
   const iconSize = Math.ceil(realSize / 2) + 2
 
@@ -21,12 +34,20 @@ export const SystemAvatar: FC<SystemAvatarProps> = ({ size = 'md', className, ..
       size={realSize}
       radius={realSize / 2}
       bd={0}
-      className={clsx('overflow-hidden', avatarProps.onClick ? 'cursor-pointer' : '', className)}
+      className={clsx('overflow-hidden', onClick ? 'cursor-pointer' : '', className)}
       classNames={{
         placeholder: 'border-0 bg-transparent !text-white flex flex-row items-center justify-center',
+        ...classNames,
       }}
+      styles={styles}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onContextMenu={onContextMenu}
+      id={id}
+      title={title}
+      style={style}
       bg={'chatbox-warning'}
-      {...avatarProps}
     >
       <ScalableIcon icon={IconSettingsFilled} size={iconSize} className="!text-inherit" />
     </Avatar>
