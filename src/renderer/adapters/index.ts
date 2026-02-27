@@ -1,7 +1,5 @@
 import { createAfetch } from '@shared/request/request'
 import type { ApiRequestOptions, ModelDependencies } from '@shared/types/adapters'
-import { getOS } from '@/packages/navigator'
-import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import * as settingActions from '@/stores/settingActions'
@@ -9,15 +7,7 @@ import { apiRequest } from '@/utils/request'
 import { RendererSentryAdapter } from './sentry'
 
 export async function createModelDependencies(): Promise<ModelDependencies> {
-  // 获取平台信息
-  const platformInfo = {
-    type: platform.type,
-    platform: await platform.getPlatform(),
-    os: getOS(),
-    version: (await platform.getVersion()) || 'unknown',
-  }
-
-  const afetch = createAfetch(platformInfo)
+  const afetch = createAfetch()
 
   return {
     storage: {

@@ -400,9 +400,8 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
-  it('removes legacy domain defaults from shared api pool source', () => {
-    const source = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
-    expect(source).not.toMatch(/chatboxai\.app/)
+  it('removes deprecated shared api pool file', () => {
+    expect(existsSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url))).toBe(false)
   })
 
   it('removes legacy api error class usage from shared request source', () => {
@@ -424,13 +423,12 @@ describe('legacy deep prune', () => {
   })
 
   it('removes legacy-named api pool helpers from request and remote sources', () => {
-    const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
     const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const remoteSource = readFileSync(new URL('../../packages/remote.ts', import.meta.url), 'utf8')
-    expect(poolSource).not.toMatch(/isChatboxAPI/)
-    expect(poolSource).not.toMatch(/getChatboxAPIOrigin/)
     expect(requestSource).not.toMatch(/isChatboxAPI/)
+    expect(requestSource).not.toMatch(/remote_api_pool/)
     expect(remoteSource).not.toMatch(/getChatboxAPIOrigin/)
+    expect(remoteSource).not.toMatch(/remote_api_pool/)
   })
 
   it('removes legacy-named shared request pool file', () => {
@@ -653,10 +651,10 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/download\.chatboxai\.app/)
   })
 
-  it('removes legacy api domain residue from remote pool and updater sources', () => {
-    const poolSource = readFileSync(new URL('../../../shared/request/remote_api_pool.ts', import.meta.url), 'utf8')
+  it('removes legacy api domain residue from request and updater sources', () => {
+    const requestSource = readFileSync(new URL('../../../shared/request/request.ts', import.meta.url), 'utf8')
     const updaterSource = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
-    expect(poolSource).not.toMatch(/api\.chatboxai\.com/)
+    expect(requestSource).not.toMatch(/api\.chatboxai\.com/)
     expect(updaterSource).not.toMatch(/api\.chatboxai\.com/)
   })
 

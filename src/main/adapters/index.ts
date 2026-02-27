@@ -1,4 +1,3 @@
-import { app } from 'electron'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -7,15 +6,7 @@ import type { ApiRequestOptions, ModelDependencies } from '../../shared/types/ad
 import { sentry } from './sentry'
 
 export async function createModelDependencies(): Promise<ModelDependencies> {
-  // Main层的平台信息
-  const platformInfo = {
-    type: 'desktop',
-    platform: process.platform,
-    os: os.platform(),
-    version: app.getVersion(),
-  }
-
-  const afetch = createAfetch(platformInfo)
+  const afetch = createAfetch()
 
   return {
     storage: {

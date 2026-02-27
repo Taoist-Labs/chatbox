@@ -1,15 +1,7 @@
 import { ApiError, BaseError, RemoteAPIError, NetworkError } from '../models/errors'
 import { parseJsonOrEmpty } from '../utils/json_utils'
-import { isRemoteAPI } from './remote_api_pool'
 
-interface PlatformInfo {
-  type: string
-  platform: string
-  os: string
-  version: string
-}
-
-export function createAfetch(platformInfo: PlatformInfo) {
+export function createAfetch() {
   return async function afetch(
     url: RequestInfo | URL,
     init?: RequestInit,
@@ -22,18 +14,6 @@ export function createAfetch(platformInfo: PlatformInfo) {
     const retry = options.retry || 0
     for (let i = 0; i < retry + 1; i++) {
       try {
-        if (isRemoteAPI(url)) {
-          init = {
-            ...init,
-            headers: {
-              ...init?.headers,
-              'CHATBOX-PLATFORM': platformInfo.platform,
-              'CHATBOX-PLATFORM-TYPE': platformInfo.type,
-              'CHATBOX-OS': platformInfo.os,
-              'CHATBOX-VERSION': platformInfo.version,
-            },
-          }
-        }
         const res = await fetch(url, init)
         // 状态码不在 200～299 之间，一般是接口报错了，这里也需要抛错后重试
         if (!res.ok) {
@@ -104,14 +84,13 @@ interface AuthTokens {
 }
 
 interface AuthenticatedAfetchConfig {
-  platformInfo: PlatformInfo
   getTokens: () => Promise<AuthTokens | null>
   refreshTokens: (refreshToken: string) => Promise<AuthTokens>
   clearTokens: () => Promise<void>
 }
 
 export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
-  const { platformInfo, getTokens, refreshTokens, clearTokens } = config
+  const { getTokens, refreshTokens, clearTokens } = config
 
   // 用于防止并发刷新 token
   let refreshPromise: Promise<AuthTokens> | null = null
@@ -134,13 +113,6 @@ export function createAuthenticatedAfetch(config: AuthenticatedAfetchConfig) {
     function buildHeaders(accessToken: string) {
       const authHeaders: Record<string, string> = {
         'x-chatbox-access-token': accessToken,
-      }
-
-      if (isRemoteAPI(url)) {
-        authHeaders['CHATBOX-PLATFORM'] = platformInfo.platform
-        authHeaders['CHATBOX-PLATFORM-TYPE'] = platformInfo.type
-        authHeaders['CHATBOX-OS'] = platformInfo.os
-        authHeaders['CHATBOX-VERSION'] = platformInfo.version
       }
 
       return {

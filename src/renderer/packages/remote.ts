@@ -23,12 +23,7 @@ async function initAfetch(): Promise<ReturnType<typeof createAfetch>> {
   if (afetchPromise) return afetchPromise
 
   afetchPromise = (async () => {
-    _afetch = createAfetch({
-      type: platform.type,
-      platform: await platform.getPlatform(),
-      os: getOS(),
-      version: await platform.getVersion(),
-    })
+    _afetch = createAfetch()
     return _afetch
   })()
 
@@ -52,12 +47,6 @@ async function initAuthenticatedAfetch(): Promise<ReturnType<typeof createAuthen
 
   authenticatedAfetchPromise = (async () => {
     _authenticatedAfetch = createAuthenticatedAfetch({
-      platformInfo: {
-        type: platform.type,
-        platform: await platform.getPlatform(),
-        os: getOS(),
-        version: await platform.getVersion(),
-      },
       getTokens: async () => {
         const tokens = authInfoStore.getState().getTokens()
         return tokens
