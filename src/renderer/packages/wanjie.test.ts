@@ -89,6 +89,58 @@ describe('wanjie helpers', () => {
     expect(models).toEqual(expected)
   })
 
+  it('logs context window read and assign stages when mapping models', () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    process.env.NODE_ENV = 'development'
+    try {
+      mapWanjieModels([
+        {
+          modelName: 'gpt-4o',
+          contextLength: 128000,
+        },
+      ])
+
+      const contextDebugCalls = debugSpy.mock.calls
+        .filter((call) => call[0] === '[Wanjie Context Debug]')
+        .map((call) => call[1] as { stage?: string })
+
+      expect(contextDebugCalls.some((call) => call.stage === 'model_context_read')).toBe(true)
+      expect(contextDebugCalls.some((call) => call.stage === 'model_context_assign')).toBe(true)
+    } finally {
+      debugSpy.mockRestore()
+      process.env.NODE_ENV = previousNodeEnv
+    }
+  })
+
+  it('does not print debug logs outside development', () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    process.env.NODE_ENV = 'production'
+    try {
+      logWanjieAuthDebug({
+        path: '/api/auth/login',
+        method: 'POST',
+        stage: 'response_encrypted',
+        data: { data: 'cipher', iv: 'nonce' },
+      })
+
+      mapWanjieModels([
+        {
+          modelName: 'gpt-4o',
+          contextLength: 128000,
+        },
+      ])
+
+      const debugLabels = debugSpy.mock.calls.map((call) => call[0])
+      expect(debugLabels).not.toContain('[Wanjie Auth Debug]')
+      expect(debugLabels).not.toContain('[Wanjie Context Debug]')
+    } finally {
+      debugSpy.mockRestore()
+      process.env.NODE_ENV = previousNodeEnv
+    }
+  })
+
   it('uses built-in wanjie runtime config', () => {
     expect(getWanjieBuiltinConfig()).toEqual({
       workerBaseUrl: WANJIE_WORKER_API_HOST,
@@ -128,36 +180,40 @@ describe('wanjie helpers', () => {
   })
 
   it('prints encrypted and decrypted debug logs for wanjie auth flow', () => {
+    const previousNodeEnv = process.env.NODE_ENV
     const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    process.env.NODE_ENV = 'development'
+    try {
+      logWanjieAuthDebug({
+        path: '/api/auth/login',
+        method: 'POST',
+        stage: 'response_encrypted',
+        data: { data: 'cipher', iv: 'nonce' },
+      })
 
-    logWanjieAuthDebug({
-      path: '/api/auth/login',
-      method: 'POST',
-      stage: 'response_encrypted',
-      data: { data: 'cipher', iv: 'nonce' },
-    })
+      logWanjieAuthDebug({
+        path: '/api/auth/login',
+        method: 'POST',
+        stage: 'response_decrypted',
+        data: { success: true, result: { accessToken: 'token' } },
+      })
 
-    logWanjieAuthDebug({
-      path: '/api/auth/login',
-      method: 'POST',
-      stage: 'response_decrypted',
-      data: { success: true, result: { accessToken: 'token' } },
-    })
-
-    expect(debugSpy).toHaveBeenCalledTimes(2)
-    expect(debugSpy.mock.calls[0]?.[0]).toBe('[Wanjie Auth Debug]')
-    expect(debugSpy.mock.calls[0]?.[1]).toMatchObject({
-      path: '/api/auth/login',
-      method: 'POST',
-      stage: 'response_encrypted',
-    })
-    expect(debugSpy.mock.calls[1]?.[1]).toMatchObject({
-      path: '/api/auth/login',
-      method: 'POST',
-      stage: 'response_decrypted',
-    })
-
-    debugSpy.mockRestore()
+      expect(debugSpy).toHaveBeenCalledTimes(2)
+      expect(debugSpy.mock.calls[0]?.[0]).toBe('[Wanjie Auth Debug]')
+      expect(debugSpy.mock.calls[0]?.[1]).toMatchObject({
+        path: '/api/auth/login',
+        method: 'POST',
+        stage: 'response_encrypted',
+      })
+      expect(debugSpy.mock.calls[1]?.[1]).toMatchObject({
+        path: '/api/auth/login',
+        method: 'POST',
+        stage: 'response_decrypted',
+      })
+    } finally {
+      debugSpy.mockRestore()
+      process.env.NODE_ENV = previousNodeEnv
+    }
   })
 
   it('creates sms cooldown deadline using default cooldown seconds', () => {

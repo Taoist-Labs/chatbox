@@ -25,10 +25,16 @@ export type WanjieAuthDebugStage =
   | 'response_failed'
   | 'response_invalid'
 
+export type WanjieContextDebugStage = 'settings_models_read' | 'model_context_read' | 'model_context_assign'
+
 const WanjieAuthDebugPathPattern = /^\/api\/(sms\/send|auth\/login|user\/models|user\/api-key|user\/api-keys)$/
 
 export function shouldLogWanjieAuthPath(path: string): boolean {
   return WanjieAuthDebugPathPattern.test(path)
+}
+
+function shouldLogWanjieDebugByEnv(): boolean {
+  return process.env.NODE_ENV === 'development'
 }
 
 export function logWanjieAuthDebug(params: {
@@ -37,7 +43,7 @@ export function logWanjieAuthDebug(params: {
   stage: WanjieAuthDebugStage
   data: unknown
 }) {
-  if (!shouldLogWanjieAuthPath(params.path)) {
+  if (!shouldLogWanjieDebugByEnv() || !shouldLogWanjieAuthPath(params.path)) {
     return
   }
 
@@ -45,6 +51,22 @@ export function logWanjieAuthDebug(params: {
     path: params.path,
     method: params.method,
     stage: params.stage,
+    data: params.data,
+  })
+}
+
+export function logWanjieContextDebug(params: {
+  stage: WanjieContextDebugStage
+  modelId?: string
+  data: unknown
+}) {
+  if (!shouldLogWanjieDebugByEnv()) {
+    return
+  }
+
+  console.log('[Wanjie Context Debug]', {
+    stage: params.stage,
+    modelId: params.modelId,
     data: params.data,
   })
 }
@@ -84,6 +106,14 @@ export function buildWanjieConfiguredSettings(params: {
   apiKey: string
   models: ProviderModelInfo[]
 }): ProviderSettings {
+  logWanjieContextDebug({
+    stage: 'settings_models_read',
+    data: params.models.map((model) => ({
+      modelId: model.modelId,
+      contextWindow: model.contextWindow,
+    })),
+  })
+
   return {
     apiHost: WANJIE_MODEL_API_HOST,
     wanjiePhone: params.phone,
@@ -349,8 +379,24 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
     }
 
     const contextWindow = getNumberFromRecord(item, ['contextLength', 'contextWindow'])
+    logWanjieContextDebug({
+      stage: 'model_context_read',
+      modelId,
+      data: {
+        contextLength: item.contextLength,
+        contextWindow: item.contextWindow,
+        parsedContextWindow: contextWindow,
+      },
+    })
     if (typeof contextWindow === 'number') {
       model.contextWindow = contextWindow
+      logWanjieContextDebug({
+        stage: 'model_context_assign',
+        modelId,
+        data: {
+          assignedContextWindow: model.contextWindow,
+        },
+      })
     }
 
     if (hasVisionCapability(item)) {
