@@ -30,17 +30,35 @@ describe('wanjie helpers', () => {
         {
           id: 'k2',
           apiKey: 'sk-second',
-          dafaultFlag: false,
+          defaultFlag: false,
         },
         {
           id: 'k1',
           apiKey: 'sk-default',
-          dafaultFlag: true,
+          defaultFlag: true,
         },
       ],
     })
 
     expect(apiKey).toBe('sk-default')
+  })
+
+  it('does not treat legacy dafaultFlag typo as default marker', () => {
+    const apiKey = extractWanjieApiKey({
+      data: [
+        {
+          id: 'k1',
+          apiKey: 'sk-first',
+        },
+        {
+          id: 'k2',
+          apiKey: 'sk-legacy-default',
+          dafaultFlag: true,
+        },
+      ],
+    })
+
+    expect(apiKey).toBe('sk-first')
   })
 
   it('maps model response into provider model list', () => {
@@ -65,8 +83,7 @@ describe('wanjie helpers', () => {
         contextLength: 64000,
       },
       {
-        id: '2',
-        modelIdStr: 'qwen-plus',
+        modelId: 'qwen-plus',
         modelSummary: '文本模型',
       },
     ])
@@ -87,6 +104,16 @@ describe('wanjie helpers', () => {
     ]
 
     expect(models).toEqual(expected)
+  })
+
+  it('ignores legacy modelIdStr-only payload fields when mapping models', () => {
+    const models = mapWanjieModels([
+      {
+        modelIdStr: 'legacy-model-id',
+      },
+    ])
+
+    expect(models).toEqual([])
   })
 
   it('logs context window read and assign stages when mapping models', () => {

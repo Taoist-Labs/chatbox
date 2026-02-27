@@ -294,7 +294,7 @@ export function RouteComponent() {
         title={t('Wanjie Login Flow')}
       >
         <Text size="sm">
-          {t('Use phone + SMS code to login, then Chatbox will automatically pull API Key and authorized model list.')}
+          {t('Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.')}
         </Text>
       </Alert>
 

@@ -664,4 +664,35 @@ describe('chatbox deep prune', () => {
     const source = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/hi@chatboxai\.com/)
   })
+
+  it('removes chatbox branding residue from shared error i18n sources', () => {
+    const errorsSource = readFileSync(new URL('../../../shared/models/errors.ts', import.meta.url), 'utf8')
+    const keyScanSource = readFileSync(new URL('../../i18n/for-key-scan.ts', import.meta.url), 'utf8')
+
+    expect(errorsSource).not.toMatch(/Chatbox AI/)
+    expect(errorsSource).not.toMatch(/Chatbox Desktop App/)
+    expect(keyScanSource).not.toMatch(/Chatbox AI/)
+  })
+
+  it('removes chatboxai-named license model enums from shared settings source', () => {
+    const source = readFileSync(new URL('../../../shared/types/settings.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/chatboxai-3\.5/)
+    expect(source).not.toMatch(/chatboxai-4/)
+  })
+
+  it('removes chatbox branding copy from wanjie settings flow source', () => {
+    const source = readFileSync(new URL('./provider/wanjie/index.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/then Chatbox will automatically pull API Key/)
+  })
+
+  it('removes chatbox branding copy from builtin mcp servers settings source', () => {
+    const source = readFileSync(new URL('../../components/settings/mcp/BuiltinServersSection.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/Chatbox \{t\('Builtin MCP Servers'\)\}/)
+    expect(source).not.toMatch(/One-click MCP servers for Chatbox AI subscribers/)
+  })
+
+  it('removes chatbox branding copy from provider discount hint source', () => {
+    const source = readFileSync(new URL('../settings/provider/$providerId.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/AIHubMix integration in Chatbox offers 10% discount/)
+  })
 })

@@ -504,7 +504,7 @@ function ProviderSettings({ providerId }: { providerId: string }) {
                 <Flex align="center" gap={4}>
                   <ScalableIcon icon={IconDiscount2} size={14} color="var(--chatbox-tint-tertiary)" />
                   <Text span size="xs" c="chatbox-tertiary">
-                    {t('AIHubMix integration in Chatbox offers 10% discount')}
+                    {t('AIHubMix integration offers 10% discount')}
                   </Text>
                 </Flex>
               )}

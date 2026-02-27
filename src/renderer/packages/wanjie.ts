@@ -366,8 +366,7 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       continue
     }
 
-    const modelId =
-      getStringFromRecord(item, ['modelCode', 'modelName', 'modelIdStr', 'modelId', 'id', 'name']) || undefined
+    const modelId = getStringFromRecord(item, ['modelCode', 'modelName', 'modelId', 'id', 'name']) || undefined
     if (!modelId || uniqueModels.has(modelId)) {
       continue
     }
@@ -438,7 +437,7 @@ export function extractWanjieApiKey(rawApiKeyResult: unknown): string {
   }
 
   const list = apiKeyListCandidate.filter(isRecord)
-  const defaultItem = list.find((item) => item.dafaultFlag === true || item.defaultFlag === true)
+  const defaultItem = list.find((item) => item.defaultFlag === true)
   if (defaultItem) {
     return getStringFromRecord(defaultItem, ['apiKey', 'key']) || ''
   }
