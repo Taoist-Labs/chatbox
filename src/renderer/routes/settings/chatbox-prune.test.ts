@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 describe('chatbox deep prune', () => {
@@ -808,5 +808,20 @@ describe('chatbox deep prune', () => {
 
     expect(sidebarSource).not.toMatch(/>\s*Chatbox\s*</)
     expect(chatboxSearchSource).not.toMatch(/export class ChatboxSearch/)
+  })
+
+  it('removes chatbox branding copy from locale translation sources', () => {
+    const localesDir = new URL('../../i18n/locales/', import.meta.url)
+    const brandingPattern = /(ChatboxAI|Chatbox AI|Chatbox|chatbox-ai|chatboxai-3\.5|chatboxai-4)/
+    const localeDirs = readdirSync(localesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory())
+
+    for (const localeDir of localeDirs) {
+      const translationFile = new URL(`./${localeDir.name}/translation.json`, localesDir)
+      if (!existsSync(translationFile)) {
+        continue
+      }
+      const source = readFileSync(translationFile, 'utf8')
+      expect(source, `${localeDir.name}/translation.json`).not.toMatch(brandingPattern)
+    }
   })
 })
