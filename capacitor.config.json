@@ -1,5 +1,5 @@
 {
-  "appId": "xyz.aiclient.ce",
+  "appId": "com.taoistlabs.chat",
   "appName": "AIClientCE",
   "webDir": "release/app/dist/renderer",
   "plugins": {

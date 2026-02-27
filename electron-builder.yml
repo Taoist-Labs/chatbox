@@ -1,5 +1,5 @@
-productName: AIClientCE
-appId: xyz.aiclient.app
+productName: com.taoistlabs.chat
+appId: com.taoistlabs.chat
 asar: true
 asarUnpack:
   - "**\\*.{node,dll}"
