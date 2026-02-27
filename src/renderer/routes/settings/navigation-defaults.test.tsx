@@ -41,7 +41,7 @@ describe('settings navigation defaults', () => {
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
-  it('does not contain chatbox-ai item in settings sidebar source', () => {
+  it('does not contain legacy-ai item in settings sidebar source', () => {
     const source = readFileSync(new URL('./route.tsx', import.meta.url), 'utf8')
 
     expect(source).not.toMatch(/key:\s*'chatbox-ai'/)
