@@ -355,6 +355,24 @@ function hasVisionCapability(record: Record<string, unknown>): boolean {
   })
 }
 
+function mapWanjieContextWindow(record: Record<string, unknown>): number | undefined {
+  const contextLengthInK = getNumberFromRecord(record, ['contextLength'])
+  if (typeof contextLengthInK === 'number') {
+    // Wanjie returns contextLength in K tokens (e.g. 32 => 32000 tokens).
+    if (contextLengthInK <= 0) {
+      return undefined
+    }
+    return Math.round(contextLengthInK * 1000)
+  }
+
+  const contextWindow = getNumberFromRecord(record, ['contextWindow'])
+  if (typeof contextWindow === 'number' && contextWindow > 0) {
+    return contextWindow
+  }
+
+  return undefined
+}
+
 export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
   if (!Array.isArray(rawModels)) {
     return []
@@ -377,7 +395,7 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       type: 'chat',
     }
 
-    const contextWindow = getNumberFromRecord(item, ['contextLength', 'contextWindow'])
+    const contextWindow = mapWanjieContextWindow(item)
     logWanjieContextDebug({
       stage: 'model_context_read',
       modelId,

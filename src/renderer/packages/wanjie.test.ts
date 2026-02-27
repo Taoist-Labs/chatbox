@@ -66,7 +66,7 @@ describe('wanjie helpers', () => {
       {
         modelName: 'gpt-4o',
         modelSummary: '多模态模型',
-        contextLength: 128000,
+        contextLength: 128,
         modelModalRelations: [
           {
             modalClass: 1,
@@ -80,7 +80,7 @@ describe('wanjie helpers', () => {
       },
       {
         modelName: 'gpt-4o',
-        contextLength: 64000,
+        contextLength: 64,
       },
       {
         modelId: 'qwen-plus',
@@ -106,6 +106,23 @@ describe('wanjie helpers', () => {
     expect(models).toEqual(expected)
   })
 
+  it('treats contextLength=0 as unlimited and leaves contextWindow undefined', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'wanjie-unlimited',
+        contextLength: 0,
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'wanjie-unlimited',
+        nickname: 'wanjie-unlimited',
+        type: 'chat',
+      },
+    ])
+  })
+
   it('ignores legacy modelIdStr-only payload fields when mapping models', () => {
     const models = mapWanjieModels([
       {
@@ -124,7 +141,7 @@ describe('wanjie helpers', () => {
       mapWanjieModels([
         {
           modelName: 'gpt-4o',
-          contextLength: 128000,
+          contextLength: 128,
         },
       ])
 
@@ -155,7 +172,7 @@ describe('wanjie helpers', () => {
       mapWanjieModels([
         {
           modelName: 'gpt-4o',
-          contextLength: 128000,
+          contextLength: 128,
         },
       ])
 
