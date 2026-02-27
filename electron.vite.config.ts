@@ -151,6 +151,7 @@ export default defineConfig(({ mode }) => {
           autoCodeSplitting: true,
           routesDirectory: './src/renderer/routes',
           generatedRouteTree: './src/renderer/routeTree.gen.ts',
+          routeFileIgnorePattern: '\\.(test|spec)\\.[mc]?[jt]sx?$',
         }),
         react({}),
         dvhToVh(),
