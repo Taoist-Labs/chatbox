@@ -5,6 +5,8 @@ import * as localParser from '@/packages/local-parser'
 import { webSearchExecutor } from '@/packages/web-search'
 import platform from '@/platform'
 
+const WEB_SEARCH_LOG_PREFIX = '[WebSearchDebug]'
+
 const toolSetDescription = `
 Use these tools to search the web and extract content from URLs.
 
@@ -22,7 +24,26 @@ export const webSearchTool = tool({
     query: z.string().describe('the search query'),
   }),
   execute: async (input: { query: string }, { abortSignal }: { abortSignal?: AbortSignal }) => {
-    return await webSearchExecutor({ query: input.query }, { abortSignal })
+    const traceId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search called`, {
+      query: input.query,
+      platformType: platform.type,
+      signalAborted: abortSignal?.aborted ?? false,
+    })
+    try {
+      const result = await webSearchExecutor({ query: input.query }, { abortSignal })
+      console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search completed`, {
+        query: result.query,
+        resultCount: result.searchResults.length,
+      })
+      return result
+    } catch (error) {
+      console.error(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search failed`, {
+        query: input.query,
+        error,
+      })
+      throw error
+    }
   },
 })
 
