@@ -334,6 +334,38 @@ function getNumberFromRecord(record: Record<string, unknown>, keys: string[]): n
   return undefined
 }
 
+function normalizeWanjieApiStyle(value: string | undefined): ProviderModelInfo['apiStyle'] | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) {
+    return undefined
+  }
+  if (normalized === 'openai') {
+    return 'openai'
+  }
+  if (normalized === 'google' || normalized === 'gemini') {
+    return 'google'
+  }
+  if (normalized === 'anthropic' || normalized === 'claude') {
+    return 'anthropic'
+  }
+
+  return undefined
+}
+
+function getWanjieModelApiStyle(record: Record<string, unknown>): ProviderModelInfo['apiStyle'] | undefined {
+  const directApiStyle = normalizeWanjieApiStyle(getStringFromRecord(record, ['apiStyle', 'api_style']))
+  if (directApiStyle) {
+    return directApiStyle
+  }
+
+  const officialProvider = getStringFromRecord(record, ['officialProvider', 'official_provider'])
+  return normalizeWanjieApiStyle(officialProvider)
+}
+
 function hasVisionCapability(record: Record<string, unknown>): boolean {
   const joinedText = [record.modelSummary, record.modelName, record.name]
     .filter((item) => typeof item === 'string')
@@ -393,6 +425,11 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       modelId,
       nickname: getStringFromRecord(item, ['modelName', 'name']) || modelId,
       type: 'chat',
+    }
+
+    const apiStyle = getWanjieModelApiStyle(item)
+    if (apiStyle) {
+      model.apiStyle = apiStyle
     }
 
     const contextWindow = mapWanjieContextWindow(item)

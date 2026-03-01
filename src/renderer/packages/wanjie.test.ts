@@ -106,6 +106,44 @@ describe('wanjie helpers', () => {
     expect(models).toEqual(expected)
   })
 
+  it('maps officialProvider into apiStyle for compatibility routing', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'gpt-4o',
+        officialProvider: 'OpenAI',
+      },
+      {
+        modelName: 'gemini-2.5-pro',
+        officialProvider: 'Gemini',
+      },
+      {
+        modelName: 'claude-3-7-sonnet',
+        officialProvider: 'Anthropic',
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'gpt-4o',
+        nickname: 'gpt-4o',
+        type: 'chat',
+        apiStyle: 'openai',
+      },
+      {
+        modelId: 'gemini-2.5-pro',
+        nickname: 'gemini-2.5-pro',
+        type: 'chat',
+        apiStyle: 'google',
+      },
+      {
+        modelId: 'claude-3-7-sonnet',
+        nickname: 'claude-3-7-sonnet',
+        type: 'chat',
+        apiStyle: 'anthropic',
+      },
+    ])
+  })
+
   it('treats contextLength=0 as unlimited and leaves contextWindow undefined', () => {
     const models = mapWanjieModels([
       {
