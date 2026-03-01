@@ -54,6 +54,7 @@ export function RouteComponent() {
         comboboxProps={{ withinPortal: true, withArrow: true }}
         data={[
           { value: 'bing', label: 'Bing Search (Free)' },
+          { value: 'yahoo', label: 'Yahoo Search (Free)' },
           { value: 'tavily', label: 'Tavily' },
         ]}
         value={selectedProvider}
@@ -77,6 +78,11 @@ export function RouteComponent() {
           {t(
             'Bing Search is provided for free use, but it may have limitations and is subject to change by Microsoft.'
           )}
+        </Text>
+      )}
+      {selectedProvider === 'yahoo' && (
+        <Text size="xs" c="chatbox-gray">
+          {t('Yahoo Search is provided for free use, but it may have limitations and is subject to change by Yahoo.')}
         </Text>
       )}
       {/* Tavily API Key */}

@@ -8,6 +8,7 @@ import type WebSearch from './base'
 import { BingSearch } from './bing'
 import { BingNewsSearch } from './bing-news'
 import { TavilySearch } from './tavily'
+import { YahooSearch } from './yahoo'
 
 const MAX_CONTEXT_ITEMS = 10
 const WEB_SEARCH_LOG_PREFIX = '[WebSearchDebug]'
@@ -49,6 +50,9 @@ function getSearchProviders() {
           settings.webSearch.tavilyIncludeRawContent
         )
       )
+      break
+    case 'yahoo':
+      selectedProviders.push(new YahooSearch())
       break
     default:
       throw new Error(`Unsupported search provider: ${provider}`)
