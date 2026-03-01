@@ -860,5 +860,14 @@
   "Your HTML content has been published. You can access it via the link below.": "HTMLコンテンツが公開されました。以下のリンクからアクセスできます。",
   "Your license has expired.": "ライセンスの有効期限が切れました。",
   "Your license has expired. Please check your subscription or purchase a new one.": "ライセンスが期限切れです。サブスクリプションを確認するか、新しいものを購入してください。",
-  "Your license has expired. You can continue using your quota pack.": "ライセンスの有効期限が切れました。クォータパックは引き続きご利用いただけます。"
+  "Your license has expired. You can continue using your quota pack.": "ライセンスの有効期限が切れました。クォータパックは引き続きご利用いただけます。",
+  "Wanjie Login Flow": "Wanjie ログインフロー",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "電話番号 + SMSコードでログインすると、アプリが API Key と認可済みモデル一覧を自動取得します。",
+  "Phone Number": "電話番号",
+  "Send SMS Code": "SMSコードを送信",
+  "Verification Code": "認証コード",
+  "smsId has been captured automatically from the SMS request.": "SMSリクエストから smsId を自動取得しました。",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "smsId を自動取得するには、先に「SMSコードを送信」をクリックしてください。",
+  "Login and Configure": "ログインして設定",
+  "Refresh Configuration": "設定を更新"
 }

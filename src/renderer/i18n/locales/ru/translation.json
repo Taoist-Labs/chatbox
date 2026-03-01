@@ -860,5 +860,14 @@
   "Your HTML content has been published. You can access it via the link below.": "Ваш HTML-контент опубликован. Вы можете получить к нему доступ по ссылке ниже.",
   "Your license has expired.": "Ваша лицензия истекла.",
   "Your license has expired. Please check your subscription or purchase a new one.": "Ваша лицензия истекла. Пожалуйста, проверьте вашу подписку или приобретите новую.",
-  "Your license has expired. You can continue using your quota pack.": "Срок действия вашей лицензии истёк. Вы можете продолжить использовать свой пакет квот."
+  "Your license has expired. You can continue using your quota pack.": "Срок действия вашей лицензии истёк. Вы можете продолжить использовать свой пакет квот.",
+  "Wanjie Login Flow": "Процесс входа Wanjie",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "Используйте номер телефона и SMS-код для входа, затем приложение автоматически получит API-ключ и список авторизованных моделей.",
+  "Phone Number": "Номер телефона",
+  "Send SMS Code": "Отправить SMS-код",
+  "Verification Code": "Код подтверждения",
+  "smsId has been captured automatically from the SMS request.": "smsId был автоматически получен из SMS-запроса.",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Сначала нажмите «Отправить SMS-код», чтобы автоматически получить smsId.",
+  "Login and Configure": "Войти и настроить",
+  "Refresh Configuration": "Обновить конфигурацию"
 }

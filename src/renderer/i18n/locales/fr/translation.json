@@ -860,5 +860,14 @@
   "Your HTML content has been published. You can access it via the link below.": "Votre contenu HTML a été publié. Vous pouvez y accéder via le lien ci-dessous.",
   "Your license has expired.": "Votre licence a expiré.",
   "Your license has expired. Please check your subscription or purchase a new one.": "Votre licence a expiré. Veuillez vérifier votre abonnement ou en acheter un nouveau.",
-  "Your license has expired. You can continue using your quota pack.": "Votre licence a expiré. Vous pouvez continuer à utiliser votre pack de quota."
+  "Your license has expired. You can continue using your quota pack.": "Votre licence a expiré. Vous pouvez continuer à utiliser votre pack de quota.",
+  "Wanjie Login Flow": "Flux de connexion Wanjie",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "Utilisez le téléphone + code SMS pour vous connecter, puis l'application récupérera automatiquement la clé API et la liste des modèles autorisés.",
+  "Phone Number": "Numéro de téléphone",
+  "Send SMS Code": "Envoyer le code SMS",
+  "Verification Code": "Code de vérification",
+  "smsId has been captured automatically from the SMS request.": "Le smsId a été capturé automatiquement à partir de la requête SMS.",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Veuillez d'abord cliquer sur \"Envoyer le code SMS\" pour obtenir le smsId automatiquement.",
+  "Login and Configure": "Se connecter et configurer",
+  "Refresh Configuration": "Actualiser la configuration"
 }

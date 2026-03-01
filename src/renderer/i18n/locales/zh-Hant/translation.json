@@ -863,5 +863,14 @@
   "Your HTML content has been published. You can access it via the link below.": "您的 HTML 內容已成功發佈。您可以透過以下連結訪問。",
   "Your license has expired.": "您的許可證已過期。",
   "Your license has expired. Please check your subscription or purchase a new one.": "您的 License 已過期。請檢查您的訂閱或購買新的 License。",
-  "Your license has expired. You can continue using your quota pack.": "您的許可證已過期。您可以繼續使用您的配額包。"
+  "Your license has expired. You can continue using your quota pack.": "您的許可證已過期。您可以繼續使用您的配額包。",
+  "Wanjie Login Flow": "Wanjie 登入流程",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "使用手機號 + 簡訊驗證碼登入，應用會自動拉取 API Key 與已授權模型清單。",
+  "Phone Number": "手機號碼",
+  "Send SMS Code": "發送簡訊驗證碼",
+  "Verification Code": "驗證碼",
+  "smsId has been captured automatically from the SMS request.": "已自動從簡訊請求中擷取 smsId。",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "請先點擊「發送簡訊驗證碼」以自動取得 smsId。",
+  "Login and Configure": "登入並配置",
+  "Refresh Configuration": "重新整理配置"
 }

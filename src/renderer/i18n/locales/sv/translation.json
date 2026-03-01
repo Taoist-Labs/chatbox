@@ -860,5 +860,14 @@
   "Your HTML content has been published. You can access it via the link below.": "Ditt HTML-innehåll har publicerats. Du kan komma åt det via länken nedan.",
   "Your license has expired.": "Din licens har gått ut.",
   "Your license has expired. Please check your subscription or purchase a new one.": "Din licens har gått ut. Vänligen kontrollera din prenumeration eller köp en ny.",
-  "Your license has expired. You can continue using your quota pack.": "Din licens har gått ut. Du kan fortsätta använda ditt kvotpaket."
+  "Your license has expired. You can continue using your quota pack.": "Din licens har gått ut. Du kan fortsätta använda ditt kvotpaket.",
+  "Wanjie Login Flow": "Wanjie-inloggningsflöde",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "Använd telefonnummer + SMS-kod för att logga in, så hämtar appen automatiskt API-nyckeln och listan över auktoriserade modeller.",
+  "Phone Number": "Telefonnummer",
+  "Send SMS Code": "Skicka SMS-kod",
+  "Verification Code": "Verifieringskod",
+  "smsId has been captured automatically from the SMS request.": "smsId har hämtats automatiskt från SMS-begäran.",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Klicka först på \"Skicka SMS-kod\" för att hämta smsId automatiskt.",
+  "Login and Configure": "Logga in och konfigurera",
+  "Refresh Configuration": "Uppdatera konfiguration"
 }

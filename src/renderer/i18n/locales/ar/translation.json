@@ -859,5 +859,14 @@
   "Your HTML content has been published. You can access it via the link below.": "تم نشر محتوى HTML الخاص بك. يمكنك الوصول إليه عبر الرابط أدناه.",
   "Your license has expired.": "لقد انتهت صلاحية ترخيصك.",
   "Your license has expired. Please check your subscription or purchase a new one.": "انتهت صلاحية ترخيصك. يرجى التحقق من اشتراكك أو شراء ترخيص جديد.",
-  "Your license has expired. You can continue using your quota pack.": "انتهت صلاحية ترخيصك. يمكنك متابعة استخدام حزمة حصتك."
+  "Your license has expired. You can continue using your quota pack.": "انتهت صلاحية ترخيصك. يمكنك متابعة استخدام حزمة حصتك.",
+  "Wanjie Login Flow": "تدفق تسجيل دخول Wanjie",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "استخدم رقم الهاتف + رمز SMS لتسجيل الدخول، ثم سيقوم التطبيق تلقائيًا بجلب مفتاح API وقائمة النماذج المصرح بها.",
+  "Phone Number": "رقم الهاتف",
+  "Send SMS Code": "إرسال رمز SMS",
+  "Verification Code": "رمز التحقق",
+  "smsId has been captured automatically from the SMS request.": "تم التقاط smsId تلقائيًا من طلب SMS.",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "يرجى النقر أولاً على \"إرسال رمز SMS\" للحصول على smsId تلقائيًا.",
+  "Login and Configure": "تسجيل الدخول والتكوين",
+  "Refresh Configuration": "تحديث التكوين"
 }

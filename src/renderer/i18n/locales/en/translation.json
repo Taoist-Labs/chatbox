@@ -767,5 +767,14 @@
   "Your current plan does not support advanced file processing. Upgrade plan to get enhanced file processing capabilities.": "Your current plan does not support advanced file processing. Upgrade plan to get enhanced file processing capabilities.",
   "Your HTML content has been published. You can access it via the link below.": "Your HTML content has been published. You can access it via the link below.",
   "Your license has expired.": "Your license has expired.",
-  "Your license has expired. You can continue using your quota pack.": "Your license has expired. You can continue using your quota pack."
+  "Your license has expired. You can continue using your quota pack.": "Your license has expired. You can continue using your quota pack.",
+  "Wanjie Login Flow": "Wanjie Login Flow",
+  "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.": "Use phone + SMS code to login, then the app will automatically pull API Key and authorized model list.",
+  "Phone Number": "Phone Number",
+  "Send SMS Code": "Send SMS Code",
+  "Verification Code": "Verification Code",
+  "smsId has been captured automatically from the SMS request.": "smsId has been captured automatically from the SMS request.",
+  "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Please click \"Send SMS Code\" first to obtain smsId automatically.",
+  "Login and Configure": "Login and Configure",
+  "Refresh Configuration": "Refresh Configuration"
 }
