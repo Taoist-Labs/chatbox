@@ -8,6 +8,7 @@ import type WebSearch from './base'
 import { BaiduSearch } from './baidu'
 import { BingSearch } from './bing'
 import { BingNewsSearch } from './bing-news'
+import { QuarkSearch } from './quark'
 import { TavilySearch } from './tavily'
 import { YahooSearch } from './yahoo'
 
@@ -57,6 +58,9 @@ function getSearchProviders() {
       break
     case 'baidu':
       selectedProviders.push(new BaiduSearch())
+      break
+    case 'quark':
+      selectedProviders.push(new QuarkSearch())
       break
     default:
       throw new Error(`Unsupported search provider: ${provider}`)

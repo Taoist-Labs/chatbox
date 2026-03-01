@@ -34,4 +34,20 @@ describe('SettingsSchema web search provider', () => {
 
     expect(parsed.extension.webSearch.provider).toBe('baidu')
   })
+
+  it('accepts quark as web search provider', () => {
+    const seed = defaultSettings()
+    const parsed = SettingsSchema.parse({
+      ...seed,
+      extension: {
+        ...seed.extension,
+        webSearch: {
+          ...seed.extension.webSearch,
+          provider: 'quark',
+        },
+      },
+    })
+
+    expect(parsed.extension.webSearch.provider).toBe('quark')
+  })
 })
