@@ -18,4 +18,20 @@ describe('SettingsSchema web search provider', () => {
 
     expect(parsed.extension.webSearch.provider).toBe('yahoo')
   })
+
+  it('accepts baidu as web search provider', () => {
+    const seed = defaultSettings()
+    const parsed = SettingsSchema.parse({
+      ...seed,
+      extension: {
+        ...seed.extension,
+        webSearch: {
+          ...seed.extension.webSearch,
+          provider: 'baidu',
+        },
+      },
+    })
+
+    expect(parsed.extension.webSearch.provider).toBe('baidu')
+  })
 })

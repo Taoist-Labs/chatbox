@@ -55,6 +55,7 @@ export function RouteComponent() {
         data={[
           { value: 'bing', label: 'Bing Search (Free)' },
           { value: 'yahoo', label: 'Yahoo Search (Free)' },
+          { value: 'baidu', label: 'Baidu Search (Free)' },
           { value: 'tavily', label: 'Tavily' },
         ]}
         value={selectedProvider}
@@ -83,6 +84,11 @@ export function RouteComponent() {
       {selectedProvider === 'yahoo' && (
         <Text size="xs" c="chatbox-gray">
           {t('Yahoo Search is provided for free use, but it may have limitations and is subject to change by Yahoo.')}
+        </Text>
+      )}
+      {selectedProvider === 'baidu' && (
+        <Text size="xs" c="chatbox-gray">
+          {t('Baidu Search is provided for free use, but it may have limitations and is subject to change by Baidu.')}
         </Text>
       )}
       {/* Tavily API Key */}

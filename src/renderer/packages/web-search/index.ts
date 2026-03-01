@@ -5,6 +5,7 @@ import platform from '@/platform'
 import { getExtensionSettings, getLanguage } from '@/stores/settingActions'
 import { RemoteAPIError } from '../../../shared/models/errors'
 import type WebSearch from './base'
+import { BaiduSearch } from './baidu'
 import { BingSearch } from './bing'
 import { BingNewsSearch } from './bing-news'
 import { TavilySearch } from './tavily'
@@ -53,6 +54,9 @@ function getSearchProviders() {
       break
     case 'yahoo':
       selectedProviders.push(new YahooSearch())
+      break
+    case 'baidu':
+      selectedProviders.push(new BaiduSearch())
       break
     default:
       throw new Error(`Unsupported search provider: ${provider}`)
