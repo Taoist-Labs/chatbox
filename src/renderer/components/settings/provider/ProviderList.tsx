@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
-import { Button, Flex, Image, Indicator, ScrollArea, Stack, Text } from '@mantine/core'
+import { Flex, Image, Indicator, ScrollArea, Stack, Text } from '@mantine/core'
 import { ModelProviderEnum, type ProviderBaseInfo } from '@shared/types'
-import { IconChevronRight, IconFileImport, IconPlus } from '@tabler/icons-react'
+import { IconChevronRight } from '@tabler/icons-react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useMemo } from 'react'
@@ -12,7 +12,6 @@ import Divider from '@/components/common/Divider'
 import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
-import platform from '@/platform'
 
 // Use Vite's import.meta.glob to dynamically import all PNG files
 // Vite handles import.meta.glob at build time, even though TypeScript doesn't recognize it with commonjs module setting
@@ -30,12 +29,9 @@ const icons: { name: string; src: string }[] = Object.entries(iconsModules).map(
 
 interface ProviderListProps {
   providers: ProviderBaseInfo[]
-  onAddProvider: () => void
-  onImportProvider: () => void
-  isImporting: boolean
 }
 
-export function ProviderList({ providers, onAddProvider, onImportProvider, isImporting }: ProviderListProps) {
+export function ProviderList({ providers }: ProviderListProps) {
   const { t } = useTranslation()
   const isSmallScreen = useIsSmallScreen()
   const routerState = useRouterState()
@@ -122,21 +118,6 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
           ))}
         </Stack>
       </ScrollArea>
-      <Stack gap="xs" mx="md" my="sm">
-        <Button variant="outline" leftSection={<ScalableIcon icon={IconPlus} />} onClick={onAddProvider}>
-          {t('Add')}
-        </Button>
-        {platform.type !== 'mobile' && (
-          <Button
-            variant="light"
-            leftSection={<ScalableIcon icon={IconFileImport} />}
-            onClick={onImportProvider}
-            loading={isImporting}
-          >
-            {t('Import from clipboard')}
-          </Button>
-        )}
-      </Stack>
     </Stack>
   )
 }
