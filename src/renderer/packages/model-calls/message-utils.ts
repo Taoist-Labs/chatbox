@@ -6,6 +6,109 @@ import { compact } from 'lodash'
 import { createModelDependencies } from '@/adapters'
 import { cloneMessage, getMessageText } from '@/utils/message'
 
+const OCR_SUMMARY_MAX_CHARS = 120
+const OCR_EXCERPT_MAX_CHARS = 320
+
+export interface ConvertToModelMessagesOptions {
+  modelSupportVision?: boolean
+  maxImagesPerRequest?: number
+}
+
+export interface ImageContextPolicyOptions {
+  modelSupportVision: boolean
+  maxImagesPerRequest?: number
+}
+
+function normalizeText(text?: string): string {
+  return text?.replace(/\s+/g, ' ').trim() ?? ''
+}
+
+function truncateText(text: string, maxChars: number): string {
+  if (text.length <= maxChars) {
+    return text
+  }
+  return `${text.slice(0, maxChars)}...`
+}
+
+function buildImageMemoryText(ocrResult: string | undefined, mode: 'limit' | 'vision_not_supported'): string {
+  const header =
+    mode === 'limit'
+      ? 'Historical image omitted from model input to reduce token usage.'
+      : 'Model does not support image input. Converted image to text memory.'
+
+  const normalizedOCR = normalizeText(ocrResult)
+  if (!normalizedOCR) {
+    return header
+  }
+
+  const summary = truncateText(normalizedOCR, OCR_SUMMARY_MAX_CHARS)
+  const excerpt = truncateText(normalizedOCR, OCR_EXCERPT_MAX_CHARS)
+  if (summary === excerpt) {
+    return `${header}\nOCR summary: ${summary}`
+  }
+
+  return `${header}\nOCR summary: ${summary}\nOCR excerpt: ${excerpt}`
+}
+
+export function applyImageContextPolicy(messages: Message[], options: ImageContextPolicyOptions): Message[] {
+  const maxImages = options.modelSupportVision
+    ? Math.max(0, Math.floor(options.maxImagesPerRequest ?? Number.MAX_SAFE_INTEGER))
+    : 0
+
+  const imageRefs: Array<{ messageIndex: number; contentIndex: number }> = []
+  messages.forEach((message, messageIndex) => {
+    message.contentParts.forEach((part, contentIndex) => {
+      if (part.type === 'image') {
+        imageRefs.push({ messageIndex, contentIndex })
+      }
+    })
+  })
+
+  if (imageRefs.length === 0) {
+    return messages
+  }
+
+  const keepImageSet = new Set<string>()
+  let keepCount = 0
+  for (let i = imageRefs.length - 1; i >= 0 && keepCount < maxImages; i--) {
+    const ref = imageRefs[i]
+    keepImageSet.add(`${ref.messageIndex}:${ref.contentIndex}`)
+    keepCount++
+  }
+
+  let hasChanges = false
+  const transformedMessages = messages.map((message, messageIndex) => {
+    let messageChanged = false
+    const transformedParts: MessageContentParts = message.contentParts.map((part, contentIndex) => {
+      if (part.type !== 'image') {
+        return part
+      }
+
+      const keepImage = keepImageSet.has(`${messageIndex}:${contentIndex}`)
+      if (keepImage) {
+        return part
+      }
+
+      messageChanged = true
+      hasChanges = true
+      return {
+        type: 'text',
+        text: buildImageMemoryText(part.ocrResult, options.modelSupportVision ? 'limit' : 'vision_not_supported'),
+      }
+    })
+
+    if (!messageChanged) {
+      return message
+    }
+
+    const cloned = cloneMessage(message)
+    cloned.contentParts = transformedParts
+    return cloned
+  })
+
+  return hasChanges ? transformedMessages : messages
+}
+
 async function convertContentParts<T extends TextPart | ImagePart | FilePart>(
   contentParts: MessageContentParts,
   imageType: 'image' | 'file',
@@ -71,11 +174,17 @@ async function convertAssistantContentParts(
 
 export async function convertToModelMessages(
   messages: Message[],
-  options?: { modelSupportVision: boolean }
+  options?: ConvertToModelMessagesOptions
 ): Promise<ModelMessage[]> {
+  const modelSupportVision = options?.modelSupportVision ?? true
+  const preparedMessages = applyImageContextPolicy(messages, {
+    modelSupportVision,
+    maxImagesPerRequest: options?.maxImagesPerRequest,
+  })
+
   const dependencies = await createModelDependencies()
   const results = await Promise.all(
-    messages.map(async (m): Promise<ModelMessage | null> => {
+    preparedMessages.map(async (m): Promise<ModelMessage | null> => {
       switch (m.role) {
         case 'system':
           return {
@@ -83,7 +192,7 @@ export async function convertToModelMessages(
             content: getMessageText(m),
           }
         case 'user': {
-          const contentParts = await convertUserContentParts(m.contentParts || [], dependencies, options)
+          const contentParts = await convertUserContentParts(m.contentParts || [], dependencies, { modelSupportVision })
           return {
             role: 'user' as const,
             content: contentParts,

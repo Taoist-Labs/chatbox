@@ -36,6 +36,8 @@ import fileToolSet from './toolsets/file'
 import { getToolSet } from './toolsets/knowledge-base'
 import websearchToolSet, { parseLinkTool, webSearchTool } from './toolsets/web-search'
 
+const MAX_IMAGES_PER_REQUEST = 1
+
 /**
  * 处理搜索结果并返回模型响应的通用函数
  */
@@ -47,7 +49,8 @@ async function handleSearchResult(
   coreMessages: ModelMessage[],
   controller: AbortController,
   onResultChange: OnResultChange,
-  params: { providerOptions?: ProviderOptions; onStatusChange?: OnStatusChange }
+  params: { providerOptions?: ProviderOptions; onStatusChange?: OnStatusChange },
+  options: { modelSupportVision: boolean }
 ) {
   if (!result?.searchResults?.length || result.type === 'none') {
     const chatResult = await model.chat(coreMessages, {
@@ -73,18 +76,24 @@ async function handleSearchResult(
       ? constructMessagesWithKnowledgeBaseResults(messages, result.searchResults)
       : constructMessagesWithSearchResults(messages, result.searchResults)
 
-  const chatResult = await model.chat(await convertToModelMessages(messagesWithResults), {
-    signal: controller.signal,
-    onResultChange: (data) => {
-      if (data.contentParts) {
-        onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
-      } else {
-        onResultChange(data)
-      }
-    },
-    onStatusChange: params.onStatusChange,
-    providerOptions: params.providerOptions,
-  })
+  const chatResult = await model.chat(
+    await convertToModelMessages(messagesWithResults, {
+      modelSupportVision: options.modelSupportVision,
+      maxImagesPerRequest: MAX_IMAGES_PER_REQUEST,
+    }),
+    {
+      signal: controller.signal,
+      onResultChange: (data) => {
+        if (data.contentParts) {
+          onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
+        } else {
+          onResultChange(data)
+        }
+      },
+      onStatusChange: params.onStatusChange,
+      providerOptions: params.providerOptions,
+    }
+  )
   return { result: chatResult, coreMessages }
 }
 
@@ -202,7 +211,11 @@ export async function streamText(
       })
     }
 
-    coreMessages = await convertToModelMessages(messages, { modelSupportVision: model.isSupportVision() })
+    const modelSupportVision = model.isSupportVision()
+    coreMessages = await convertToModelMessages(messages, {
+      modelSupportVision,
+      maxImagesPerRequest: MAX_IMAGES_PER_REQUEST,
+    })
 
     // 3. handle model not support tool use scenarios
     if (kbNotSupported || webNotSupported) {
@@ -233,7 +246,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
       // 只有知识库不支持工具调用
@@ -255,7 +269,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
       // 只有网络搜索不支持工具调用
@@ -276,7 +291,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
     }
