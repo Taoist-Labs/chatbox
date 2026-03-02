@@ -1,11 +1,12 @@
 import { Button, Flex, PasswordInput, Select, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { ofetch } from 'ofetch'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import platform from '@/platform'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getWebSearchProviderOptions, normalizeWebSearchProviderForPlatform } from './-web-search-options'
 
 export const Route = createFileRoute('/settings/web-search')({
   component: RouteComponent,
@@ -18,7 +19,27 @@ export function RouteComponent() {
 
   const [checkingTavily, setCheckingTavily] = useState(false)
   const [tavilyAvaliable, setTavilyAvaliable] = useState<boolean>()
-  const selectedProvider = extension.webSearch.provider === 'build-in' ? 'bing' : extension.webSearch.provider
+  const selectedProvider = normalizeWebSearchProviderForPlatform(extension.webSearch.provider, platform.type)
+  const providerOptions = getWebSearchProviderOptions(platform.type)
+
+  useEffect(() => {
+    if (platform.type !== 'mobile') {
+      return
+    }
+    if (extension.webSearch.provider === selectedProvider) {
+      return
+    }
+    setSettings({
+      extension: {
+        ...extension,
+        webSearch: {
+          ...extension.webSearch,
+          provider: selectedProvider,
+        },
+      },
+    })
+  }, [extension, selectedProvider, setSettings])
+
   const checkTavily = async () => {
     if (extension.webSearch.tavilyApiKey) {
       setCheckingTavily(true)
@@ -52,13 +73,7 @@ export function RouteComponent() {
 
       <AdaptiveSelect
         comboboxProps={{ withinPortal: true, withArrow: true }}
-        data={[
-          { value: 'bing', label: 'Bing Search (Free)' },
-          { value: 'yahoo', label: 'Yahoo Search (Free)' },
-          { value: 'baidu', label: 'Baidu Search (Free)' },
-          { value: 'quark', label: 'Quark Search (Free)' },
-          { value: 'tavily', label: 'Tavily' },
-        ]}
+        data={providerOptions}
         value={selectedProvider}
         onChange={(e) =>
           e &&
@@ -82,19 +97,9 @@ export function RouteComponent() {
           )}
         </Text>
       )}
-      {selectedProvider === 'yahoo' && (
-        <Text size="xs" c="chatbox-gray">
-          {t('Yahoo Search is provided for free use, but it may have limitations and is subject to change by Yahoo.')}
-        </Text>
-      )}
       {selectedProvider === 'baidu' && (
         <Text size="xs" c="chatbox-gray">
           {t('Baidu Search is provided for free use, but it may have limitations and is subject to change by Baidu.')}
-        </Text>
-      )}
-      {selectedProvider === 'quark' && (
-        <Text size="xs" c="chatbox-gray">
-          {t('Quark Search is provided for free use, but it may have limitations and is subject to change by Quark.')}
         </Text>
       )}
       {/* Tavily API Key */}
