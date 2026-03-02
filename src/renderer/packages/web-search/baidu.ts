@@ -2,9 +2,43 @@ import type { SearchResult } from '@shared/types'
 import WebSearch from './base'
 
 const WEB_SEARCH_LOG_PREFIX = '[WebSearchDebug]'
+const NODE_TEXT_SNIPPET_MAX_LENGTH = 500
+const BAIDU_SNIPPET_CANDIDATE_SELECTORS = [
+  '.c-abstract',
+  '.c-span-last',
+  '.c-color-text',
+  '[class*="c-color-text"]',
+  '.c-font-normal',
+  '.c-row p',
+]
 
 function normalizeText(value: string | null | undefined): string {
   return (value || '').replace(/\s+/g, ' ').trim()
+}
+
+function getSnippetBySelector(node: Element, selector: string): string {
+  return normalizeText(node.querySelector(selector)?.textContent || '')
+}
+
+function isBaiduResultOpNode(node: Element): boolean {
+  return node.classList.contains('result-op')
+}
+
+function isBaiduInternalSearchLink(link: string): boolean {
+  return /^\/s\?wd=/.test(link)
+}
+
+function getFallbackSnippetFromNodeText(nodeText: string, title: string): string {
+  if (!nodeText) {
+    return ''
+  }
+  if (!title) {
+    return nodeText
+  }
+  if (nodeText.startsWith(title)) {
+    return normalizeText(nodeText.slice(title.length))
+  }
+  return normalizeText(nodeText.replace(title, ''))
 }
 
 export class BaiduSearch extends WebSearch {
@@ -42,31 +76,73 @@ export class BaiduSearch extends WebSearch {
       nodeCount: nodes.length,
     })
 
-    const items = nodes
-      .map((node) => {
-        const nodeA = node.querySelector('h3 a, .t a, a')
-        const link = nodeA?.getAttribute('href') || ''
-        const title = normalizeText(nodeA?.textContent)
-        const snippet = normalizeText(
-          node.querySelector('.c-abstract, .c-span-last, [class*="c-color-text"]')?.textContent || ''
-        )
+    const parsedNodeDiagnostics = nodes.map((node, index) => {
+      const nodeA = node.querySelector('h3 a, .t a, a')
+      const title = normalizeText(nodeA?.textContent)
+      const link = nodeA?.getAttribute('href') || ''
+      const nodeText = normalizeText(node.textContent)
+      const snippetFromSelector =
+        BAIDU_SNIPPET_CANDIDATE_SELECTORS.map((selector) => getSnippetBySelector(node, selector)).find(Boolean) || ''
+      const snippetFallback = getFallbackSnippetFromNodeText(nodeText, title).slice(0, NODE_TEXT_SNIPPET_MAX_LENGTH)
+      const snippet = snippetFromSelector || snippetFallback
+      const snippetSource = snippetFromSelector ? 'selector' : snippetFallback ? 'node_text_fallback' : 'empty'
+      const isResultOp = isBaiduResultOpNode(node)
+      const isInternalSearch = isBaiduInternalSearchLink(link)
 
-        if (!title || !link) {
-          return null
-        }
+      return {
+        index,
+        title,
+        link,
+        isResultOp,
+        isInternalSearch,
+        snippet,
+        snippetSource,
+      }
+    })
 
-        return {
-          title,
-          link,
-          snippet,
-        }
-      })
-      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    const removedResultOpCount = parsedNodeDiagnostics.filter((node) => node.isResultOp).length
+    const removedInternalSearchCount = parsedNodeDiagnostics.filter(
+      (node) => !node.isResultOp && node.isInternalSearch
+    ).length
+    const removedMissingCoreCount = parsedNodeDiagnostics.filter((node) => !node.title || !node.link).length
+    const keptNodes = parsedNodeDiagnostics.filter(
+      (node) => !node.isResultOp && !node.isInternalSearch && node.title && node.link
+    )
+
+    console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] Baidu filter diagnostics`, {
+      totalNodeCount: parsedNodeDiagnostics.length,
+      removedResultOpCount,
+      removedInternalSearchCount,
+      removedMissingCoreCount,
+      keptNodeCount: keptNodes.length,
+      keptNodeSamples: keptNodes.slice(0, 5).map((node) => ({
+        index: node.index,
+        title: node.title,
+        link: node.link,
+        snippetSource: node.snippetSource,
+      })),
+    })
+
+    const items = keptNodes
+      .map((node) => ({
+        title: node.title,
+        link: node.link,
+        snippet: node.snippet,
+      }))
       .slice(0, 10)
 
     console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] Baidu parse done`, {
       strategy: 'organic',
       parsedCount: items.length,
+    })
+
+    console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] Baidu parsed items preview`, {
+      items: items.map((item, index) => ({
+        index,
+        title: item.title,
+        link: item.link,
+        snippet: item.snippet.slice(0, 200),
+      })),
     })
 
     return items
