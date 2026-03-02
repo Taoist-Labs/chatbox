@@ -366,6 +366,53 @@ function getWanjieModelApiStyle(record: Record<string, unknown>): ProviderModelI
   return normalizeWanjieApiStyle(officialProvider)
 }
 
+interface WanjieModelCategory {
+  supported: boolean
+  hasVisionCapability: boolean
+}
+
+function mapWanjieInteractionType(value: number | undefined): WanjieModelCategory | undefined {
+  switch (value) {
+    case 1: // 图像生成文本
+      return { supported: true, hasVisionCapability: true }
+    case 3: // 文本生成-非交互文本
+    case 4: // 文本生成-交互文本
+      return { supported: true, hasVisionCapability: false }
+    case 2: // 图像生成图像
+    case 5: // 文本生成图片
+    case 6: // 文字生成语音
+      return { supported: false, hasVisionCapability: false }
+    default:
+      return undefined
+  }
+}
+
+function mapWanjieModelType(value: number | undefined): WanjieModelCategory | undefined {
+  switch (value) {
+    case 1: // 图生文
+      return { supported: true, hasVisionCapability: true }
+    case 3: // 文本生成
+      return { supported: true, hasVisionCapability: false }
+    case 2: // 文生图
+    case 4: // 语音
+    case 5: // 视频
+      return { supported: false, hasVisionCapability: false }
+    default:
+      return undefined
+  }
+}
+
+function resolveWanjieModelCategory(record: Record<string, unknown>): WanjieModelCategory | undefined {
+  const interactionType = getNumberFromRecord(record, ['interactionType', 'interaction_type'])
+  const fromInteractionType = mapWanjieInteractionType(interactionType)
+  if (fromInteractionType) {
+    return fromInteractionType
+  }
+
+  const modelType = getNumberFromRecord(record, ['modelType', 'model_type'])
+  return mapWanjieModelType(modelType)
+}
+
 function hasVisionCapability(record: Record<string, unknown>): boolean {
   const joinedText = [record.modelSummary, record.modelName, record.name]
     .filter((item) => typeof item === 'string')
@@ -427,6 +474,11 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       type: 'chat',
     }
 
+    const category = resolveWanjieModelCategory(item)
+    if (category && !category.supported) {
+      continue
+    }
+
     const apiStyle = getWanjieModelApiStyle(item)
     if (apiStyle) {
       model.apiStyle = apiStyle
@@ -453,7 +505,8 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       })
     }
 
-    if (hasVisionCapability(item)) {
+    const visionCapability = category ? category.hasVisionCapability : hasVisionCapability(item)
+    if (visionCapability) {
       model.capabilities = ['vision']
     }
 

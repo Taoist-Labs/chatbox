@@ -106,6 +106,85 @@ describe('wanjie helpers', () => {
     expect(models).toEqual(expected)
   })
 
+  it('maps interactionType/modelType into chat model type and vision capability', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'i1-model',
+        interactionType: 1,
+      },
+      {
+        modelName: 'i4-model',
+        interactionType: 4,
+      },
+      {
+        modelName: 't1-model',
+        modelType: 1,
+      },
+      {
+        modelName: 't3-model',
+        modelType: 3,
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'i1-model',
+        nickname: 'i1-model',
+        type: 'chat',
+        capabilities: ['vision'],
+      },
+      {
+        modelId: 'i4-model',
+        nickname: 'i4-model',
+        type: 'chat',
+      },
+      {
+        modelId: 't1-model',
+        nickname: 't1-model',
+        type: 'chat',
+        capabilities: ['vision'],
+      },
+      {
+        modelId: 't3-model',
+        nickname: 't3-model',
+        type: 'chat',
+      },
+    ])
+  })
+
+  it('filters out unsupported explicit interactionType/modelType model categories', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'image-to-image',
+        interactionType: 2,
+      },
+      {
+        modelName: 'text-to-image',
+        interactionType: 5,
+      },
+      {
+        modelName: 'speech',
+        modelType: 4,
+      },
+      {
+        modelName: 'video',
+        modelType: 5,
+      },
+      {
+        modelName: 'chat',
+        interactionType: 3,
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'chat',
+        nickname: 'chat',
+        type: 'chat',
+      },
+    ])
+  })
+
   it('maps officialProvider into apiStyle for compatibility routing', () => {
     const models = mapWanjieModels([
       {
