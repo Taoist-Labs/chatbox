@@ -371,6 +371,11 @@ interface WanjieModelCategory {
   hasVisionCapability: boolean
 }
 
+function shouldSkipWanjieModelByModelType(record: Record<string, unknown>): boolean {
+  const modelType = getNumberFromRecord(record, ['modelType', 'model_type'])
+  return modelType === 4 || modelType === 5
+}
+
 function mapWanjieInteractionType(value: number | undefined): WanjieModelCategory | undefined {
   switch (value) {
     case 1: // 图像生成文本
@@ -472,6 +477,10 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
       modelId,
       nickname: getStringFromRecord(item, ['modelName', 'name']) || modelId,
       type: 'chat',
+    }
+
+    if (shouldSkipWanjieModelByModelType(item)) {
+      continue
     }
 
     const category = resolveWanjieModelCategory(item)

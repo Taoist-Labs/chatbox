@@ -185,6 +185,34 @@ describe('wanjie helpers', () => {
     ])
   })
 
+  it('skips speech and video models by modelType even when interactionType looks like text', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'speech-with-text-interaction',
+        interactionType: 3,
+        modelType: 4,
+      },
+      {
+        modelName: 'video-with-chat-interaction',
+        interactionType: 4,
+        modelType: 5,
+      },
+      {
+        modelName: 'normal-chat',
+        interactionType: 4,
+        modelType: 3,
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'normal-chat',
+        nickname: 'normal-chat',
+        type: 'chat',
+      },
+    ])
+  })
+
   it('maps officialProvider into apiStyle for compatibility routing', () => {
     const models = mapWanjieModels([
       {
