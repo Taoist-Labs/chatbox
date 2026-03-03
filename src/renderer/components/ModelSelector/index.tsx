@@ -2,6 +2,7 @@ import type { ComboboxProps } from '@mantine/core'
 import type { ModelProvider, ProviderModelInfo } from '@shared/types'
 import { forwardRef, type PropsWithChildren, useMemo, useState } from 'react'
 import { useProviders } from '@/hooks/useProviders'
+import { isImageOnlyModel } from '@/packages/image-generation-models'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { DesktopModelSelector } from './DesktopModelSelector'
 import { MobileModelSelector } from './MobileModelSelector'
@@ -48,6 +49,7 @@ export const ModelSelector = forwardRef<HTMLDivElement, ModelSelectorProps>(
         const models = provider.models?.filter(
           (model) =>
             (!model.type || model.type === 'chat') &&
+            !isImageOnlyModel(model) &&
             (provider.id.toLowerCase().includes(search.toLowerCase()) ||
               provider.name.toLowerCase().includes(search.toLowerCase()) ||
               model.nickname?.toLowerCase().includes(search.toLowerCase()) ||

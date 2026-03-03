@@ -1,37 +1,12 @@
 import { Combobox, type ComboboxProps, Divider, Text, useCombobox } from '@mantine/core'
-import type { ModelProvider, ProviderInfo } from '@shared/types'
+import type { ModelProvider } from '@shared/types'
 import { forwardRef, type PropsWithChildren, useMemo } from 'react'
 import { useProviders } from '@/hooks/useProviders'
+import { getAvailableImageModelsForProvider } from '@/packages/image-generation-models'
 
 interface ImageModel {
   modelId: string
   displayName: string
-}
-
-const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-1', 'gpt-image-1.5']
-const GEMINI_IMAGE_MODEL_IDS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'gemini-3-pro-image']
-const SUPPORTED_IMAGE_MODEL_IDS = [...OPENAI_IMAGE_MODEL_IDS, ...GEMINI_IMAGE_MODEL_IDS]
-
-const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
-  'gpt-image-1': 'GPT Image 1',
-  'gpt-image-1.5': 'GPT Image 1.5',
-  'gemini-2.5-flash-image': 'Nano Banana',
-  'gemini-3-pro-image-preview': 'Nano Banana Pro',
-  'gemini-3-pro-image': 'Nano Banana Pro',
-}
-
-function getAvailableImageModels(provider: ProviderInfo, imageModelIds: string[]): ImageModel[] {
-  const providerModels = provider.models || provider.defaultSettings?.models || []
-  return imageModelIds
-    .map((modelId) => {
-      const model = providerModels.find((m) => m.modelId === modelId)
-      if (!model) return null
-      return {
-        modelId,
-        displayName: model.nickname || IMAGE_MODEL_FALLBACK_NAMES[modelId] || modelId,
-      }
-    })
-    .filter((m): m is ImageModel => m !== null)
 }
 
 export type ImageModelSelectProps = PropsWithChildren<
@@ -49,7 +24,10 @@ export const ImageModelSelect = forwardRef<HTMLButtonElement, ImageModelSelectPr
         providers
           .map((provider) => ({
             provider,
-            imageModels: getAvailableImageModels(provider, SUPPORTED_IMAGE_MODEL_IDS),
+            imageModels: getAvailableImageModelsForProvider(
+              provider.id,
+              provider.models || provider.defaultSettings?.models || []
+            ),
           }))
           .filter((item) => item.imageModels.length > 0),
       [providers]

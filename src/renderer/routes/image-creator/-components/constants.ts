@@ -1,19 +1,16 @@
+import {
+  GEMINI_IMAGE_MODEL_IDS,
+  IMAGE_MODEL_FALLBACK_NAMES,
+  OPENAI_IMAGE_MODEL_IDS,
+} from '@/packages/image-generation-models'
+
 export const MAX_REFERENCE_IMAGES = 14
 
 export const HISTORY_PANEL_WIDTH = 280
 
-export const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
-  '': 'GPT Image',
-  'gpt-image-1': 'GPT Image 1',
-  'gpt-image-1.5': 'GPT Image 1.5',
-  'gemini-2.5-flash-image': 'Nano Banana',
-  'gemini-3-pro-image-preview': 'Nano Banana Pro',
-  'gemini-3-pro-image': 'Nano Banana Pro',
-}
+export { GEMINI_IMAGE_MODEL_IDS, IMAGE_MODEL_FALLBACK_NAMES, OPENAI_IMAGE_MODEL_IDS }
 
-export const CHATBOXAI_IMAGE_MODEL_IDS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'gemini-3-pro-image']
-export const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-1', 'gpt-image-1.5']
-export const GEMINI_IMAGE_MODEL_IDS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'gemini-3-pro-image']
+export const CHATBOXAI_IMAGE_MODEL_IDS = [...GEMINI_IMAGE_MODEL_IDS]
 
 type ImageModelFamily = 'gpt' | 'gemini' | 'default'
 

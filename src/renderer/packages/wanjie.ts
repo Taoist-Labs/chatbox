@@ -1,4 +1,10 @@
-import { WANJIE_ENCRYPTION_KEY, WANJIE_MODEL_API_HOST, WANJIE_WORKER_API_HOST } from '@shared/constants/wanjie'
+import {
+  WANJIE_ENCRYPTION_KEY,
+  WANJIE_IMAGE_TO_IMAGE_LABEL,
+  WANJIE_MODEL_API_HOST,
+  WANJIE_TEXT_TO_IMAGE_LABEL,
+  WANJIE_WORKER_API_HOST,
+} from '@shared/constants/wanjie'
 import type { ProviderModelInfo, ProviderSettings } from '@shared/types'
 
 export interface WanjieEncryptedPayload {
@@ -369,6 +375,7 @@ function getWanjieModelApiStyle(record: Record<string, unknown>): ProviderModelI
 interface WanjieModelCategory {
   supported: boolean
   hasVisionCapability: boolean
+  imageLabels?: string[]
 }
 
 function shouldSkipWanjieModelByModelType(record: Record<string, unknown>): boolean {
@@ -384,7 +391,9 @@ function mapWanjieInteractionType(value: number | undefined): WanjieModelCategor
     case 4: // 文本生成-交互文本
       return { supported: true, hasVisionCapability: false }
     case 2: // 图像生成图像
+      return { supported: true, hasVisionCapability: true, imageLabels: [WANJIE_IMAGE_TO_IMAGE_LABEL] }
     case 5: // 文本生成图片
+      return { supported: true, hasVisionCapability: false, imageLabels: [WANJIE_TEXT_TO_IMAGE_LABEL] }
     case 6: // 文字生成语音
       return { supported: false, hasVisionCapability: false }
     default:
@@ -399,6 +408,7 @@ function mapWanjieModelType(value: number | undefined): WanjieModelCategory | un
     case 3: // 文本生成
       return { supported: true, hasVisionCapability: false }
     case 2: // 文生图
+      return { supported: true, hasVisionCapability: false, imageLabels: [WANJIE_TEXT_TO_IMAGE_LABEL] }
     case 4: // 语音
     case 5: // 视频
       return { supported: false, hasVisionCapability: false }
@@ -517,6 +527,9 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
     const visionCapability = category ? category.hasVisionCapability : hasVisionCapability(item)
     if (visionCapability) {
       model.capabilities = ['vision']
+    }
+    if (category?.imageLabels?.length) {
+      model.labels = [...new Set(category.imageLabels)]
     }
 
     uniqueModels.set(modelId, model)

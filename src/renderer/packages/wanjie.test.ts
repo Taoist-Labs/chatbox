@@ -152,7 +152,7 @@ describe('wanjie helpers', () => {
     ])
   })
 
-  it('filters out unsupported explicit interactionType/modelType model categories', () => {
+  it('keeps text-to-image and image-to-image categories while still filtering speech/video', () => {
     const models = mapWanjieModels([
       {
         modelName: 'image-to-image',
@@ -177,6 +177,19 @@ describe('wanjie helpers', () => {
     ])
 
     expect(models).toEqual([
+      {
+        modelId: 'image-to-image',
+        nickname: 'image-to-image',
+        type: 'chat',
+        labels: ['wanjie:image-to-image'],
+        capabilities: ['vision'],
+      },
+      {
+        modelId: 'text-to-image',
+        nickname: 'text-to-image',
+        type: 'chat',
+        labels: ['wanjie:text-to-image'],
+      },
       {
         modelId: 'chat',
         nickname: 'chat',

@@ -30,6 +30,7 @@ import Page from '@/components/layout/Page'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { getLogger } from '@/lib/utils'
+import { getAvailableImageModelsForProvider } from '@/packages/image-generation-models'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import { createAndGenerate, retryGeneration } from '@/stores/imageGenerationActions'
@@ -46,12 +47,10 @@ import { lastUsedModelStore } from '@/stores/lastUsedModelStore'
 import { queryClient } from '@/stores/queryClient'
 import {
   blobToDataUrl,
-  GEMINI_IMAGE_MODEL_IDS,
   getRatioOptionsForModel,
   HISTORY_PANEL_WIDTH,
   IMAGE_MODEL_FALLBACK_NAMES,
   MAX_REFERENCE_IMAGES,
-  OPENAI_IMAGE_MODEL_IDS,
 } from './-components/constants'
 import { EmptyState } from './-components/EmptyState'
 import { GeneratedImagesGallery } from './-components/GeneratedImagesGallery'
@@ -386,27 +385,11 @@ function ImageCreatorPage() {
     }
   }, [])
 
-  const getAvailableImageModels = (
-    providerModels: { modelId: string; nickname?: string }[],
-    imageModelIds: string[]
-  ) => {
-    return imageModelIds
-      .map((modelId) => {
-        const model = providerModels.find((m) => m.modelId === modelId)
-        if (!model) return null
-        return {
-          modelId,
-          displayName: model.nickname || IMAGE_MODEL_FALLBACK_NAMES[modelId] || modelId,
-        }
-      })
-      .filter((m): m is { modelId: string; displayName: string } => m !== null)
-  }
-
   const imageModelGroups = useMemo(() => {
     return providers
       .map((provider) => {
         const providerModels = provider.models || provider.defaultSettings?.models || []
-        const models = getAvailableImageModels(providerModels, [...GEMINI_IMAGE_MODEL_IDS, ...OPENAI_IMAGE_MODEL_IDS])
+        const models = getAvailableImageModelsForProvider(provider.id, providerModels)
         if (models.length === 0) {
           return null
         }
