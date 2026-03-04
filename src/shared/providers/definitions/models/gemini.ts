@@ -10,6 +10,46 @@ import { normalizeGeminiHost } from '../../../utils/llm_utils'
 
 const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview']
 
+type GeminiImageGenerationContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image'; image: string; mediaType?: string }
+
+function parseBase64DataUrl(value: string): { mediaType: string; data: string } | undefined {
+  const match = value.match(/^data:([^;,]+);base64,(.+)$/)
+  if (!match) {
+    return undefined
+  }
+  return {
+    mediaType: match[1],
+    data: match[2],
+  }
+}
+
+function buildGeminiImageGenerationContent(
+  prompt: string,
+  images?: { imageUrl: string }[]
+): GeminiImageGenerationContentPart[] {
+  const content: GeminiImageGenerationContentPart[] = [{ type: 'text', text: prompt }]
+
+  for (const image of images || []) {
+    const parsed = parseBase64DataUrl(image.imageUrl)
+    if (parsed) {
+      content.push({
+        type: 'image',
+        image: parsed.data,
+        mediaType: parsed.mediaType,
+      })
+      continue
+    }
+    content.push({
+      type: 'image',
+      image: image.imageUrl,
+    })
+  }
+
+  return content
+}
+
 interface Options {
   geminiAPIKey: string
   geminiAPIHost: string
@@ -23,7 +63,10 @@ interface Options {
 export default class Gemini extends AbstractAISDKModel {
   public name = 'Google Gemini'
 
-  constructor(public options: Options, dependencies: ModelDependencies) {
+  constructor(
+    public options: Options,
+    dependencies: ModelDependencies
+  ) {
     super(options, dependencies)
     this.injectDefaultMetadata = false
   }
@@ -120,7 +163,12 @@ export default class Gemini extends AbstractAISDKModel {
 
       const result = await generateText({
         model,
-        messages: [{ role: 'user', content: params.prompt }],
+        messages: [
+          {
+            role: 'user',
+            content: buildGeminiImageGenerationContent(params.prompt, params.images),
+          },
+        ],
         abortSignal: signal,
         providerOptions: {
           google: providerOptions,
@@ -156,7 +204,7 @@ export default class Gemini extends AbstractAISDKModel {
     const res = await this.dependencies.request.apiRequest({
       url: `${this.options.geminiAPIHost}/v1beta/models?key=${this.options.geminiAPIKey}`,
       method: 'GET',
-      headers: {}
+      headers: {},
     })
     const json: Response = await res.json()
     if (!json.models) {
