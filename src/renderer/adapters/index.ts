@@ -1,9 +1,11 @@
 import { createAfetch } from '@shared/request/request'
 import type { ApiRequestOptions, ModelDependencies } from '@shared/types/adapters'
+import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import * as settingActions from '@/stores/settingActions'
 import { apiRequest } from '@/utils/request'
+import { handleMobileRequest } from '@/utils/mobile-request'
 import { RendererSentryAdapter } from './sentry'
 
 export async function createModelDependencies(): Promise<ModelDependencies> {
@@ -28,6 +30,17 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
         init?: RequestInit,
         options?: { retry?: number; parseRemoteAPIError?: boolean }
       ): Promise<Response> => {
+        if (platform.type === 'mobile') {
+          return handleMobileRequest(
+            url,
+            init?.method || 'GET',
+            new Headers(init?.headers),
+            init?.body,
+            init?.signal || undefined,
+            'arraybuffer'
+          )
+        }
+
         // 支持自定义选项的 fetch
         return afetch(url, init, options || {})
       },
