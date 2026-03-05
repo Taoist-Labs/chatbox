@@ -876,5 +876,6 @@
   "Your HTML content has been published. You can access it via the link below.": "您的 HTML 内容已成功发布。您可以通过以下链接访问。",
   "Your license has expired.": "您的许可证已过期。",
   "Your license has expired. Please check your subscription or purchase a new one.": "您的 license 已过期。请检查您的订阅或重新购买。",
-  "Your license has expired. You can continue using your quota pack.": "您的许可证已过期。您可以继续使用您的配额包。"
+  "Your license has expired. You can continue using your quota pack.": "您的许可证已过期。您可以继续使用您的配额包。",
+  "jimeng_i2i_upload_tip": "Jimeng 图生图模型需要先上传一张参考图片。"
 }

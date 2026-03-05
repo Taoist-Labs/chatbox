@@ -868,5 +868,6 @@
   "smsId has been captured automatically from the SMS request.": "smsId ble automatisk hentet fra SMS-forespørselen.",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Klikk først på \"Send SMS-kode\" for å hente smsId automatisk.",
   "Login and Configure": "Logg inn og konfigurer",
-  "Refresh Configuration": "Oppdater konfigurasjon"
+  "Refresh Configuration": "Oppdater konfigurasjon",
+  "jimeng_i2i_upload_tip": "Jimeng-modeller for bilde-til-bilde krever at du laster opp et referansebilde først."
 }

@@ -27,6 +27,10 @@ export function isImageOnlyModel(model: Pick<ProviderModelInfo, 'labels'>): bool
   return (model.labels || []).some((label) => WANJIE_IMAGE_LABELS.has(label))
 }
 
+export function isJimengImageToImageModel(modelId: string): boolean {
+  return /^jimeng_i2i/i.test(modelId.trim())
+}
+
 export function getAvailableImageModelsForProvider(
   providerId: string,
   providerModels: ImageProviderModel[]

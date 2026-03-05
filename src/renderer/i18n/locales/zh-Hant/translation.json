@@ -872,5 +872,6 @@
   "smsId has been captured automatically from the SMS request.": "已自動從簡訊請求中擷取 smsId。",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "請先點擊「發送簡訊驗證碼」以自動取得 smsId。",
   "Login and Configure": "登入並配置",
-  "Refresh Configuration": "重新整理配置"
+  "Refresh Configuration": "重新整理配置",
+  "jimeng_i2i_upload_tip": "Jimeng 圖生圖模型需要先上傳一張參考圖片。"
 }

@@ -868,5 +868,6 @@
   "smsId has been captured automatically from the SMS request.": "تم التقاط smsId تلقائيًا من طلب SMS.",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "يرجى النقر أولاً على \"إرسال رمز SMS\" للحصول على smsId تلقائيًا.",
   "Login and Configure": "تسجيل الدخول والتكوين",
-  "Refresh Configuration": "تحديث التكوين"
+  "Refresh Configuration": "تحديث التكوين",
+  "jimeng_i2i_upload_tip": "تتطلب نماذج Jimeng من صورة إلى صورة رفع صورة مرجعية أولاً."
 }

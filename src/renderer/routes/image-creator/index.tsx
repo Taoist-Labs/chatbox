@@ -30,7 +30,7 @@ import Page from '@/components/layout/Page'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { getLogger } from '@/lib/utils'
-import { getAvailableImageModelsForProvider } from '@/packages/image-generation-models'
+import { getAvailableImageModelsForProvider, isJimengImageToImageModel } from '@/packages/image-generation-models'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import { createAndGenerate, retryGeneration } from '@/stores/imageGenerationActions'
@@ -220,6 +220,8 @@ function ImageCreatorPage() {
 
   // Get ratio options based on selected model
   const ratioOptions = getRatioOptionsForModel(selectedModel)
+  const requiresReferenceImage = isJimengImageToImageModel(selectedModel)
+  const missingRequiredReferenceImage = requiresReferenceImage && referenceImages.length === 0
 
   const currentGeneratingId = useCurrentGeneratingId()
   const currentRecordId = useCurrentRecordId()
@@ -288,7 +290,8 @@ function ImageCreatorPage() {
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!prompt.trim() || !selectedProvider || !selectedModel || isCurrentlyGenerating) return
+    if (!prompt.trim() || !selectedProvider || !selectedModel || isCurrentlyGenerating || missingRequiredReferenceImage)
+      return
 
     try {
       // Collect all unique source record IDs from reference images (DAG support)
@@ -313,7 +316,15 @@ function ImageCreatorPage() {
     } catch (error) {
       log.error('Failed to generate image:', error)
     }
-  }, [prompt, referenceImages, selectedProvider, selectedModel, selectedRatio, isCurrentlyGenerating])
+  }, [
+    prompt,
+    referenceImages,
+    selectedProvider,
+    selectedModel,
+    selectedRatio,
+    isCurrentlyGenerating,
+    missingRequiredReferenceImage,
+  ])
 
   const handleQuickPromptSubmit = useCallback(
     async (quickPrompt: string) => {
@@ -510,6 +521,12 @@ function ImageCreatorPage() {
                 onAddClick={() => fileInputRef.current?.click()}
               />
 
+              {missingRequiredReferenceImage && (
+                <Text size="xs" c="orange.6" px={2}>
+                  {t('jimeng_i2i_upload_tip')}
+                </Text>
+              )}
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -562,11 +579,15 @@ function ImageCreatorPage() {
                       color={isCurrentlyGenerating ? 'dark' : 'chatbox-brand'}
                       radius="xl"
                       onClick={isCurrentlyGenerating ? undefined : handleSubmit}
-                      disabled={(!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating}
-                      className={`shrink-0 mb-1 ${(!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating ? 'disabled:!opacity-100 !text-white' : ''}`}
+                      disabled={
+                        (!prompt.trim() || !selectedModel || !selectedProvider || missingRequiredReferenceImage) &&
+                        !isCurrentlyGenerating
+                      }
+                      className={`shrink-0 mb-1 ${(!prompt.trim() || !selectedModel || !selectedProvider || missingRequiredReferenceImage) && !isCurrentlyGenerating ? 'disabled:!opacity-100 !text-white' : ''}`}
                       style={{
                         cursor: isCurrentlyGenerating ? 'default' : undefined,
-                        ...((!prompt.trim() || !selectedModel || !selectedProvider) && !isCurrentlyGenerating
+                        ...((!prompt.trim() || !selectedModel || !selectedProvider || missingRequiredReferenceImage) &&
+                        !isCurrentlyGenerating
                           ? { backgroundColor: 'rgba(222, 226, 230, 1)' }
                           : {}),
                       }}

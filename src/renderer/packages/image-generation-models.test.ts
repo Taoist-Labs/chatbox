@@ -1,6 +1,10 @@
 import { ModelProviderEnum } from '@shared/types'
 import { describe, expect, it } from 'vitest'
-import { getAvailableImageModelsForProvider, isImageOnlyModel } from './image-generation-models'
+import {
+  getAvailableImageModelsForProvider,
+  isImageOnlyModel,
+  isJimengImageToImageModel,
+} from './image-generation-models'
 
 describe('image-generation-models', () => {
   it('returns allowlist image models from provider model list', () => {
@@ -50,5 +54,12 @@ describe('image-generation-models', () => {
     expect(isImageOnlyModel({ labels: ['wanjie:image-to-image'] })).toBe(true)
     expect(isImageOnlyModel({ labels: ['recommended'] })).toBe(false)
     expect(isImageOnlyModel({})).toBe(false)
+  })
+
+  it('recognizes jimeng i2i model ids that require reference image upload', () => {
+    expect(isJimengImageToImageModel('jimeng_i2i_v30')).toBe(true)
+    expect(isJimengImageToImageModel('JIMENG_I2I_PRO')).toBe(true)
+    expect(isJimengImageToImageModel('jimeng_t2i_v40')).toBe(false)
+    expect(isJimengImageToImageModel('gpt-image-1')).toBe(false)
   })
 })

@@ -776,5 +776,6 @@
   "smsId has been captured automatically from the SMS request.": "smsId has been captured automatically from the SMS request.",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Please click \"Send SMS Code\" first to obtain smsId automatically.",
   "Login and Configure": "Login and Configure",
-  "Refresh Configuration": "Refresh Configuration"
+  "Refresh Configuration": "Refresh Configuration",
+  "jimeng_i2i_upload_tip": "Jimeng image-to-image models require uploading a reference image first."
 }

@@ -869,5 +869,6 @@
   "smsId has been captured automatically from the SMS request.": "smsId был автоматически получен из SMS-запроса.",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "Сначала нажмите «Отправить SMS-код», чтобы автоматически получить smsId.",
   "Login and Configure": "Войти и настроить",
-  "Refresh Configuration": "Обновить конфигурацию"
+  "Refresh Configuration": "Обновить конфигурацию",
+  "jimeng_i2i_upload_tip": "Для моделей Jimeng «изображение в изображение» сначала нужно загрузить эталонное изображение."
 }

@@ -869,5 +869,6 @@
   "smsId has been captured automatically from the SMS request.": "SMSリクエストから smsId を自動取得しました。",
   "Please click \"Send SMS Code\" first to obtain smsId automatically.": "smsId を自動取得するには、先に「SMSコードを送信」をクリックしてください。",
   "Login and Configure": "ログインして設定",
-  "Refresh Configuration": "設定を更新"
+  "Refresh Configuration": "設定を更新",
+  "jimeng_i2i_upload_tip": "Jimengの画像生成（画像→画像）モデルでは、先に参照画像を1枚アップロードする必要があります。"
 }
