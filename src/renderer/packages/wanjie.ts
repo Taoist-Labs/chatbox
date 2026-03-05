@@ -383,6 +383,18 @@ function shouldSkipWanjieModelByModelType(record: Record<string, unknown>): bool
   return modelType === 4 || modelType === 5
 }
 
+const WANJIE_BLOCKED_MODEL_NAME_KEYWORDS = ['kling', 'sora', 'veo', 'jimeng_t2v', 'jimeng_i2v']
+
+function shouldSkipWanjieModelByModelName(record: Record<string, unknown>): boolean {
+  const modelName = getStringFromRecord(record, ['modelName'])
+  if (!modelName) {
+    return false
+  }
+
+  const normalizedModelName = modelName.toLowerCase()
+  return WANJIE_BLOCKED_MODEL_NAME_KEYWORDS.some((keyword) => normalizedModelName.includes(keyword))
+}
+
 function mapWanjieInteractionType(value: number | undefined): WanjieModelCategory | undefined {
   switch (value) {
     case 1: // 图像生成文本
@@ -480,6 +492,10 @@ export function mapWanjieModels(rawModels: unknown): ProviderModelInfo[] {
 
     const modelId = getStringFromRecord(item, ['modelCode', 'modelName', 'modelId', 'id', 'name']) || undefined
     if (!modelId || uniqueModels.has(modelId)) {
+      continue
+    }
+
+    if (shouldSkipWanjieModelByModelName(item)) {
       continue
     }
 

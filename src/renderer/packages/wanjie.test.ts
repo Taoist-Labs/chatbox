@@ -226,6 +226,37 @@ describe('wanjie helpers', () => {
     ])
   })
 
+  it('skips models when modelName contains blocked video providers', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'kling-v1',
+      },
+      {
+        modelName: 'Sora-preview',
+      },
+      {
+        modelName: 'veo-3',
+      },
+      {
+        modelName: 'jimeng_t2v_fast',
+      },
+      {
+        modelName: 'jimeng_i2v_pro',
+      },
+      {
+        modelName: 'gpt-4o',
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'gpt-4o',
+        nickname: 'gpt-4o',
+        type: 'chat',
+      },
+    ])
+  })
+
   it('maps officialProvider into apiStyle for compatibility routing', () => {
     const models = mapWanjieModels([
       {
