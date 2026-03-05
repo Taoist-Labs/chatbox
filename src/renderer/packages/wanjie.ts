@@ -384,6 +384,9 @@ function shouldSkipWanjieModelByModelType(record: Record<string, unknown>): bool
 }
 
 const WANJIE_BLOCKED_MODEL_NAME_KEYWORDS = ['kling', 'sora', 'veo', 'jimeng_t2v', 'jimeng_i2v']
+const WANJIE_GEMINI_IMAGE_MODEL_NAME_PATTERN = /^gemini-.*-image(?:-preview)?$/i
+const WANJIE_JIMENG_TEXT_TO_IMAGE_MODEL_NAME_PATTERN = /jimeng_t2i/i
+const WANJIE_JIMENG_IMAGE_TO_IMAGE_MODEL_NAME_PATTERN = /jimeng_i2i/i
 
 function shouldSkipWanjieModelByModelName(record: Record<string, unknown>): boolean {
   const modelName = getStringFromRecord(record, ['modelName'])
@@ -393,6 +396,26 @@ function shouldSkipWanjieModelByModelName(record: Record<string, unknown>): bool
 
   const normalizedModelName = modelName.toLowerCase()
   return WANJIE_BLOCKED_MODEL_NAME_KEYWORDS.some((keyword) => normalizedModelName.includes(keyword))
+}
+
+function mapWanjieModelNameCategory(record: Record<string, unknown>): WanjieModelCategory | undefined {
+  const modelName = getStringFromRecord(record, ['modelName'])
+  if (!modelName) {
+    return undefined
+  }
+
+  if (WANJIE_JIMENG_IMAGE_TO_IMAGE_MODEL_NAME_PATTERN.test(modelName)) {
+    return { supported: true, hasVisionCapability: true, imageLabels: [WANJIE_IMAGE_TO_IMAGE_LABEL] }
+  }
+
+  if (
+    WANJIE_JIMENG_TEXT_TO_IMAGE_MODEL_NAME_PATTERN.test(modelName) ||
+    WANJIE_GEMINI_IMAGE_MODEL_NAME_PATTERN.test(modelName)
+  ) {
+    return { supported: true, hasVisionCapability: false, imageLabels: [WANJIE_TEXT_TO_IMAGE_LABEL] }
+  }
+
+  return undefined
 }
 
 function mapWanjieInteractionType(value: number | undefined): WanjieModelCategory | undefined {
@@ -437,7 +460,12 @@ function resolveWanjieModelCategory(record: Record<string, unknown>): WanjieMode
   }
 
   const modelType = getNumberFromRecord(record, ['modelType', 'model_type'])
-  return mapWanjieModelType(modelType)
+  const fromModelType = mapWanjieModelType(modelType)
+  if (fromModelType) {
+    return fromModelType
+  }
+
+  return mapWanjieModelNameCategory(record)
 }
 
 function hasVisionCapability(record: Record<string, unknown>): boolean {

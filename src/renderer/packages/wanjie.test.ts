@@ -198,6 +198,59 @@ describe('wanjie helpers', () => {
     ])
   })
 
+  it('maps modelName patterns to image model labels when type metadata is absent', () => {
+    const models = mapWanjieModels([
+      {
+        modelName: 'gemini-2.5-flash-image',
+      },
+      {
+        modelName: 'gemini-2.5-flash-image-preview',
+      },
+      {
+        modelName: 'jimeng_t2i_fast',
+      },
+      {
+        modelName: 'jimeng_i2i_pro',
+      },
+      {
+        modelName: 'normal-chat',
+      },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'gemini-2.5-flash-image',
+        nickname: 'gemini-2.5-flash-image',
+        type: 'chat',
+        labels: ['wanjie:text-to-image'],
+      },
+      {
+        modelId: 'gemini-2.5-flash-image-preview',
+        nickname: 'gemini-2.5-flash-image-preview',
+        type: 'chat',
+        labels: ['wanjie:text-to-image'],
+      },
+      {
+        modelId: 'jimeng_t2i_fast',
+        nickname: 'jimeng_t2i_fast',
+        type: 'chat',
+        labels: ['wanjie:text-to-image'],
+      },
+      {
+        modelId: 'jimeng_i2i_pro',
+        nickname: 'jimeng_i2i_pro',
+        type: 'chat',
+        labels: ['wanjie:image-to-image'],
+        capabilities: ['vision'],
+      },
+      {
+        modelId: 'normal-chat',
+        nickname: 'normal-chat',
+        type: 'chat',
+      },
+    ])
+  })
+
   it('skips speech and video models by modelType even when interactionType looks like text', () => {
     const models = mapWanjieModels([
       {
