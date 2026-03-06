@@ -1,6 +1,6 @@
 {
   "appId": "com.taoistlabs.chat",
-  "appName": "AIClientCE",
+  "appName": "Wamo Chat",
   "webDir": "release/app/dist/renderer",
   "plugins": {
     "SplashScreen": {
