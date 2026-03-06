@@ -385,6 +385,24 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/hi@chatboxai\.com/)
   })
 
+  it('keeps only app info card section in about source', () => {
+    const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
+    expect(source).toMatch(/about-slogan/)
+    expect(source).not.toMatch(/Check Update/)
+    expect(source).not.toMatch(/chatboxai\/chatbox\/releases/)
+    expect(source).not.toMatch(/正版提示/)
+    expect(source).not.toMatch(/<List>/)
+    expect(source).not.toMatch(/BrandGithub/)
+    expect(source).not.toMatch(/BrandRedNote/)
+    expect(source).not.toMatch(/BrandWechat/)
+    expect(source).not.toMatch(/WechatQRCode/)
+    expect(source).not.toMatch(/IconHome/)
+    expect(source).not.toMatch(/IconClipboard/)
+    expect(source).not.toMatch(/IconPencil/)
+    expect(source).not.toMatch(/IconFileText/)
+    expect(source).not.toMatch(/IconMessage2/)
+  })
+
   it('removes legacy domain updater feed urls from main app-updater source', () => {
     const source = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app\/api\/auto_upgrade/)
