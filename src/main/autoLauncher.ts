@@ -6,7 +6,7 @@ let _autoLaunch: AutoLaunch | null = null
 
 export function get() {
   if (!_autoLaunch) {
-    _autoLaunch = new AutoLaunch({ name: 'AI Client' })
+    _autoLaunch = new AutoLaunch({ name: 'Wamo Chat' })
   }
   return _autoLaunch
 }

@@ -23,8 +23,8 @@ function RouteComponent() {
             <Image h={100} w={100} mah={'20vw'} maw={'20vw'} src={iconPNG} />
             <Stack flex={1} gap="xxs">
               <Flex justify="space-between" align="center" wrap="wrap" gap={isSmallScreen ? 'xs' : 'sm'} rowGap="xs">
-                <Title order={5} lh={1.5} lineClamp={1} title={`AI Client v${version.version}`}>
-                  AI Client {/\d/.test(version.version) ? `(v${version.version})` : ''}
+                <Title order={5} lh={1.5} lineClamp={1} title={`Wamo Chat v${version.version}`}>
+                  Wamo Chat {/\d/.test(version.version) ? `(v${version.version})` : ''}
                 </Title>
               </Flex>
               <Text>{t('about-slogan')}</Text>

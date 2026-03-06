@@ -56,17 +56,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
-      label: 'AI Client',
+      label: 'Wamo Chat',
       submenu: [
         {
-          label: 'About AI Client',
+          label: 'About Wamo Chat',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
         { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
-          label: 'Hide AI Client',
+          label: 'Hide Wamo Chat',
           accelerator: 'Command+H',
           selector: 'hide:',
         },
