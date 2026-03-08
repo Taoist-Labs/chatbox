@@ -160,31 +160,7 @@ export function RouteComponent() {
 
       {/* import and export data */}
       <ImportExportDataSection />
-
-      <Divider />
-
-      {/* Export Logs */}
-      <ExportLogsSection />
-
-      <Divider />
-
-      {/* Error Reporting */}
-      <Stack gap="md">
-        <Stack gap="xxs">
-          <Title order={5}>{t('Error Reporting')}</Title>
-          <Text c="chatbox-tertiary">
-            {t(
-              'This app respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
-            )}
-          </Text>
-        </Stack>
-
-        <Checkbox
-          label={t('Enable optional anonymous reporting of crash and event data')}
-          checked={settings.allowReportingAndTracking}
-          onChange={(e) => setSettings({ allowReportingAndTracking: e.target.checked })}
-        />
-      </Stack>
+      {/* 按产品要求下线：诊断日志与错误报告区块已从通用设置页隐藏。 */}
 
       {/* others */}
       {platform.type === 'desktop' && (
@@ -497,68 +473,4 @@ enum ExportDataItem {
   Copilot = 'copilot',
 }
 
-const ExportLogsSection = () => {
-  const { t } = useTranslation()
-  const [isExporting, setIsExporting] = useState(false)
-  const [exportResult, setExportResult] = useState<{
-    success: boolean
-    error?: string
-  } | null>(null)
-
-  const handleExportLogs = async () => {
-    setIsExporting(true)
-    setExportResult(null)
-    try {
-      const logs = await platform.exportLogs()
-      if (!logs || logs.trim() === '') {
-        setExportResult({ success: true })
-        return
-      }
-
-      const date = new Date()
-      const dateStr = dayjs(date).format('YYYY-M-D_H-m')
-      await platform.exporter.exportTextFile(`app-logs-${dateStr}.txt`, logs)
-      setExportResult({ success: true })
-    } catch (error) {
-      console.error('Failed to export logs:', error)
-      setExportResult({ success: false, error: String(error) })
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const handleClearLogs = async () => {
-    try {
-      await platform.clearLogs()
-      setExportResult({ success: true })
-    } catch (error) {
-      console.error('Failed to clear logs:', error)
-    }
-  }
-
-  return (
-    <Stack gap="md">
-      <Stack gap="xxs">
-        <Title order={5}>{t('Diagnostic Logs')}</Title>
-        <Text c="chatbox-tertiary">
-          {t(
-            'Export application logs for troubleshooting. These logs may be requested by support to help diagnose issues.'
-          )}
-        </Text>
-      </Stack>
-      <Flex gap="md">
-        <Button variant="primary" onClick={handleExportLogs} disabled={isExporting} loading={isExporting}>
-          {isExporting ? t('Exporting...') : t('Export Logs')}
-        </Button>
-        {/* <Button variant="subtle" color="red" onClick={handleClearLogs} disabled={isExporting}>
-          {t('Clear Logs')}
-        </Button> */}
-      </Flex>
-      {exportResult && !exportResult.success && (
-        <Alert className="self-start" variant="light" color="red" title={t('Export failed')} icon={<IconInfoCircle />}>
-          <Text size="sm">{exportResult.error || t('Unknown error')}</Text>
-        </Alert>
-      )}
-    </Stack>
-  )
-}
+// 按产品要求下线：诊断日志导出功能不再在设置页展示。

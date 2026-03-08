@@ -825,6 +825,12 @@ describe('legacy deep prune', () => {
     expect(sessionStoreSource).not.toMatch(/for Chatbox\./)
   })
 
+  it('hides diagnostic logs and error reporting controls from general settings source', () => {
+    const generalSource = readFileSync(new URL('../settings/general.tsx', import.meta.url), 'utf8')
+    expect(generalSource).not.toMatch(/<ExportLogsSection\s*\/>/)
+    expect(generalSource).not.toMatch(/allowReportingAndTracking/)
+  })
+
   it('removes legacy branding copy from sidebar title and web-search class naming', () => {
     const sidebarSource = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
     const builtInSearchSource = readFileSync(new URL('../../packages/web-search/built-in-search.ts', import.meta.url), 'utf8')
