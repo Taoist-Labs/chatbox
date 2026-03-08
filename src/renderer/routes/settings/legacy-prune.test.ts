@@ -403,6 +403,12 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/IconMessage2/)
   })
 
+  it('keeps only privacy policy link with wamo privacy url in about source', () => {
+    const source = readFileSync(new URL('../about.tsx', import.meta.url), 'utf8')
+    expect(source).toMatch(/href=\"https:\/\/wamo-privacy\.caboroca\.xyz\"/)
+    expect(source).not.toMatch(/User Terms/)
+  })
+
   it('removes legacy domain updater feed urls from main app-updater source', () => {
     const source = readFileSync(new URL('../../../main/app-updater.ts', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app\/api\/auto_upgrade/)

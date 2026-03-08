@@ -33,21 +33,12 @@ function RouteComponent() {
               <Flex gap="sm">
                 <Anchor
                   size="sm"
-                  href="https://github.com/chatboxai/chatbox"
+                  href="https://wamo-privacy.caboroca.xyz"
                   target="_blank"
                   underline="hover"
                   c="chatbox-tertiary"
                 >
                   {t('Privacy Policy')}
-                </Anchor>
-                <Anchor
-                  size="sm"
-                  href="https://github.com/chatboxai/chatbox/blob/main/LICENSE"
-                  target="_blank"
-                  underline="hover"
-                  c="chatbox-tertiary"
-                >
-                  {t('User Terms')}
                 </Anchor>
               </Flex>
             </Stack>
