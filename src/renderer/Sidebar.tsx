@@ -140,7 +140,7 @@ export default function Sidebar() {
             <Flex
               align="center"
               gap="sm"
-              onClick={() => platform.openLink('https://github.com/taoist-labs/chatbox')}
+              onClick={() => platform.openLink('https://wamo.caboroca.xyz/')}
               style={{ cursor: 'pointer' }}
             >
               <Image src={icon} w={20} h={20} />

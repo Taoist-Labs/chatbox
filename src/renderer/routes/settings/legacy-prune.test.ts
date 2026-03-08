@@ -634,6 +634,12 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/chatboxai\.app/)
   })
 
+  it('uses wamo homepage link for sidebar brand click source', () => {
+    const source = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
+    expect(source).toMatch(/platform\.openLink\('https:\/\/wamo\.caboroca\.xyz\/'\)/)
+    expect(source).not.toMatch(/platform\.openLink\('https:\/\/github\.com\/taoist-labs\/chatbox'\)/)
+  })
+
   it('removes legacy domain and upsell tracking residue from file-parse error modal source', () => {
     const source = readFileSync(new URL('../../modals/FileParseError.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/chatboxai\.app/)
