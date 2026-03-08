@@ -831,6 +831,12 @@ describe('legacy deep prune', () => {
     expect(generalSource).not.toMatch(/allowReportingAndTracking/)
   })
 
+  it('uses provider image icons in model selector provider header source', () => {
+    const providerHeaderSource = readFileSync(new URL('../../components/ModelSelector/ProviderHeader.tsx', import.meta.url), 'utf8')
+    expect(providerHeaderSource).toMatch(/ProviderImageIcon/)
+    expect(providerHeaderSource).not.toMatch(/icon=\{ProviderIcon\}/)
+  })
+
   it('removes legacy branding copy from sidebar title and web-search class naming', () => {
     const sidebarSource = readFileSync(new URL('../../Sidebar.tsx', import.meta.url), 'utf8')
     const builtInSearchSource = readFileSync(new URL('../../packages/web-search/built-in-search.ts', import.meta.url), 'utf8')
