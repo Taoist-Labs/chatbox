@@ -701,6 +701,13 @@ describe('legacy deep prune', () => {
     expect(source).not.toMatch(/then Chatbox will automatically pull API Key/)
   })
 
+  it('hides built-in wanjie configuration block from wanjie settings flow source', () => {
+    const source = readFileSync(new URL('./provider/wanjie/index.tsx', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/Built-in Wanjie Configuration/)
+    expect(source).not.toMatch(/Wanjie Worker API Host/)
+    expect(source).not.toMatch(/Model API Host/)
+  })
+
   it('removes legacy branding copy from builtin mcp servers settings source', () => {
     const source = readFileSync(new URL('../../components/settings/mcp/BuiltinServersSection.tsx', import.meta.url), 'utf8')
     expect(source).not.toMatch(/Chatbox \{t\('Builtin MCP Servers'\)\}/)

@@ -304,15 +304,6 @@ export function RouteComponent() {
         </Alert>
       ) : null}
 
-      <Alert variant="light" color="gray" title={t('Built-in Wanjie Configuration')}>
-        <Text size="sm">
-          {t('Wanjie Worker API Host')}: {workerHost}
-        </Text>
-        <Text size="sm">
-          {t('Model API Host')}: {modelApiHost}
-        </Text>
-      </Alert>
-
       <Flex gap="sm" align="flex-end">
         <Stack gap="xs" flex={1}>
           <Text span fw="600">
