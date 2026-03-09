@@ -18,7 +18,7 @@ import './static/index.css'
 import { initLogAtom, migrationProcessAtom } from './stores/atoms/utilAtoms'
 import * as migration from './stores/migration'
 import queryClient from './stores/queryClient'
-import { BUILD_PLATFORM, BUILD_TARGET } from './variables'
+import { BUILD_TARGET } from './variables'
 
 const log = getLogger('index')
 
@@ -48,8 +48,8 @@ import { initSettingsStore } from './stores/settingsStore'
 // Token estimation system initialization (runs in all environments)
 import('./setup/token_estimation_init')
 
-// 引入移动端安全区域代码，主要为了解决异形屏幕的问题
-if (BUILD_TARGET === 'mobile_app' && BUILD_PLATFORM === 'ios') {
+// 引入移动端安全区域代码，主要为了解决异形屏幕和键盘遮挡问题
+if (BUILD_TARGET === 'mobile_app') {
   import('./setup/mobile_safe_area')
 }
 
