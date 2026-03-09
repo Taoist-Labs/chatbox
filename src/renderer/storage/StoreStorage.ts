@@ -1,7 +1,21 @@
 import { DebouncedFunc } from 'lodash'
 import debounce from 'lodash/debounce'
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4, v5 as uuidv5 } from 'uuid'
 import BaseStorage from './BaseStorage'
+
+const FILE_UNIQ_KEY_NAMESPACE = '4f43f93b-5fd7-4527-9230-9903b67aceeb'
+const LINK_UNIQ_KEY_NAMESPACE = '4f1f8992-cf44-48f8-a2c4-147e6c28ff95'
+
+function getFileFingerprint(file: File): string {
+  const fileWithPath = file as File & { path?: string }
+  return [
+    fileWithPath.name || '',
+    fileWithPath.type || '',
+    fileWithPath.size || 0,
+    fileWithPath.lastModified || 0,
+    fileWithPath.path || '',
+  ].join('|')
+}
 
 export enum StorageKey {
   ChatSessions = 'chat-sessions',
@@ -19,6 +33,12 @@ export enum StorageKey {
 export const StorageKeyGenerator = {
   session(id: string) {
     return `session:${id}`
+  },
+  fileUniqKey(file: File) {
+    return `file-uniq:${uuidv5(getFileFingerprint(file), FILE_UNIQ_KEY_NAMESPACE)}`
+  },
+  linkUniqKey(url: string) {
+    return `link-uniq:${uuidv5(url.trim(), LINK_UNIQ_KEY_NAMESPACE)}`
   },
   picture(category: string) {
     return `picture:${category}:${uuidv4()}`
