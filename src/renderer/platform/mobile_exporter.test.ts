@@ -62,4 +62,45 @@ describe('MobileExporter', () => {
       })
     )
   })
+
+  it('uses Filesystem and Share for native image export', async () => {
+    getUriMock.mockResolvedValueOnce({ uri: 'file:///cache/exports/cat.png' })
+
+    const { default: MobileExporter } = await import('./mobile_exporter')
+    const exporter = new MobileExporter()
+
+    await exporter.exportImageFile('cat', 'data:image/png;base64,aGVsbG8=')
+
+    expect(writeFileMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: 'exports/cat.png',
+        data: 'aGVsbG8=',
+      })
+    )
+    expect(getUriMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: 'exports/cat.png',
+      })
+    )
+    expect(shareMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'file:///cache/exports/cat.png',
+      })
+    )
+  })
+
+  it('shares url directly for native exportByUrl', async () => {
+    const { default: MobileExporter } = await import('./mobile_exporter')
+    const exporter = new MobileExporter()
+
+    await exporter.exportByUrl('cat', 'https://example.com/cat.png')
+
+    expect(writeFileMock).not.toHaveBeenCalled()
+    expect(shareMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'cat',
+        url: 'https://example.com/cat.png',
+      })
+    )
+  })
 })
