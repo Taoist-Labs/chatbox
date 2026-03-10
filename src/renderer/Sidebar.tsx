@@ -27,11 +27,13 @@ import platform from './platform'
 import icon from './static/icon.png'
 import { useLanguage } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
+import { formatDisplayVersion } from './utils/app-version'
 import { BUILD_PLATFORM } from './variables'
 
 export default function Sidebar() {
   const { t } = useTranslation()
   const versionHook = useVersion()
+  const displayVersion = formatDisplayVersion(versionHook.version)
   const language = useLanguage()
   const navigate = useNavigate()
   const showSidebar = useUIStore((s) => s.showSidebar)
@@ -225,7 +227,7 @@ export default function Sidebar() {
             className="rounded"
             label={
               <Flex align="center" gap={6}>
-                <span>{`${t('About')} ${/\d/.test(versionHook.version) ? `(${versionHook.version})` : ''}`}</span>
+                <span>{`${t('About')} ${displayVersion ? `(${displayVersion})` : ''}`}</span>
                 {BUILD_PLATFORM === 'android' && versionHook.needCheckUpdate && (
                   <Box w={8} h={8} miw={8} bg="chatbox-brand" style={{ borderRadius: '50%' }} />
                 )}

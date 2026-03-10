@@ -5,6 +5,7 @@ import Page from '@/components/layout/Page'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import useVersion from '@/hooks/useVersion'
 import iconPNG from '@/static/icon.png'
+import { formatDisplayVersion } from '@/utils/app-version'
 
 export const Route = createFileRoute('/about')({
   component: RouteComponent,
@@ -14,6 +15,7 @@ function RouteComponent() {
   const { t } = useTranslation()
   const version = useVersion()
   const isSmallScreen = useIsSmallScreen()
+  const displayVersion = formatDisplayVersion(version.version)
 
   return (
     <Page title={t('About')}>
@@ -23,8 +25,13 @@ function RouteComponent() {
             <Image h={100} w={100} mah={'20vw'} maw={'20vw'} src={iconPNG} />
             <Stack flex={1} gap="xxs">
               <Flex justify="space-between" align="center" wrap="wrap" gap={isSmallScreen ? 'xs' : 'sm'} rowGap="xs">
-                <Title order={5} lh={1.5} lineClamp={1} title={`Wamo Chat v${version.version}`}>
-                  Wamo Chat {/\d/.test(version.version) ? `(v${version.version})` : ''}
+                <Title
+                  order={5}
+                  lh={1.5}
+                  lineClamp={1}
+                  title={displayVersion ? `Wamo Chat ${displayVersion}` : 'Wamo Chat'}
+                >
+                  Wamo Chat {displayVersion ? `(${displayVersion})` : ''}
                 </Title>
               </Flex>
               <Text>{t('about-slogan')}</Text>
