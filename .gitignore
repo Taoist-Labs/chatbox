@@ -180,3 +180,5 @@ electron-builder.env
 .sisyphus/
 android
 ios
+.pydeps
+.swift-cache
