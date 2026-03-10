@@ -182,3 +182,8 @@ android
 ios
 .pydeps
 .swift-cache
+
+# Android release signing
+android/keystore.properties
+*.jks
+*.keystore
