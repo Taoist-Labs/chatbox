@@ -6,9 +6,8 @@ import { ApiError } from '../../../models/errors'
 import type { CallChatCompletionOptions } from '../../../models/types'
 import type { ProviderModelInfo } from '../../../types'
 import type { ModelDependencies } from '../../../types/adapters'
+import { isGeminiImageGenerationModel } from '../../../utils/gemini_image_models'
 import { normalizeGeminiHost } from '../../../utils/llm_utils'
-
-const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview']
 
 type GeminiImageGenerationContentPart =
   | { type: 'text'; text: string }
@@ -124,7 +123,7 @@ export default class Gemini extends AbstractAISDKModel {
         } satisfies GoogleGenerativeAIProviderOptions,
       },
     }
-    if (['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'].includes(this.options.model.modelId)) {
+    if (isGeminiImageGenerationModel(this.options.model.modelId)) {
       settings.providerOptions = {
         google: {
           ...providerParams,
@@ -145,7 +144,7 @@ export default class Gemini extends AbstractAISDKModel {
     signal?: AbortSignal,
     callback?: (picBase64: string) => void
   ): Promise<string[]> {
-    if (!GEMINI_IMAGE_MODELS.includes(this.options.model.modelId)) {
+    if (!isGeminiImageGenerationModel(this.options.model.modelId)) {
       throw new ApiError('This Gemini model does not support image generation')
     }
 

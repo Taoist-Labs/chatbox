@@ -1,5 +1,9 @@
 import { WANJIE_IMAGE_MODEL_LABELS } from '@shared/constants/wanjie'
 import { ModelProviderEnum, type ProviderModelInfo } from '@shared/types'
+import {
+  isGeminiImageGenerationModel,
+  GEMINI_IMAGE_MODEL_IDS as SHARED_GEMINI_IMAGE_MODEL_IDS,
+} from '@shared/utils/gemini_image_models'
 
 export type ImageModelOption = {
   modelId: string
@@ -18,7 +22,7 @@ export const IMAGE_MODEL_FALLBACK_NAMES: Record<string, string> = {
 }
 
 export const OPENAI_IMAGE_MODEL_IDS = ['gpt-image-1', 'gpt-image-1.5'] as const
-export const GEMINI_IMAGE_MODEL_IDS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'gemini-3-pro-image'] as const
+export const GEMINI_IMAGE_MODEL_IDS = SHARED_GEMINI_IMAGE_MODEL_IDS
 const SUPPORTED_IMAGE_MODEL_IDS = [...GEMINI_IMAGE_MODEL_IDS, ...OPENAI_IMAGE_MODEL_IDS]
 
 const WANJIE_IMAGE_LABELS = new Set<string>(WANJIE_IMAGE_MODEL_LABELS)
@@ -50,6 +54,12 @@ export function getAvailableImageModelsForProvider(
   for (const modelId of SUPPORTED_IMAGE_MODEL_IDS) {
     const model = providerModels.find((item) => item.modelId === modelId)
     if (model) {
+      add(model)
+    }
+  }
+
+  for (const model of providerModels) {
+    if (isGeminiImageGenerationModel(model.modelId)) {
       add(model)
     }
   }

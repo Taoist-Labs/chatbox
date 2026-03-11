@@ -116,4 +116,58 @@ describe('Gemini paint image input forwarding', () => {
       })
     )
   })
+
+  it('Gemini: supports gemini-3.1-flash-image-preview image generation', async () => {
+    const gemini = new Gemini(
+      {
+        geminiAPIKey: 'test-key',
+        geminiAPIHost: 'https://example.com',
+        model: createModel('gemini-3.1-flash-image-preview'),
+      },
+      createDependencies()
+    )
+
+    await gemini.paint({
+      prompt: '生成一张月球基地概念图',
+      num: 1,
+    })
+
+    expect(mockGenerateText).toHaveBeenCalledTimes(1)
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOptions: {
+          google: expect.objectContaining({
+            responseModalities: ['TEXT', 'IMAGE'],
+          }),
+        },
+      })
+    )
+  })
+
+  it('CustomGemini: supports gemini-3.1-flash-image-preview image generation', async () => {
+    const customGemini = new CustomGemini(
+      {
+        apiKey: 'test-key',
+        apiHost: 'https://example.com',
+        model: createModel('gemini-3.1-flash-image-preview'),
+      },
+      createDependencies()
+    )
+
+    await customGemini.paint({
+      prompt: '生成一张水下城市概念图',
+      num: 1,
+    })
+
+    expect(mockGenerateText).toHaveBeenCalledTimes(1)
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOptions: {
+          google: expect.objectContaining({
+            responseModalities: ['TEXT', 'IMAGE'],
+          }),
+        },
+      })
+    )
+  })
 })

@@ -16,6 +16,20 @@ describe('image-generation-models', () => {
     expect(models).toEqual([{ modelId: 'gpt-image-1', displayName: 'GPT Image 1' }])
   })
 
+  it('includes gemini-3.1-flash-image-preview for Gemini provider image models', () => {
+    const models = getAvailableImageModelsForProvider(ModelProviderEnum.Gemini, [
+      { modelId: 'gemini-3.1-flash-image-preview', nickname: 'Gemini 3.1 Flash Image Preview' },
+      { modelId: 'gemini-2.5-flash', nickname: 'Gemini 2.5 Flash' },
+    ])
+
+    expect(models).toEqual([
+      {
+        modelId: 'gemini-3.1-flash-image-preview',
+        displayName: 'Gemini 3.1 Flash Image Preview',
+      },
+    ])
+  })
+
   it('includes wanjie text-to-image and image-to-image models by label', () => {
     const models = getAvailableImageModelsForProvider(ModelProviderEnum.Wanjie, [
       {
