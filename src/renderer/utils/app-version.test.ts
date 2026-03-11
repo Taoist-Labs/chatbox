@@ -14,6 +14,10 @@ describe('formatDisplayVersion', () => {
     expect(formatDisplayVersion('V1.0')).toBe('V1.0')
   })
 
+  it('hides a trailing zero patch version for display', () => {
+    expect(formatDisplayVersion('1.0.0')).toBe('V1.0')
+  })
+
   it('hides non-numeric placeholder versions', () => {
     expect(formatDisplayVersion('web')).toBe('')
   })

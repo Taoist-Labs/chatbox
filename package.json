@@ -1,7 +1,7 @@
 {
   "name": "com.taoistlabs.chat",
-  "productName": "com.taoistlabs.chat",
-  "version": "1.0",
+  "productName": "Wamo Chat",
+  "version": "1.0.0",
   "engines": {
     "node": ">=20.0.0 <23.0.0",
     "pnpm": ">=10.0.0"
