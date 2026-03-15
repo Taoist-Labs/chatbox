@@ -37,4 +37,21 @@ describe('desktop package metadata', () => {
     const rootPackage = readPackageJson('package.json')
     expect(rootPackage.version).toBe('1.0.0')
   })
+
+  it('uses Wamo support metadata in the release package', () => {
+    const releasePackage = readPackageJson('release/app/package.json') as PackageMetadata & {
+      author?: { email?: string; url?: string }
+    }
+
+    expect(releasePackage.author?.email).toBe('m9iaujigj@mozmail.com')
+    expect(releasePackage.author?.url).toBe('https://wamo.caboroca.xyz/')
+  })
+
+  it('points repository metadata to the Wamo site', () => {
+    const rootPackage = readPackageJson('package.json') as PackageMetadata & {
+      repository?: { url?: string }
+    }
+
+    expect(rootPackage.repository?.url).toBe('https://wamo.caboroca.xyz/')
+  })
 })
