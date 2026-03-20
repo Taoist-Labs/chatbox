@@ -1,20 +1,29 @@
-import type { SearchResultItem } from '@/../shared/types'
-import { getExtensionSettings, getLanguage, getLicenseKey } from '@/stores/settingActions'
 import { cachified } from '@epic-web/cachified'
+import type { SearchResultItem } from '@shared/types'
 import { truncate } from 'lodash'
-import { ChatboxAIAPIError } from '../../../shared/models/errors'
-import WebSearch from './base'
+import platform from '@/platform'
+import { getExtensionSettings, getLanguage } from '@/stores/settingActions'
+import { RemoteAPIError } from '../../../shared/models/errors'
+import type WebSearch from './base'
+import { BaiduSearch } from './baidu'
 import { BingSearch } from './bing'
 import { BingNewsSearch } from './bing-news'
-import { ChatboxSearch } from './chatbox-search'
 import { TavilySearch } from './tavily'
 
 const MAX_CONTEXT_ITEMS = 10
+const WEB_SEARCH_LOG_PREFIX = '[WebSearchDebug]'
+
+function createWebSearchTraceId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function getProviderName(provider: WebSearch) {
+  return provider.constructor?.name || 'UnknownSearchProvider'
+}
 
 // 根据配置的搜索提供方来选择搜索服务
 function getSearchProviders() {
   const settings = getExtensionSettings()
-  const licenseKey = getLicenseKey()
 
   const selectedProviders: WebSearch[] = []
   const provider = settings.webSearch.provider
@@ -22,14 +31,6 @@ function getSearchProviders() {
 
   switch (provider) {
     case 'build-in':
-      if (!licenseKey) {
-        throw ChatboxAIAPIError.fromCodeName(
-          'chatbox_search_license_key_required',
-          'chatbox_search_license_key_required'
-        )
-      }
-      selectedProviders.push(new ChatboxSearch(licenseKey))
-      break
     case 'bing':
       selectedProviders.push(new BingSearch())
       if (language !== 'zh-Hans') {
@@ -38,7 +39,7 @@ function getSearchProviders() {
       break
     case 'tavily':
       if (!settings.webSearch.tavilyApiKey) {
-        throw ChatboxAIAPIError.fromCodeName('tavily_api_key_required', 'tavily_api_key_required')
+        throw RemoteAPIError.fromCodeName('tavily_api_key_required', 'tavily_api_key_required')
       }
       selectedProviders.push(
         new TavilySearch(
@@ -50,6 +51,9 @@ function getSearchProviders() {
         )
       )
       break
+    case 'baidu':
+      selectedProviders.push(new BaiduSearch())
+      break
     default:
       throw new Error(`Unsupported search provider: ${provider}`)
   }
@@ -57,16 +61,31 @@ function getSearchProviders() {
   return selectedProviders
 }
 
-async function _searchRelatedResults(query: string, signal?: AbortSignal) {
+async function _searchRelatedResults(query: string, signal?: AbortSignal, traceId: string = 'no-trace') {
   const providers = getSearchProviders()
+  const providerNames = providers.map((provider) => getProviderName(provider))
+  console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] provider pipeline start`, {
+    query,
+    providerNames,
+    providerCount: providers.length,
+    signalAborted: signal?.aborted ?? false,
+  })
+
   const results = await Promise.all(
     providers.map(async (provider) => {
+      const providerName = getProviderName(provider)
+      console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] provider request start`, { providerName, query })
       try {
         const result = await provider.search(query, signal)
+        console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] provider request success`, {
+          providerName,
+          query,
+          itemCount: result.items.length,
+        })
         console.debug(`web search result for "${query}":`, result.items)
         return result
       } catch (err) {
-        console.error(err)
+        console.error(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] provider request failed`, { providerName, query, err })
         return { items: [] }
       }
     })
@@ -85,13 +104,16 @@ async function _searchRelatedResults(query: string, signal?: AbortSignal) {
         hasMore = true
         items.push(item)
       } else {
-        continue
       }
     }
     i++
   } while (hasMore && items.length < MAX_CONTEXT_ITEMS)
 
   console.debug('web search items', items)
+  console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] provider pipeline done`, {
+    query,
+    mergedItemCount: items.length,
+  })
 
   return items.map((item) => ({
     title: item.title,
@@ -107,12 +129,31 @@ export const webSearchExecutor = async (
   { query }: { query: string },
   { abortSignal }: { abortSignal?: AbortSignal }
 ) => {
+  const traceId = createWebSearchTraceId()
+  const settings = getExtensionSettings()
+  const cacheKey = `search-context:${query}`
+  const hasCachedValue = cache.has(cacheKey)
+  console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] executor start`, {
+    query,
+    cacheKey,
+    hasCachedValue,
+    provider: settings.webSearch.provider,
+    platformType: platform.type,
+    signalAborted: abortSignal?.aborted ?? false,
+  })
+
   const searchResults = await cachified({
     cache,
-    key: `search-context:${query}`,
+    key: cacheKey,
     ttl: 1000 * 60 * 5,
-    getFreshValue: () => _searchRelatedResults(query, abortSignal),
+    getFreshValue: () => _searchRelatedResults(query, abortSignal, traceId),
   })
+  console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] executor done`, {
+    query,
+    hasCachedValue,
+    resultCount: searchResults.length,
+  })
+
   return { query, searchResults }
 }
 

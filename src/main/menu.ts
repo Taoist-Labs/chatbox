@@ -6,6 +6,8 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   submenu?: DarwinMenuItemConstructorOptions[] | Menu
 }
 
+const WAMO_WEBSITE_URL = 'https://wamo.caboroca.xyz/'
+
 export default class MenuBuilder {
   mainWindow: BrowserWindow
 
@@ -56,17 +58,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
-      label: 'Chatbox',
+      label: 'Wamo Chat',
       submenu: [
         {
-          label: 'About Chatbox',
+          label: 'About Wamo Chat',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
         { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
-          label: 'Hide Chatbox',
+          label: 'Hide Wamo Chat',
           accelerator: 'Command+H',
           selector: 'hide:',
         },
@@ -196,27 +198,15 @@ export default class MenuBuilder {
       label: 'Help',
       submenu: [
         {
-          label: 'Learn More',
+          label: '官方网站',
           click() {
-            shell.openExternal('https://chatboxai.app')
+            shell.openExternal(WAMO_WEBSITE_URL)
           },
         },
         {
-          label: 'Github Repo',
+          label: '反馈问题',
           click() {
-            shell.openExternal('https://github.com/chatboxai/chatbox')
-          },
-        },
-        // {
-        //   label: 'Community Discussions',
-        //   click() {
-        //     shell.openExternal('https://www.electronjs.org/community');
-        //   },
-        // },
-        {
-          label: 'Search Issues',
-          click() {
-            shell.openExternal('https://github.com/chatboxai/chatbox/issues?q=is%3Aissue')
+            shell.openExternal(WAMO_WEBSITE_URL)
           },
         },
       ],
@@ -287,27 +277,15 @@ export default class MenuBuilder {
         label: 'Help',
         submenu: [
           {
-            label: 'Learn More',
+            label: '官方网站',
             click() {
-              shell.openExternal('https://chatboxai.app')
+              shell.openExternal(WAMO_WEBSITE_URL)
             },
           },
           {
-            label: 'Github Repo',
+            label: '反馈问题',
             click() {
-              shell.openExternal('https://github.com/chatboxai/chatbox')
-            },
-          },
-          // {
-          //   label: 'Community Discussions',
-          //   click() {
-          //     shell.openExternal('https://www.electronjs.org/community');
-          //   },
-          // },
-          {
-            label: 'Search Issues',
-            click() {
-              shell.openExternal('https://github.com/chatboxai/chatbox/issues?q=is%3Aissue')
+              shell.openExternal(WAMO_WEBSITE_URL)
             },
           },
         ],

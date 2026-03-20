@@ -1,22 +1,26 @@
+import { getModel } from '@shared/models'
+import { RemoteAPIError, OCRError } from '@shared/models/errors'
+import { sequenceMessages } from '@shared/utils/message'
+import { getModelSettings } from '@shared/utils/model_settings'
 import type { ModelMessage, ToolSet } from 'ai'
 import { t } from 'i18next'
 import { uniqueId } from 'lodash'
-import { getModel } from 'src/shared/models'
-import { ChatboxAIAPIError } from 'src/shared/models/errors'
-import { sequenceMessages } from 'src/shared/utils/message'
-import { getModelSettings } from 'src/shared/utils/model_settings'
 import { createModelDependencies } from '@/adapters'
 import * as settingActions from '@/stores/settingActions'
 import { settingsStore } from '@/stores/settingsStore'
-import type { ModelInterface, OnResultChange, OnResultChangeWithCancel } from '../../../shared/models/types'
-import {
-  type KnowledgeBase,
-  type Message,
-  type MessageInfoPart,
-  type MessageToolCallPart,
-  ModelProviderEnum,
-  type ProviderOptions,
-  type StreamTextResult,
+import type {
+  ModelInterface,
+  OnResultChange,
+  OnResultChangeWithCancel,
+  OnStatusChange,
+} from '../../../shared/models/types'
+import type {
+  KnowledgeBase,
+  Message,
+  MessageInfoPart,
+  MessageToolCallPart,
+  ProviderOptions,
+  StreamTextResult,
 } from '../../../shared/types'
 import { mcpController } from '../mcp/controller'
 import { convertToModelMessages, injectModelSystemPrompt } from './message-utils'
@@ -32,6 +36,8 @@ import fileToolSet from './toolsets/file'
 import { getToolSet } from './toolsets/knowledge-base'
 import websearchToolSet, { parseLinkTool, webSearchTool } from './toolsets/web-search'
 
+const MAX_IMAGES_PER_REQUEST = 1
+
 /**
  * 处理搜索结果并返回模型响应的通用函数
  */
@@ -43,10 +49,16 @@ async function handleSearchResult(
   coreMessages: ModelMessage[],
   controller: AbortController,
   onResultChange: OnResultChange,
-  params: { providerOptions?: ProviderOptions }
+  params: { providerOptions?: ProviderOptions; onStatusChange?: OnStatusChange },
+  options: { modelSupportVision: boolean }
 ) {
   if (!result?.searchResults?.length || result.type === 'none') {
-    return model.chat(coreMessages, { signal: controller.signal, onResultChange })
+    const chatResult = await model.chat(coreMessages, {
+      signal: controller.signal,
+      onResultChange,
+      onStatusChange: params.onStatusChange,
+    })
+    return { result: chatResult, coreMessages }
   }
 
   const toolCallPart: MessageToolCallPart = {
@@ -64,39 +76,45 @@ async function handleSearchResult(
       ? constructMessagesWithKnowledgeBaseResults(messages, result.searchResults)
       : constructMessagesWithSearchResults(messages, result.searchResults)
 
-  return model.chat(await convertToModelMessages(messagesWithResults), {
-    signal: controller.signal,
-    onResultChange: (data) => {
-      if (data.contentParts) {
-        onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
-      } else {
-        onResultChange(data)
-      }
-    },
-    providerOptions: params.providerOptions,
-  })
+  const chatResult = await model.chat(
+    await convertToModelMessages(messagesWithResults, {
+      modelSupportVision: options.modelSupportVision,
+      maxImagesPerRequest: MAX_IMAGES_PER_REQUEST,
+    }),
+    {
+      signal: controller.signal,
+      onResultChange: (data) => {
+        if (data.contentParts) {
+          onResultChange({ ...data, contentParts: [toolCallPart, ...data.contentParts] })
+        } else {
+          onResultChange(data)
+        }
+      },
+      onStatusChange: params.onStatusChange,
+      providerOptions: params.providerOptions,
+    }
+  )
+  return { result: chatResult, coreMessages }
 }
 
 async function ocrMessages(messages: Message[]) {
-  // check chatbox ai license active
-  const licenseKey = settingActions.getLicenseKey()
   const settings = settingsStore.getState().getSettings()
-  if (!licenseKey && !(settings.ocrModel?.provider && settings.ocrModel?.model)) {
-    // use default ocr model
-    throw ChatboxAIAPIError.fromCodeName('model_not_support_image_2', 'model_not_support_image_2')
+  const hasUserOcrModel = settings.ocrModel?.provider && settings.ocrModel?.model
+
+  if (!hasUserOcrModel) {
+    throw RemoteAPIError.fromCodeName('model_not_support_image_2', 'model_not_support_image_2')
   }
-  let ocrModel: ModelInterface
-  const dependencies = await createModelDependencies()
-  if (settings.licenseKey) {
-    const modelSettings = getModelSettings(settings, ModelProviderEnum.ChatboxAI, 'chatbox-ocr-1')
-    ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
-  } else {
-    const ocrModelSetting = settings.ocrModel
-    const modelSettings = getModelSettings(settings, ocrModelSetting?.provider!, ocrModelSetting?.model!)
-    ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
+
+  const ocrProviderName = settings.ocrModel!.provider
+  try {
+    const dependencies = await createModelDependencies()
+    const ocrModelSetting = settings.ocrModel!
+    const modelSettings = getModelSettings(settings, ocrModelSetting.provider, ocrModelSetting.model)
+    const ocrModel = getModel(modelSettings, settings, { uuid: '123' }, dependencies)
+    await imageOCR(ocrModel, messages)
+  } catch (err) {
+    throw new OCRError(ocrProviderName, err instanceof Error ? err : new Error(`${err}`))
   }
-  // do OCR first
-  await imageOCR(ocrModel, messages)
 }
 
 /**
@@ -108,12 +126,13 @@ export async function streamText(
     sessionId?: string
     messages: Message[]
     onResultChangeWithCancel: OnResultChangeWithCancel
+    onStatusChange?: OnStatusChange
     providerOptions?: ProviderOptions
     knowledgeBase?: Pick<KnowledgeBase, 'id' | 'name'>
     webBrowsing?: boolean
   },
   signal?: AbortSignal
-) {
+): Promise<{ result: StreamTextResult; coreMessages: ModelMessage[] }> {
   const { knowledgeBase, webBrowsing, sessionId } = params
   const hasFileOrLink = params.messages.some((m) => m.files?.length || m.links?.length)
 
@@ -126,6 +145,8 @@ export async function streamText(
   let result: StreamTextResult = {
     contentParts: [],
   }
+  let coreMessages: ModelMessage[] = []
+
   // for model not support tool use, use prompt engineering to handle knowledge base and web search
   const needFileToolSet = hasFileOrLink && model.isSupportToolUse()
   const kbNotSupported = knowledgeBase && !model.isSupportToolUse('knowledge-base')
@@ -133,8 +154,17 @@ export async function streamText(
 
   // 1. inject system prompt for tool use
   let toolSetInstructions = ''
-  if (knowledgeBase && !kbNotSupported) {
-    toolSetInstructions += getToolSet(knowledgeBase.id, knowledgeBase.name).description
+  // 预加载知识库工具集（异步获取文件列表）
+  let kbToolSet = null
+  if (knowledgeBase) {
+    try {
+      kbToolSet = await getToolSet(knowledgeBase.id, knowledgeBase.name)
+    } catch (err) {
+      console.error('Failed to load knowledge base toolset:', err)
+    }
+  }
+  if (kbToolSet && !kbNotSupported) {
+    toolSetInstructions += kbToolSet.description
   }
   if (needFileToolSet) {
     toolSetInstructions += fileToolSet.description
@@ -181,7 +211,11 @@ export async function streamText(
       })
     }
 
-    const coreMessages = await convertToModelMessages(messages, { modelSupportVision: model.isSupportVision() })
+    const modelSupportVision = model.isSupportVision()
+    coreMessages = await convertToModelMessages(messages, {
+      modelSupportVision,
+      maxImagesPerRequest: MAX_IMAGES_PER_REQUEST,
+    })
 
     // 3. handle model not support tool use scenarios
     if (kbNotSupported || webNotSupported) {
@@ -212,7 +246,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
       // 只有知识库不支持工具调用
@@ -234,7 +269,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
       // 只有网络搜索不支持工具调用
@@ -255,7 +291,8 @@ export async function streamText(
           coreMessages,
           controller,
           onResultChange,
-          params
+          params,
+          { modelSupportVision }
         )
       }
     }
@@ -266,14 +303,12 @@ export async function streamText(
     }
     if (webBrowsing) {
       tools.web_search = webSearchTool
-      if (settingActions.isPro()) {
-        tools.parse_link = parseLinkTool
-      }
+      tools.parse_link = parseLinkTool
     }
-    if (knowledgeBase) {
+    if (kbToolSet) {
       tools = {
         ...tools,
-        ...getToolSet(knowledgeBase.id, knowledgeBase.name).tools,
+        ...kbToolSet.tools,
       }
     }
 
@@ -290,16 +325,17 @@ export async function streamText(
       sessionId,
       signal: controller.signal,
       onResultChange,
+      onStatusChange: params.onStatusChange,
       providerOptions: params.providerOptions,
       tools,
     })
 
-    return result
+    return { result, coreMessages }
   } catch (err) {
     console.error(err)
     // if a cancellation is performed, do not throw an exception, otherwise the content will be overwritten.
     if (controller.signal.aborted) {
-      return result
+      return { result, coreMessages }
     }
     throw err
   }

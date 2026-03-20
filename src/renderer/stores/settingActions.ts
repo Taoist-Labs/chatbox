@@ -1,15 +1,10 @@
+import { ModelProviderEnum } from '@shared/types'
 import { getDefaultStore } from 'jotai'
-import { ModelProviderEnum } from 'src/shared/types'
 import * as atoms from './atoms'
 import { settingsStore } from './settingsStore'
 
 export function needEditSetting() {
   const settings = settingsStore.getState()
-
-  // 激活了chatbox ai
-  if (settings.licenseKey) {
-    return false
-  }
 
   if (settings.providers && Object.keys(settings.providers).length > 0) {
     const providers = settings.providers
@@ -51,11 +46,11 @@ export function getLicenseDetail() {
 }
 
 export function isPaid() {
-  return !!getLicenseKey()
+  return false
 }
 
 export function isPro() {
-  return !!getLicenseKey() && !getLicenseDetail()?.name.toLowerCase().includes('lite')
+  return false
 }
 
 export function getRemoteConfig() {

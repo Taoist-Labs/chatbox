@@ -4,9 +4,16 @@ import platform from '@/platform'
 
 export const queryKnowledgeBaseTool = (kbId: number) => {
   return tool({
-    description: 'Query a knowledge base',
+    description: `Search the knowledge base with a semantic query. Returns relevant document chunks.
+
+CRITICAL: You MUST call this tool FIRST for every new user question before attempting to answer.
+- Do NOT rely on your own knowledge - always search the knowledge base first
+- Do NOT assume previous search results cover the current question
+- Even for follow-up questions, search again if the topic shifts
+- Searching is fast and low-cost - when in doubt, search
+- Only skip searching if the user explicitly asks about something unrelated to the documents`,
     inputSchema: z.object({
-      query: z.string().describe('The query to search the knowledge base'),
+      query: z.string().describe('The search query - rephrase the user question for better semantic matching'),
     }),
     execute: async (input: { query: string }) => {
       const knowledgeBaseController = platform.getKnowledgeBaseController()
@@ -74,19 +81,38 @@ export function listFilesTool(knowledgeBaseId: number) {
     },
   })
 }
-const getToolSetDescription = (knowledgeBaseId: number, knowledgeBaseName: string) => {
+async function getToolSetDescription(knowledgeBaseId: number, knowledgeBaseName: string) {
+  // 预加载文件列表，让模型知道知识库中有什么文件
+  const knowledgeBaseController = platform.getKnowledgeBaseController()
+  const files = await knowledgeBaseController.listFilesPaginated(knowledgeBaseId, 0, 50)
+  const doneFiles = files.filter((f) => f.status === 'done')
+  const fileListStr =
+    doneFiles.length > 0 ? doneFiles.map((f) => `- "${f.filename}"`).join('\n') : '(No files available yet)'
+
   return `
-  Toolset for interacting with a knowledge base ${knowledgeBaseName}. Includes tools to query the knowledge base, get file metadata, read file chunks, and list files.
-  Available tools:
-  1. query_knowledge_base: Query the knowledge base with a search query.
-  2. get_files_meta: Get metadata for files in the knowledge base.
-  3. read_file_chunks: Read content chunks from specified files in the knowledge base.
-  4. list_files: List all files in the knowledge base.
+## Knowledge Base: "${knowledgeBaseName}"
+
+You have access to a knowledge base containing these documents:
+
+${fileListStr}
+
+### Tools:
+- **query_knowledge_base** - Semantic search (fast, low cost). Use liberally.
+- **read_file_chunks** - Read document content.
+- **get_files_meta** - Get file metadata.
+- **list_files** - List all files (paginated).
+
+### IMPORTANT - When to search:
+- **For EVERY new question**, independently consider whether the knowledge base might help
+- Even if you searched before, **search again** if the current question touches a different topic
+- Previous search results may not cover the current question - don't assume you already have the answer
+- When in doubt, search. It's better to search and find nothing than to miss relevant information.
 `
 }
-export function getToolSet(knowledgeBaseId: number, knowledgeBaseName: string) {
+
+export async function getToolSet(knowledgeBaseId: number, knowledgeBaseName: string) {
   return {
-    description: getToolSetDescription(knowledgeBaseId, knowledgeBaseName),
+    description: await getToolSetDescription(knowledgeBaseId, knowledgeBaseName),
     tools: {
       query_knowledge_base: queryKnowledgeBaseTool(knowledgeBaseId),
       get_files_meta: getFilesMetaTool(knowledgeBaseId),

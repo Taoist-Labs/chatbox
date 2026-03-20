@@ -4,6 +4,31 @@ import { ModelProviderEnum, ModelProviderType } from './provider'
 // Re-export for backward compatibility
 export { ModelProviderType } from './provider'
 
+// ===== Document Parser Types =====
+
+/**
+ * Document parser service type
+ * - none: No parsing service, only supports basic text files (mobile/web default)
+ * - local: Local parsing using built-in libraries (desktop default)
+ * - mineru: Third-party MinerU parsing service (desktop only)
+ */
+export type DocumentParserType = 'none' | 'local' | 'mineru'
+
+export const DocumentParserConfigSchema = z.object({
+  type: z.enum(['none', 'local', 'mineru']),
+  mineru: z
+    .object({
+      apiToken: z.string(),
+    })
+    .optional(),
+})
+
+export type DocumentParserConfig = z.infer<typeof DocumentParserConfigSchema>
+
+export const DEFAULT_DOCUMENT_PARSER_CONFIG: DocumentParserConfig = {
+  type: 'local',
+}
+
 export const ProviderModelInfoSchema = z.object({
   modelId: z.string(),
   type: z.enum(['chat', 'embedding', 'rerank']).optional().catch(undefined),
@@ -25,6 +50,12 @@ export const ProviderSettingsSchema = z.object({
   models: z.array(ProviderModelInfoSchema).optional().catch(undefined),
   excludedModels: z.array(z.string()).optional().catch(undefined),
   useProxy: z.boolean().optional().catch(undefined),
+  wanjieWorkerHost: z.string().optional().catch(undefined),
+  wanjieEncryptionKey: z.string().optional().catch(undefined),
+  wanjiePhone: z.string().optional().catch(undefined),
+  wanjieSmsId: z.string().optional().catch(undefined),
+  wanjieSmsCooldownUntil: z.number().optional().catch(undefined),
+  wanjieAccountToken: z.string().optional().catch(undefined),
 
   // azure
   endpoint: z.string().optional().catch(undefined),
@@ -101,17 +132,26 @@ export const SessionSettingsSchema = GlobalSessionSettingsSchema.extend({
   dalleStyle: z.enum(['vivid', 'natural']).optional().catch('vivid'),
   imageGenerateNum: z.number().optional().catch(1),
   providerOptions: ProviderOptionsSchema.optional().catch(undefined),
+  autoCompaction: z.boolean().optional().catch(undefined),
 })
 
-const ChatboxAILicenseDetailSchema = z.object({
-  type: z.enum(['chatboxai-3.5', 'chatboxai-4']).optional(),
+const UnifiedTokenUsageDetailSchema = z.object({
+  type: z.string(), // "plan" | "trial" | ... (more types in future)
+  token_usage: z.number(),
+  token_limit: z.number(),
+})
+
+const RemoteLicenseDetailSchema = z.object({
+  type: z.string().optional(),
   name: z.string(),
-  defaultModel: z.enum(['chatboxai-3.5', 'chatboxai-4']).optional(),
+  status: z.string().optional(),
+  defaultModel: z.string().optional(),
   remaining_quota_35: z.number(),
   remaining_quota_4: z.number(),
   remaining_quota_image: z.number(),
   image_used_count: z.number(),
   image_total_quota: z.number(),
+  plan_image_limit: z.number(),
   token_refreshed_time: z.string(),
   token_next_refresh_time: z.string().optional(),
   token_expire_time: z.string().nullish(),
@@ -120,6 +160,14 @@ const ChatboxAILicenseDetailSchema = z.object({
   expansion_pack_usage: z.number(),
   unified_token_usage: z.number(),
   unified_token_limit: z.number(),
+  unified_token_usage_details: z.array(UnifiedTokenUsageDetailSchema).default([]),
+  key: z.string().optional(),
+  price_type: z.string().optional(),
+  order_type: z.string().optional(),
+  utm_source: z.string().optional(),
+  expires_at: z.string().optional(),
+  recurring_canceled: z.boolean().nullish(),
+  payment_type: z.string().optional(),
 })
 
 export const shortcutSendValues = [
@@ -156,7 +204,7 @@ const ShortcutSettingSchema = z.object({
 
 const ExtensionSettingsSchema = z.object({
   webSearch: z.object({
-    provider: z.enum(['build-in', 'bing', 'tavily']),
+    provider: z.enum(['build-in', 'bing', 'baidu', 'tavily']),
     tavilyApiKey: z.string().optional(),
     tavilySearchDepth: z.string().optional(),
     tavilyMaxResults: z.number().optional(),
@@ -183,6 +231,8 @@ const ExtensionSettingsSchema = z.object({
       }),
     })
     .optional(),
+  // Document parser configuration for global default
+  documentParser: DocumentParserConfigSchema.optional(),
 })
 
 const MCPTransportConfigSchema = z.discriminatedUnion('type', [
@@ -260,10 +310,10 @@ export const SettingsSchema = GlobalSessionSettingsSchema.extend({
     .optional()
     .catch(undefined),
 
-  // chatboxai
+  // license settings
   licenseKey: z.string().optional(),
   licenseInstances: z.record(z.string(), z.string()).optional().catch(undefined),
-  licenseDetail: ChatboxAILicenseDetailSchema.optional().catch(undefined),
+  licenseDetail: RemoteLicenseDetailSchema.optional().catch(undefined),
   licenseActivationMethod: z.enum(['login', 'manual']).optional(),
   lastSelectedLicenseByUser: z.record(z.string(), z.string()).optional().catch(undefined),
   // 在 licensekeyview UI中显示/记忆的key，以免用户使用 login 方式后老 key 被清除，他也不记得
@@ -321,6 +371,9 @@ export const SettingsSchema = GlobalSessionSettingsSchema.extend({
 
   autoGenerateTitle: z.boolean().default(true),
 
+  autoCompaction: z.boolean().default(true),
+  compactionThreshold: z.number().min(0.4).max(0.9).default(0.6),
+
   autoLaunch: z.boolean().default(false),
   autoUpdate: z.boolean().default(true), // 是否自动检查更新
   betaUpdate: z.boolean().default(false), // 是否自动检查 beta 更新
@@ -346,7 +399,8 @@ export type OpenAIParams = z.infer<typeof OpenAIParamsSchema>
 export type GoogleParams = z.infer<typeof GoogleParamsSchema>
 export type ProviderOptions = z.infer<typeof ProviderOptionsSchema>
 export type GlobalSessionSettings = z.infer<typeof GlobalSessionSettingsSchema>
-export type ChatboxAILicenseDetail = z.infer<typeof ChatboxAILicenseDetailSchema>
+export type RemoteLicenseDetail = z.infer<typeof RemoteLicenseDetailSchema>
+export type UnifiedTokenUsageDetail = z.infer<typeof UnifiedTokenUsageDetailSchema>
 export type ShortcutSendValue = z.infer<typeof ShortcutSendValueSchema>
 export type ShortcutToggleWindowValue = z.infer<typeof ShortcutToggleWindowValueSchema>
 export type ShortcutName = keyof ShortcutSetting

@@ -1,13 +1,13 @@
 import { Box, Button, Flex, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
+import type { CustomProviderBaseInfo, ModelProviderEnum, ProviderInfo, ProviderSettings } from '@shared/types'
+import { ModelProviderType } from '@shared/types'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CustomProviderBaseInfo, ModelProviderEnum, ProviderInfo, ProviderSettings } from 'src/shared/types'
-import { ModelProviderType } from 'src/shared/types'
+import { AdaptiveModal } from '@/components/common/AdaptiveModal'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { ModelList } from '@/components/ModelList'
-import { Modal } from '@/components/Overlay'
-import { ScalableIcon } from '@/components/ScalableIcon'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { add as addToast } from '@/stores/toastActions'
 
@@ -135,7 +135,7 @@ export function ImportProviderModal({ opened, onClose, importedConfig, existingP
   ])
 
   return (
-    <Modal
+    <AdaptiveModal
       opened={opened}
       onClose={onClose}
       title={t('Import Provider Configuration')}
@@ -208,15 +208,13 @@ export function ImportProviderModal({ opened, onClose, importedConfig, existingP
         </Box>
 
         {/* Action buttons */}
-        <Flex justify="flex-end" gap="sm" mt="lg">
-          <Button variant="outline" onClick={onClose}>
-            {t('Cancel')}
-          </Button>
+        <AdaptiveModal.Actions>
+          <AdaptiveModal.CloseButton onClick={onClose} />
           <Button onClick={handleConfirmImport} disabled={!providerName || !providerId}>
             {t('Save')}
           </Button>
-        </Flex>
+        </AdaptiveModal.Actions>
       </Stack>
-    </Modal>
+    </AdaptiveModal>
   )
 }

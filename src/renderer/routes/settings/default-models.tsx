@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <todo> */
 import { Flex, Stack, Text, Title } from '@mantine/core'
+import { SystemProviders } from '@shared/defaults'
 import { IconSelector } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { forwardRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SystemProviders } from 'src/shared/defaults'
 import ModelSelector from '@/components/ModelSelector'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export const Route = createFileRoute('/settings/default-models')({
@@ -58,7 +58,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will use this model as the default for new chats.')}
+          {t('The app will use this model as the default for new chats.')}
         </Text>
       </Stack>
 
@@ -93,7 +93,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will automatically use this model to rename threads.')}
+          {t('The app will automatically use this model to rename threads.')}
         </Text>
       </Stack>
 
@@ -128,7 +128,7 @@ export function RouteComponent() {
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox will automatically use this model to construct search term.')}
+          {t('The app will automatically use this model to construct search terms.')}
         </Text>
       </Stack>
       <Stack gap="xs">
@@ -137,7 +137,7 @@ export function RouteComponent() {
         <ModelSelector
           position="bottom-start"
           showAuto={true}
-          autoText={settings.licenseKey ? t('Auto (Use Chatbox AI)')! : t('None')!}
+          autoText={t('None')!}
           width={320}
           modelFilter={(model) => model.capabilities?.includes('vision') ?? false}
           selectedProviderId={settings.ocrModel?.provider}
@@ -156,14 +156,14 @@ export function RouteComponent() {
           }
         >
           <ModelSelectContent
-            autoText={settings.licenseKey ? t('Auto (Use Chatbox AI)')! : t('None')!}
+            autoText={t('None')!}
             provider={settings.ocrModel?.provider}
             model={settings.ocrModel?.model}
           />
         </ModelSelector>
 
         <Text c="chatbox-tertiary" size="xs">
-          {t('Chatbox OCRs images with this model and sends the text to models without image support.')}
+          {t('The app OCRs images with this model and sends the text to models without image support.')}
         </Text>
       </Stack>
     </Stack>
@@ -181,11 +181,11 @@ const ModelSelectContent = forwardRef<
     () =>
       !provider || !model
         ? autoText || t('Auto')
-        : ([...SystemProviders, ...(customProviders || [])].find((p) => p.id === provider)?.name || provider) +
+        : ([...SystemProviders(), ...(customProviders || [])].find((p) => p.id === provider)?.name || provider) +
           '/' +
-          ((providers?.[provider]?.models || SystemProviders[provider as any]?.defaultSettings?.models)?.find(
-            (m) => m.modelId === model
-          )?.nickname || model),
+          ((
+            providers?.[provider]?.models || SystemProviders().find((p) => p.id === provider)?.defaultSettings?.models
+          )?.find((m) => m.modelId === model)?.nickname || model),
     [provider, model, autoText, t, customProviders, providers]
   )
   return (

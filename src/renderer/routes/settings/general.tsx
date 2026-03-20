@@ -13,14 +13,16 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { type Language, type ProviderInfo, type Settings, Theme } from '@shared/types'
+import { formatFileSize } from '@shared/utils'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
+import dayjs from 'dayjs'
 import { mapValues, uniqBy } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type Language, type ProviderInfo, type Settings, Theme } from 'src/shared/types'
-import { formatFileSize } from 'src/shared/utils'
-import LazySlider from '@/components/LazySlider'
+import { AdaptiveSelect } from '@/components/AdaptiveSelect'
+import LazySlider from '@/components/common/LazySlider'
 import { languageNameMap, languages } from '@/i18n/locales'
 import platform from '@/platform'
 import storage, { StorageKey } from '@/storage'
@@ -45,7 +47,7 @@ export function RouteComponent() {
         <Title order={5}>{t('Display Settings')}</Title>
 
         {/* language */}
-        <Select
+        <AdaptiveSelect
           maw={320}
           comboboxProps={{ withinPortal: true }}
           value={settings.language}
@@ -70,7 +72,7 @@ export function RouteComponent() {
         />
 
         {/* theme */}
-        <Select
+        <AdaptiveSelect
           maw={320}
           comboboxProps={{ withinPortal: true, withArrow: true }}
           label={t('Theme')}
@@ -158,26 +160,7 @@ export function RouteComponent() {
 
       {/* import and export data */}
       <ImportExportDataSection />
-
-      <Divider />
-
-      {/* Error Reporting */}
-      <Stack gap="md">
-        <Stack gap="xxs">
-          <Title order={5}>{t('Error Reporting')}</Title>
-          <Text c="chatbox-tertiary">
-            {t(
-              'Chatbox respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
-            )}
-          </Text>
-        </Stack>
-
-        <Checkbox
-          label={t('Enable optional anonymous reporting of crash and event data')}
-          checked={settings.allowReportingAndTracking}
-          onChange={(e) => setSettings({ allowReportingAndTracking: e.target.checked })}
-        />
-      </Stack>
+      {/* 按产品要求下线：诊断日志与错误报告区块已从通用设置页隐藏。 */}
 
       {/* others */}
       {platform.type === 'desktop' && (
@@ -325,8 +308,8 @@ const ImportExportDataSection = () => {
     const date = new Date()
     data['__exported_items'] = exportItems
     data['__exported_at'] = date.toISOString()
-    const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-    platform.exporter.exportTextFile(`chatbox-exported-data-${dateStr}.json`, JSON.stringify(data))
+    const dateStr = dayjs(date).format('YYYY-M-D')
+    platform.exporter.exportTextFile(`app-exported-data-${dateStr}.json`, JSON.stringify(data))
   }
 
   const onImport = (file: File | null) => {
@@ -489,3 +472,5 @@ enum ExportDataItem {
   Conversations = 'conversations',
   Copilot = 'copilot',
 }
+
+// 按产品要求下线：诊断日志导出功能不再在设置页展示。

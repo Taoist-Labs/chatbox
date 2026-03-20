@@ -4,6 +4,7 @@ import {
   Button,
   Center,
   Collapse,
+  Flex,
   Group,
   Loader,
   Paper,
@@ -14,12 +15,16 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
+import type { FileMeta, KnowledgeBase } from '@shared/types'
+import { formatFileSize } from '@shared/utils'
 import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
   IconCircleCheck,
+  IconExclamationCircle,
   IconFile,
+  IconInfoCircle,
   IconLoader,
   IconPlayerPause,
   IconPlayerPlay,
@@ -27,16 +32,16 @@ import {
   IconRefresh,
   IconTrash,
   IconUpload,
-  IconX,
 } from '@tabler/icons-react'
-import React from 'react'
+import type React from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import type { FileMeta, KnowledgeBase } from 'src/shared/types'
-import { formatFileSize } from 'src/shared/utils'
 import { useKnowledgeBaseFiles, useKnowledgeBaseFilesActions, useKnowledgeBaseFilesCount } from '@/hooks/knowledge-base'
 import { useChunksPreview } from '@/hooks/useChunksPreview'
 import platform from '@/platform'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { trackEvent } from '@/utils/track'
 import ChunksPreviewModal from './ChunksPreviewModal'
 
 interface KnowledgeBaseDocumentsProps {
@@ -45,12 +50,13 @@ interface KnowledgeBaseDocumentsProps {
 
 const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowledgeBase }) => {
   const { t } = useTranslation()
-  const [isExpanded, setIsExpanded] = React.useState(false)
-  const [showScrollIndicator, setShowScrollIndicator] = React.useState(true)
-  const [isDragOver, setIsDragOver] = React.useState(false)
-  const [showUploadArea, setShowUploadArea] = React.useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [showUploadArea, setShowUploadArea] = useState(false)
 
-  const scrollAreaRef = React.useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const globalDocumentParserType = useSettingsStore((state) => state.extension?.documentParser?.type)
 
   // Chunks preview hook
   const chunksPreview = useChunksPreview()
@@ -68,12 +74,12 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   const { invalidateFiles } = useKnowledgeBaseFilesActions()
 
   // Flatten all pages of files into a single array
-  const allFiles = React.useMemo(() => {
+  const allFiles = useMemo(() => {
     return filesData?.pages.flatMap((page) => page.files) || []
   }, [filesData])
 
   // Real-time polling for file status updates
-  React.useEffect(() => {
+  useEffect(() => {
     if (!knowledgeBase?.id || allFiles.length === 0) return
 
     // Check if there are any files being processed
@@ -93,7 +99,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   }, [knowledgeBase?.id, allFiles, refetch, refetchCount])
 
   // MIME type correction for Windows compatibility
-  const correctMimeType = React.useCallback((file: File): FileMeta => {
+  const correctMimeType = useCallback((file: File): FileMeta => {
     const filename = file.name.toLowerCase()
     let mimeType = file.type
 
@@ -145,53 +151,50 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   const maxHeight = 5 * 60 // 5 items * 60px
 
   // Handle scroll position change
-  const handleScrollPositionChange = React.useCallback((position: { x: number; y: number }) => {
+  const handleScrollPositionChange = useCallback((position: { x: number; y: number }) => {
     setShowScrollIndicator(true)
   }, [])
 
-  const handleScrollToBottom = React.useCallback(() => {
+  const handleScrollToBottom = useCallback(() => {
     setShowScrollIndicator(false)
     fetchNextPage()
   }, [fetchNextPage])
 
   // Update scroll indicator when documents change
-  React.useEffect(() => {
+  useEffect(() => {
     setShowScrollIndicator(allFiles.length > 5)
   }, [allFiles.length])
 
   // Get supported file types
-  const getSupportedFileTypes = React.useCallback(() => {
-    const documentTypes = [
-      '.pdf',
-      '.doc',
-      '.docx',
-      '.txt',
-      '.md',
-      '.rtf',
-      '.ppt',
-      '.pptx',
-      '.xls',
-      '.xlsx',
-      '.csv',
-      '.epub',
-    ]
+  const getSupportedFileTypes = useCallback(() => {
+    const effectiveParserType = knowledgeBase?.documentParser?.type || globalDocumentParserType || 'local'
+    const isLocalParser = effectiveParserType === 'local'
+
+    const baseDocumentTypes = ['.pdf', '.docx', '.txt', '.md', '.rtf', '.pptx', '.xlsx', '.csv', '.epub']
+    const extendedDocumentTypes = ['.doc', '.ppt', '.xls']
+    const documentTypes = isLocalParser ? baseDocumentTypes : [...baseDocumentTypes, ...extendedDocumentTypes]
     const imageTypes = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
 
     // Add MIME types for better Windows compatibility
-    const documentMimeTypes = [
+    const baseDocumentMimeTypes = [
       'application/pdf',
-      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
       'text/markdown',
       'application/rtf',
-      'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'text/csv',
       'application/epub+zip',
     ]
+    const extendedDocumentMimeTypes = [
+      'application/msword',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.ms-excel',
+    ]
+    const documentMimeTypes = isLocalParser
+      ? baseDocumentMimeTypes
+      : [...baseDocumentMimeTypes, ...extendedDocumentMimeTypes]
     const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']
 
     const hasVisionModel = knowledgeBase?.visionModel && knowledgeBase.visionModel.trim() !== ''
@@ -205,10 +208,10 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
       accept: allTypes.join(','),
       display: hasVisionModel ? [...documentTypes, ...imageTypes] : documentTypes,
     }
-  }, [knowledgeBase?.visionModel])
+  }, [knowledgeBase?.documentParser?.type, knowledgeBase?.visionModel, globalDocumentParserType])
 
   // Handle file upload (shared logic)
-  const uploadFiles = React.useCallback(
+  const uploadFiles = useCallback(
     async (files: FileList) => {
       if (!knowledgeBase?.id || !files.length) return
 
@@ -301,7 +304,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Validate file type against supported types
-  const validateFileType = React.useCallback(
+  const validateFileType = useCallback(
     (file: File): boolean => {
       const supportedTypes = getSupportedFileTypes()
       const fileName = file.name.toLowerCase()
@@ -332,13 +335,13 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Handle drag and drop events
-  const handleDragOver = React.useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(true)
   }, [])
 
-  const handleDragLeave = React.useCallback((e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     // Only hide drag over state if we're leaving the drop zone completely
@@ -347,7 +350,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
     }
   }, [])
 
-  const handleDrop = React.useCallback(
+  const handleDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
@@ -401,7 +404,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Handle file deletion
-  const handleDeleteFile = React.useCallback(
+  const handleDeleteFile = useCallback(
     async (fileId: number) => {
       try {
         const knowledgeBaseController = platform.getKnowledgeBaseController()
@@ -417,7 +420,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Handle file retry
-  const handleRetryFile = React.useCallback(
+  const handleRetryFile = useCallback(
     async (fileId: number) => {
       try {
         const knowledgeBaseController = platform.getKnowledgeBaseController()
@@ -436,7 +439,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Handle file pause
-  const handlePauseFile = React.useCallback(
+  const handlePauseFile = useCallback(
     async (fileId: number) => {
       try {
         const knowledgeBaseController = platform.getKnowledgeBaseController()
@@ -455,7 +458,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   )
 
   // Handle file resume
-  const handleResumeFile = React.useCallback(
+  const handleResumeFile = useCallback(
     async (fileId: number) => {
       try {
         const knowledgeBaseController = platform.getKnowledgeBaseController()
@@ -532,7 +535,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
     }
   }
 
-  const getStatusIcon = (status: string, error?: string) => {
+  const getStatusIcon = (status: string, error?: string, parserType?: string) => {
     switch (status) {
       case 'completed':
       case 'done':
@@ -545,19 +548,35 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
         return <IconLoader size={16} color="var(--chatbox-tint-gray)" />
       case 'paused':
         return <IconPlayerPause size={16} color="var(--chatbox-tint-warning)" />
-      case 'failed':
+      case 'failed': {
+        // Determine label based on actual parser type used
+        const getParserLabel = () => {
+          switch (parserType) {
+            case 'mineru':
+              return t('MinerU parse failed')
+            case 'local':
+            default:
+              return t('Local parse failed')
+          }
+        }
+        const isRemoteParser = parserType === 'mineru'
         return (
-          <Tooltip
-            label={error || t('Processing failed')}
-            multiline
-            w={300}
-            withArrow
-            position="top"
-            transitionProps={{ duration: 200 }}
-          >
-            <IconX size={16} color="var(--chatbox-tint-error)" style={{ cursor: 'help' }} />
-          </Tooltip>
+          <Flex gap={4} align="center">
+            <Tooltip
+              label={error || t('Processing failed')}
+              multiline
+              w={300}
+              withArrow
+              position="top"
+              transitionProps={{ duration: 200 }}
+            >
+              <Pill size="xs" c={isRemoteParser ? 'orange' : 'gray'} className="cursor-help">
+                {getParserLabel()}
+              </Pill>
+            </Tooltip>
+          </Flex>
         )
+      }
       default:
         return null
     }
@@ -570,7 +589,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   }
 
   // Handle file upload via button
-  const handleAddFile = React.useCallback(async () => {
+  const handleAddFile = useCallback(async () => {
     if (!knowledgeBase?.id) return
 
     // Toggle upload area visibility
@@ -581,7 +600,7 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
   }, [knowledgeBase?.id, showUploadArea])
 
   // Handle file selection via file dialog
-  const handleFileDialog = React.useCallback(async () => {
+  const handleFileDialog = useCallback(async () => {
     if (!knowledgeBase?.id) return
 
     try {
@@ -762,17 +781,24 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
                                   {formatFileSize(doc.file_size)}
                                 </Text>
                                 {doc.status === 'done' && (
-                                  <Text
-                                    size="xs"
-                                    c="dimmed"
-                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      chunksPreview.openPreview(doc)
-                                    }}
-                                  >
-                                    {doc.chunk_count} {t('chunks')}
-                                  </Text>
+                                  <>
+                                    <Text
+                                      size="xs"
+                                      c="dimmed"
+                                      style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        chunksPreview.openPreview(doc)
+                                      }}
+                                    >
+                                      {doc.chunk_count} {t('chunks')}
+                                    </Text>
+                                    {doc.parser_type && (
+                                      <Pill size="xs" c="dimmed">
+                                        {doc.parser_type === 'mineru' ? 'MinerU' : 'Local'}
+                                      </Pill>
+                                    )}
+                                  </>
                                 )}
                                 {(doc.status === 'processing' || doc.status === 'paused') && doc.total_chunks > 0 && (
                                   <Box style={{ flex: 1, minWidth: 100 }}>
@@ -804,16 +830,20 @@ const KnowledgeBaseDocuments: React.FC<KnowledgeBaseDocumentsProps> = ({ knowled
                           </Group>
 
                           <Group gap="sm" align="center">
-                            <Center w={20} h={20}>
-                              {getStatusIcon(doc.status, doc.error)}
-                            </Center>
+                            {doc.status === 'failed' ? (
+                              getStatusIcon(doc.status, doc.error, doc.parser_type)
+                            ) : (
+                              <Center w={20} h={20}>
+                                {getStatusIcon(doc.status, doc.error, doc.parser_type)}
+                              </Center>
+                            )}
                             {doc.status === 'failed' && (
                               <ActionIcon
                                 variant="subtle"
                                 color="blue"
                                 size="sm"
                                 onClick={() => handleRetryFile(doc.id)}
-                                title={t('Retry')}
+                                title={t('Retry locally')}
                               >
                                 <IconRefresh size={14} />
                               </ActionIcon>

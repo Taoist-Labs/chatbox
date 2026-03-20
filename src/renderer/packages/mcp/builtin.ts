@@ -1,5 +1,5 @@
 import { getLicenseKey } from '@/stores/settingActions'
-import { MCPServerConfig } from './types'
+import type { MCPServerConfig } from './types'
 import i18n from '@/i18n'
 
 export interface BuildinMCPServerConfig {
@@ -16,7 +16,7 @@ export const BUILTIN_MCP_SERVERS: BuildinMCPServerConfig[] = [
     description: i18n.t(
       'This server enables LLMs to retrieve and process content from web pages, converting HTML to markdown for easier consumption.'
     ),
-    url: 'https://mcp.chatboxai.app/fetch',
+    url: 'https://mcp.ai-chatbox.com/fetch',
   },
   {
     id: 'sequentialthinking',
@@ -24,25 +24,25 @@ export const BUILTIN_MCP_SERVERS: BuildinMCPServerConfig[] = [
     description: i18n.t(
       'An MCP server implementation that provides a tool for dynamic and reflective problem-solving through a structured thinking process.'
     ),
-    url: 'https://mcp.chatboxai.app/sequentialthinking',
+    url: 'https://mcp.ai-chatbox.com/sequentialthinking',
   },
   {
     id: 'edgeone-pages',
     name: 'EdgeOne Pages',
     description: i18n.t('Deploy HTML content to EdgeOne Pages and obtaining an accessible public URL.'),
-    url: 'https://mcp.chatboxai.app/edgeone-pages',
+    url: 'https://mcp.ai-chatbox.com/edgeone-pages',
   },
   {
     id: 'arxiv',
     name: 'arXiv',
     description: i18n.t('MCP server for accessing arXiv papers'),
-    url: 'https://mcp.chatboxai.app/arxiv',
+    url: 'https://mcp.ai-chatbox.com/arxiv',
   },
   {
     id: 'context7',
     name: 'Context7',
     description: i18n.t('Retrieves up-to-date documentation and code examples for any library.'),
-    url: 'https://mcp.chatboxai.app/context7',
+    url: 'https://mcp.ai-chatbox.com/context7',
   },
 ]
 

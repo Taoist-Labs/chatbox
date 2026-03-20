@@ -1,10 +1,11 @@
 import { Button, Flex, Select, Stack, Text, TextInput } from '@mantine/core'
+import { ModelProviderType } from '@shared/types'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ModelProviderType } from 'src/shared/types'
 import { v4 as uuidv4 } from 'uuid'
-import { Modal } from '@/components/Overlay'
+import { AdaptiveSelect } from '@/components/AdaptiveSelect'
+import { AdaptiveModal } from '@/components/common/AdaptiveModal'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 interface AddProviderModalProps {
@@ -43,7 +44,7 @@ export function AddProviderModal({ opened, onClose }: AddProviderModalProps) {
   }
 
   return (
-    <Modal size="sm" opened={opened} onClose={onClose} centered title={t('Add provider')}>
+    <AdaptiveModal size="sm" opened={opened} onClose={onClose} centered title={t('Add provider')}>
       <Stack gap="xs">
         <Text>{t('Name')}</Text>
         <TextInput
@@ -53,8 +54,9 @@ export function AddProviderModal({ opened, onClose }: AddProviderModalProps) {
           error={!newProviderName.trim() ? t('Name is required') : ''}
         />
         <Text>{t('API Mode')}</Text>
-        <Select
+        <AdaptiveSelect
           value={newProviderMode}
+          classNames={{ dropdown: 'pointer-events-auto' }}
           onChange={(value) => setNewProviderMode(value as ModelProviderType)}
           data={[
             {
@@ -75,15 +77,13 @@ export function AddProviderModal({ opened, onClose }: AddProviderModalProps) {
             },
           ]}
         />
-        <Flex justify="flex-end" gap="sm" mt="sm">
-          <Button variant="light" color="chatbox-gray" onClick={onClose}>
-            {t('Cancel')}
-          </Button>
+        <AdaptiveModal.Actions>
+          <AdaptiveModal.CloseButton onClick={onClose} />
           <Button onClick={handleAddProvider} disabled={!newProviderName.trim()}>
             {t('Add')}
           </Button>
-        </Flex>
+        </AdaptiveModal.Actions>
       </Stack>
-    </Modal>
+    </AdaptiveModal>
   )
 }

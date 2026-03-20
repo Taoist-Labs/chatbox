@@ -1,34 +1,84 @@
-import { Flex, Menu, Text } from '@mantine/core'
+import { Flex, Loader, Menu, Switch, Text, Tooltip } from '@mantine/core'
+import { formatNumber } from '@shared/utils'
 import { IconFileZip } from '@tabler/icons-react'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatNumber } from 'src/shared/utils'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
-import { ScalableIcon } from '../ScalableIcon'
+import { ScalableIcon } from '../common/ScalableIcon'
 
 type Props = {
   currentInputTokens: number
   contextTokens: number
   totalTokens: number
+  isCalculating?: boolean
+  pendingTasks?: number
+  totalContextMessages?: number
   contextWindow?: number
   currentMessageCount?: number
   maxContextMessageCount?: number
   children?: React.ReactNode
   onCompressClick?: () => void
+  // Auto-compaction props
+  autoCompactionEnabled?: boolean
+  isCompacting?: boolean
+  contextWindowKnown?: boolean
+  onAutoCompactionChange?: (enabled: boolean) => void
 }
 
 const TokenCountMenu: FC<Props> = ({
   currentInputTokens,
   contextTokens,
   totalTokens,
+  isCalculating = false,
+  pendingTasks,
+  totalContextMessages,
   contextWindow,
   currentMessageCount,
   maxContextMessageCount,
   children,
   onCompressClick,
+  autoCompactionEnabled,
+  isCompacting,
+  contextWindowKnown = true,
+  onAutoCompactionChange,
 }) => {
   const { t } = useTranslation()
   const isSmallScreen = useIsSmallScreen()
+
+  const autoCompactionToggle = onAutoCompactionChange !== undefined && (
+    <Menu.Item closeMenuOnClick={false} style={{ cursor: 'default' }}>
+      <Flex justify="space-between" align="center" gap="xs">
+        <Flex align="center" gap="xs">
+          <Text size="sm">{t('Auto Compaction')}</Text>
+          <Text size="xs" c="dimmed">
+            ({t('This session')})
+          </Text>
+        </Flex>
+        {isCompacting ? (
+          <Flex align="center" gap="xs">
+            <Loader size="xs" />
+            <Text size="xs" c="dimmed">
+              {t('Compacting...')}
+            </Text>
+          </Flex>
+        ) : (
+          <Tooltip
+            label={t('Context window unknown for this model')}
+            disabled={contextWindowKnown}
+            withArrow
+            position="top"
+          >
+            <Switch
+              size="xs"
+              checked={autoCompactionEnabled}
+              disabled={!contextWindowKnown || isCompacting}
+              onChange={(e) => onAutoCompactionChange(e.currentTarget.checked)}
+            />
+          </Tooltip>
+        )}
+      </Flex>
+    </Menu.Item>
+  )
 
   return (
     <Menu
@@ -45,7 +95,11 @@ const TokenCountMenu: FC<Props> = ({
     >
       <Menu.Target>{children}</Menu.Target>
       <Menu.Dropdown className="min-w-56">
-        <Menu.Label fw={600}>{t('Estimated Token Usage')}</Menu.Label>
+        <Flex justify="space-between" align="center" px="xs" pt="xs" pb="4">
+          <Text size="sm" fw={600}>
+            {t('Estimated Token Usage')}
+          </Text>
+        </Flex>
 
         <Menu.Item disabled style={{ cursor: 'default' }}>
           <Flex justify="space-between" align="center" gap="xs">
@@ -59,9 +113,20 @@ const TokenCountMenu: FC<Props> = ({
         <Menu.Item disabled style={{ cursor: 'default' }}>
           <Flex justify="space-between" align="center" gap="xs">
             <Text size="sm">{t('Context')}:</Text>
-            <Text size="sm" fw={500}>
-              {formatNumber(contextTokens)}
-            </Text>
+            <Flex align="center" gap="xs">
+              <Text size="sm" fw={500}>
+                {isCalculating ? '~' : ''}
+                {formatNumber(contextTokens)}
+              </Text>
+              {isCalculating &&
+                pendingTasks !== undefined &&
+                totalContextMessages !== undefined &&
+                totalContextMessages > 0 && (
+                  <Text size="xs" c="dimmed">
+                    ({Math.max(0, totalContextMessages - pendingTasks)}/{totalContextMessages})
+                  </Text>
+                )}
+            </Flex>
           </Flex>
         </Menu.Item>
 
@@ -100,6 +165,13 @@ const TokenCountMenu: FC<Props> = ({
               </Text>
             </Flex>
           </Menu.Item>
+        )}
+
+        {autoCompactionToggle && (
+          <>
+            <Menu.Divider />
+            {autoCompactionToggle}
+          </>
         )}
 
         {onCompressClick && contextTokens > 0 && (

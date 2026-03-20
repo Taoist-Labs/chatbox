@@ -1,4 +1,7 @@
+import { getLogger } from '@/lib/utils'
 import platform from '@/platform'
+
+const log = getLogger('base-storage')
 
 export default class BaseStorage {
   constructor() {}
@@ -12,17 +15,47 @@ export default class BaseStorage {
   }
 
   public async setItemNow<T>(key: string, value: T): Promise<void> {
-    return platform.setStoreValue(key, value)
+    try {
+      if (key === 'settings') {
+        const valueObj = value as Record<string, unknown>
+        const providers = valueObj?.providers
+        const providersCount =
+          providers && typeof providers === 'object' && !Array.isArray(providers) ? Object.keys(providers).length : 0
+        if (providersCount === 0) {
+          log.info(
+            `[CONFIG_DEBUG] setItemNow settings with providersCount=0, stack=${new Error().stack?.split('\n').slice(1, 6).join(' <- ')}`
+          )
+        }
+      }
+      return await platform.setStoreValue(key, value)
+    } catch (error) {
+      log.error(`Failed to write to storage (key: ${key}):`, error)
+      throw error
+    }
   }
 
-  // getItem 需要保证如果数据不存在，返回默认值的同时，也要将默认值写入存储
   public async getItem<T>(key: string, initialValue: T): Promise<T> {
-    let value: any = await platform.getStoreValue(key)
-    if (value === undefined || value === null) {
-      value = initialValue
-      this.setItemNow(key, value)
+    try {
+      let value: unknown = await platform.getStoreValue(key)
+      if (value === undefined || value === null) {
+        value = initialValue
+        if (key === 'settings') {
+          log.info(`[CONFIG_DEBUG] getItem settings: value was null/undefined, using initialValue`)
+        }
+        this.setItemNow(key, value)
+      } else if (key === 'settings') {
+        const providers = (value as Record<string, unknown>)?.providers
+        const providersCount =
+          providers && typeof providers === 'object' && !Array.isArray(providers) ? Object.keys(providers).length : 0
+        if (providersCount === 0) {
+          log.info(`[CONFIG_DEBUG] getItem settings: read providersCount=0 from storage`)
+        }
+      }
+      return value as T
+    } catch (error) {
+      log.error(`Failed to read from storage (key: ${key}):`, error)
+      throw error
     }
-    return value
   }
 
   public async removeItem(key: string): Promise<void> {
@@ -30,7 +63,21 @@ export default class BaseStorage {
   }
 
   public async getAll(): Promise<{ [key: string]: any }> {
-    return platform.getAllStoreValues()
+    try {
+      return await platform.getAllStoreValues()
+    } catch (error) {
+      log.error('Failed to read all values from storage:', error)
+      throw error
+    }
+  }
+
+  public async getAllKeys(): Promise<string[]> {
+    try {
+      return await platform.getAllStoreKeys()
+    } catch (error) {
+      log.error('Failed to read all keys from storage:', error)
+      throw error
+    }
   }
 
   public async setAll(data: { [key: string]: any }) {
@@ -42,7 +89,12 @@ export default class BaseStorage {
     return platform.setStoreBlob(key, value)
   }
   public async getBlob(key: string): Promise<string | null> {
-    return platform.getStoreBlob(key)
+    try {
+      return await platform.getStoreBlob(key)
+    } catch (error) {
+      log.error(`Failed to read blob from storage (key: ${key}):`, error)
+      throw error
+    }
   }
   public async delBlob(key: string) {
     return platform.delStoreBlob(key)

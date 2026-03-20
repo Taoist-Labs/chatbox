@@ -8,13 +8,18 @@
  * When running `npm run build` or `npm run build:main`, this file is compiled to
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
+
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeTheme, session, shell, Tray } from 'electron'
+import electronDebug from 'electron-debug'
 import log from 'electron-log/main'
 import { autoUpdater } from 'electron-updater'
 import os from 'os'
 import path from 'path'
+// @ts-expect-error - source-map-support doesn't have type definitions
+import * as sourceMapSupport from 'source-map-support'
 import type { ShortcutSetting } from 'src/shared/types'
 import * as analystic from './analystic-node'
+import { AppUpdater } from './app-updater'
 import * as autoLauncher from './autoLauncher'
 import { handleDeepLink } from './deeplinks'
 import { parseFile } from './file-parser'
@@ -31,15 +36,15 @@ import {
   setStoreBlob,
   store,
 } from './store-node'
-import { resolveHtmlPath } from './util'
 import * as windowState from './window_state'
 
-// Only import knowledge-base module if not on win32 arm64 (libsql doesn't support win32 arm64)
-if (!(process.platform === 'win32' && process.arch === 'arm64')) {
-  import('./knowledge-base')
-}
+const knowledgeBaseInitPromise = import('./knowledge-base/index.js')
+  .then((mod) => mod.getInitPromise())
+  .catch((error) => {
+    log.error('[KB] Failed to initialize knowledge base during bootstrap:', error)
+  })
 
-// 这行代码是解决 Windows 通知的标题和图标不正确的问题，标题会错误显示成 electron.app.Chatbox
+// 这行代码是解决 Windows 通知的标题和图标不正确的问题，标题会错误显示成 electron.app.<AppName>
 // 参考：https://stackoverflow.com/questions/65859634/notification-from-electron-shows-electron-app-electron
 if (process.platform === 'win32') {
   app.setAppUserModelId(app.name)
@@ -53,8 +58,8 @@ const getAssetPath = (...paths: string[]): string => {
   return path.join(RESOURCES_PATH, ...paths)
 }
 
-// 开发环境使用 chatbox-dev:// 协议，避免和正式版冲突
-const PROTOCOL_SCHEME = process.defaultApp ? 'chatbox-dev' : 'chatbox'
+// 开发环境使用 aiclient-dev:// 协议，避免和正式版冲突
+const PROTOCOL_SCHEME = process.defaultApp ? 'aiclient-dev' : 'aiclient'
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -175,7 +180,7 @@ function createTray() {
       accelerator: 'Command+Q',
     },
   ])
-  tray.setToolTip('Chatbox')
+  tray.setToolTip('Wamo Chat')
   tray.setContextMenu(contextMenu)
   tray.on('double-click', showOrHideWindow)
   return tray
@@ -211,14 +216,13 @@ function destroyTray() {
 // --------- 开发模式 ---------
 
 if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support')
   sourceMapSupport.install()
 }
 
 const isDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
 
 if (isDebug) {
-  require('electron-debug')()
+  electronDebug()
 }
 
 // const installExtensions = async () => {
@@ -262,11 +266,19 @@ async function createWindow() {
       spellcheck: true,
       webSecurity: false, // 其中一个作用是解决跨域问题
       allowRunningInsecureContent: false,
-      preload: app.isPackaged ? path.join(__dirname, 'preload.js') : path.join(__dirname, '../../.erb/dll/preload.js'),
+      preload: app.isPackaged
+        ? path.join(__dirname, '../preload/index.js')
+        : path.join(__dirname, '../../out/preload/index.js'),
     },
   })
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'))
+  // Load the local URL for development or the local
+  // html file for production
+  if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  }
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
@@ -303,6 +315,10 @@ async function createWindow() {
 
   mainWindow.on('unmaximize', () => {
     mainWindow?.webContents.send('window:maximized-changed', false)
+  })
+
+  mainWindow.on('focus', () => {
+    mainWindow?.webContents.send('window:focused')
   })
 
   const menuBuilder = new MenuBuilder(mainWindow)
@@ -372,7 +388,7 @@ if (!gotTheLock) {
 } else {
   app.on('second-instance', async (event, commandLine, workingDirectory) => {
     // on windows and linux, the deep link is passed in the command line
-    const url = commandLine.find((arg) => arg.startsWith('chatbox://') || arg.startsWith('chatbox-dev://'))
+    const url = commandLine.find((arg) => arg.startsWith('aiclient://') || arg.startsWith('aiclient-dev://'))
 
     if (url) {
       // Deep Link 场景：总是显示并聚焦窗口
@@ -416,6 +432,7 @@ if (!gotTheLock) {
   app
     .whenReady()
     .then(async () => {
+      await knowledgeBaseInitPromise
       await createWindow()
       ensureTray()
       // Remove this if your app does not use auto updates
@@ -425,7 +442,7 @@ if (!gotTheLock) {
       // 处理启动时的 Deep Link (Windows/Linux)
       // macOS 会通过 open-url 事件处理，不需要在这里处理
       if (process.platform !== 'darwin') {
-        const url = process.argv.find((arg) => arg.startsWith('chatbox://') || arg.startsWith('chatbox-dev://'))
+        const url = process.argv.find((arg) => arg.startsWith('aiclient://') || arg.startsWith('aiclient-dev://'))
         if (url && mainWindow) {
           // 确保窗口加载完成后再处理 Deep Link
           if (mainWindow.webContents.isLoading()) {
@@ -629,6 +646,33 @@ ipcMain.handle('appLog', (event, dataJson) => {
       break
     default:
       log.info(data.message)
+  }
+})
+
+ipcMain.handle('exportLogs', async () => {
+  try {
+    const fs = await import('fs/promises')
+    const logPath = log.transports.file.getFile()?.path
+    if (!logPath) {
+      return ''
+    }
+    const content = await fs.readFile(logPath, 'utf-8')
+    return content
+  } catch (error) {
+    log.error('Failed to export logs:', error)
+    return ''
+  }
+})
+
+ipcMain.handle('clearLogs', async () => {
+  try {
+    const fs = await import('fs/promises')
+    const logPath = log.transports.file.getFile()?.path
+    if (logPath) {
+      await fs.writeFile(logPath, '', 'utf-8')
+    }
+  } catch (error) {
+    log.error('Failed to clear logs:', error)
   }
 })
 

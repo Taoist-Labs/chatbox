@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react'
-import { CHATBOX_BUILD_PLATFORM, CHATBOX_BUILD_TARGET, NODE_ENV } from '@/variables'
+import { BUILD_PLATFORM, BUILD_TARGET, NODE_ENV } from '@/variables'
 import platform from '../platform'
 
 void (async () => {
@@ -25,8 +25,8 @@ void (async () => {
       tags: {
         platform: platform.type,
         app_version: version,
-        build_target: CHATBOX_BUILD_TARGET,
-        build_platform: CHATBOX_BUILD_PLATFORM,
+        build_target: BUILD_TARGET,
+        build_platform: BUILD_PLATFORM,
       },
     },
     // beforeSend hook implements differential sampling

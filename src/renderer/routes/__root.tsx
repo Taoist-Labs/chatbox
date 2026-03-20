@@ -1,7 +1,7 @@
-import { type RemoteConfig, Theme } from '@/../shared/types'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import ExitFullscreenButton from '@/components/ExitFullscreenButton'
-import Toasts from '@/components/Toasts'
+import { Theme } from '@shared/types'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import Toasts from '@/components/common/Toasts'
+import ExitFullscreenButton from '@/components/layout/ExitFullscreenButton'
 import useAppTheme from '@/hooks/useAppTheme'
 import { useSystemLanguageWhenInit } from '@/hooks/useDefaultSystemLanguage'
 import { useI18nEffect } from '@/hooks/useI18nEffect'
@@ -27,6 +27,7 @@ import {
   Popover,
   rem,
   Select,
+  Slider,
   Switch,
   Text,
   TextInput,
@@ -39,18 +40,15 @@ import { Box, Grid } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
-import { useSetAtom } from 'jotai'
 import { useEffect, useMemo, useRef } from 'react'
 import SettingsModal, { navigateToSettings } from '@/modals/Settings'
 import { getOS } from '@/packages/navigator'
-import * as remote from '@/packages/remote'
 import PictureDialog from '@/pages/PictureDialog'
 import RemoteDialogWindow from '@/pages/RemoteDialogWindow'
 import SearchDialog from '@/pages/SearchDialog'
 import platform from '@/platform'
 import { router } from '@/router'
 import Sidebar from '@/Sidebar'
-import * as atoms from '@/stores/atoms'
 import * as premiumActions from '@/stores/premiumActions'
 import * as settingActions from '@/stores/settingActions'
 import { settingsStore, useLanguage, useSettingsStore, useTheme } from '@/stores/settingsStore'
@@ -64,8 +62,6 @@ function Root() {
 
   const setOpenAboutDialog = useUIStore((s) => s.setOpenAboutDialog)
 
-  const setRemoteConfig = useSetAtom(atoms.remoteConfigAtom)
-
   useEffect(() => {
     if (initialized.current) {
       return
@@ -74,10 +70,6 @@ function Root() {
     const tid = setTimeout(() => {
       // biome-ignore lint/nursery/noFloatingPromises: inline call
       ;(async () => {
-        const remoteConfig = await remote
-          .getRemoteConfig('setting_chatboxai_first')
-          .catch(() => ({ setting_chatboxai_first: false }) as RemoteConfig)
-        setRemoteConfig((conf) => ({ ...conf, ...remoteConfig }))
         // 是否需要弹出设置窗口
         initialized.current = true
         if (settingActions.needEditSetting() && location.pathname !== '/settings/mcp') {
@@ -87,7 +79,7 @@ function Root() {
         // 是否需要弹出关于窗口（更新后首次启动）
         // 目前仅在桌面版本更新后首次启动、且网络环境为"外网"的情况下才自动弹窗
         const shouldShowAboutDialogWhenStartUp = await platform.shouldShowAboutDialogWhenStartUp()
-        if (shouldShowAboutDialogWhenStartUp && remoteConfig.setting_chatboxai_first) {
+        if (shouldShowAboutDialogWhenStartUp) {
           setOpenAboutDialog(true)
           return
         }
@@ -95,7 +87,7 @@ function Root() {
     }, 2000)
 
     return () => clearTimeout(tid)
-  }, [setOpenAboutDialog, setRemoteConfig, location.pathname])
+  }, [setOpenAboutDialog, location.pathname])
 
   const showSidebar = useUIStore((s) => s.showSidebar)
   const sidebarWidth = useSidebarWidth()
@@ -459,6 +451,12 @@ const creteMantineTheme = (scale = 1) =>
       Popover: Popover.extend({
         defaultProps: {
           zIndex: 3000,
+        },
+      }),
+      Slider: Slider.extend({
+        classNames: {
+          trackContainer: 'max-sm:pointer-events-none',
+          thumb: 'max-sm:pointer-events-auto',
         },
       }),
     },

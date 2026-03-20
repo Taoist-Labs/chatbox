@@ -4,8 +4,13 @@ import { sentry } from '../adapters/sentry'
 import { getLogger } from '../util'
 import { getDatabase, getVectorStore, parseSQLiteTimestamp, withTransaction } from './db'
 import { readChunks, searchKnowledgeBase } from './file-loaders'
+import { MineruParser, testMineruConnection } from './parsers'
 
 const log = getLogger('knowledge-base:ipc-handlers')
+
+// Store active MinerU parsing tasks for cancellation support
+// Key: filePath, Value: AbortController
+const activeMineruParseTasks = new Map<string, AbortController>()
 
 // Register knowledge base related APIs
 export function registerKnowledgeBaseHandlers() {
@@ -21,6 +26,7 @@ export function registerKnowledgeBaseHandlers() {
         embeddingModel: row.embedding_model,
         rerankModel: row.rerank_model,
         visionModel: row.vision_model,
+        documentParser: row.document_parser ? JSON.parse(row.document_parser as string) : undefined,
         createdAt: row.created_at,
       }))
     } catch (error: any) {
@@ -43,11 +49,18 @@ export function registerKnowledgeBaseHandlers() {
         embeddingModel,
         rerankModel,
         visionModel,
-      }: { name: string; embeddingModel: string; rerankModel: string; visionModel?: string }
+        documentParser,
+      }: {
+        name: string
+        embeddingModel: string
+        rerankModel: string
+        visionModel?: string
+        documentParser?: { type: string; mineru?: { apiToken: string } }
+      }
     ) => {
       try {
         log.info(
-          `ipcMain: kb:create, name=${name}, embeddingModel=${embeddingModel}, rerankModel=${rerankModel}, visionModel=${visionModel}`
+          `ipcMain: kb:create, name=${name}, embeddingModel=${embeddingModel}, rerankModel=${rerankModel}, visionModel=${visionModel}, documentParser=${documentParser?.type || 'default'}`
         )
 
         // Validate required fields
@@ -59,9 +72,10 @@ export function registerKnowledgeBaseHandlers() {
         }
 
         const db = getDatabase()
+        const documentParserJson = documentParser ? JSON.stringify(documentParser) : null
         const rs = await db.execute({
-          sql: 'INSERT INTO knowledge_base (name, embedding_model, rerank_model, vision_model) VALUES (?, ?, ?, ?)',
-          args: [name.trim(), embeddingModel, rerankModel || null, visionModel || null],
+          sql: 'INSERT INTO knowledge_base (name, embedding_model, rerank_model, vision_model, document_parser) VALUES (?, ?, ?, ?, ?)',
+          args: [name.trim(), embeddingModel, rerankModel || null, visionModel || null, documentParserJson],
         })
         const id = rs.lastInsertRowid
 
@@ -80,6 +94,7 @@ export function registerKnowledgeBaseHandlers() {
           scope.setExtra('embeddingModel', embeddingModel)
           scope.setExtra('rerankModel', rerankModel)
           scope.setExtra('visionModel', visionModel)
+          scope.setExtra('documentParser', documentParser?.type)
           sentry.captureException(error)
         })
         throw error
@@ -223,6 +238,7 @@ export function registerKnowledgeBaseHandlers() {
         status: row.status,
         error: row.error,
         createdAt: parseSQLiteTimestamp(row.created_at as string),
+        parser_type: row.parser_type || 'local',
       }))
     } catch (error: any) {
       log.error(`ipcMain: kb:file:list failed for kbId=${kbId}`, error)
@@ -290,6 +306,7 @@ export function registerKnowledgeBaseHandlers() {
         status: row.status,
         error: row.error,
         createdAt: parseSQLiteTimestamp(row.created_at as string),
+        parser_type: row.parser_type || 'local',
       }))
     } catch (error: any) {
       log.error(`ipcMain: kb:file:list-paginated failed for kbId=${kbId}`, error)
@@ -491,7 +508,7 @@ export function registerKnowledgeBaseHandlers() {
 
       // Reset file status to pending for reprocessing
       await db.execute({
-        sql: 'UPDATE kb_file SET status = ?, error = NULL, processing_started_at = NULL WHERE id = ?',
+        sql: 'UPDATE kb_file SET status = ?, error = NULL, chunk_count = 0, total_chunks = 0, processing_started_at = NULL WHERE id = ?',
         args: ['pending', fileId],
       })
 
@@ -672,6 +689,112 @@ export function registerKnowledgeBaseHandlers() {
         scope.setExtra('fileId', fileId)
         sentry.captureException(error)
       })
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Parser-related handlers
+  ipcMain.handle('parser:test-mineru', async (_event, apiToken: string) => {
+    try {
+      log.debug('ipcMain: parser:test-mineru')
+
+      if (!apiToken || !apiToken.trim()) {
+        return { success: false, error: 'API token is required' }
+      }
+
+      return await testMineruConnection(apiToken.trim())
+    } catch (error: any) {
+      log.error('ipcMain: parser:test-mineru failed', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Parse file with MinerU (for InputBox file attachments)
+  ipcMain.handle(
+    'parser:parse-file-with-mineru',
+    async (
+      _event,
+      params: {
+        filePath: string
+        filename: string
+        mimeType: string
+        apiToken: string
+      }
+    ): Promise<{ success: boolean; content?: string; error?: string; cancelled?: boolean }> => {
+      const { filePath, filename, mimeType, apiToken } = params
+
+      try {
+        log.info(`ipcMain: parser:parse-file-with-mineru, filename=${filename}, mimeType=${mimeType}`)
+
+        if (!filePath || !filePath.trim()) {
+          return { success: false, error: 'File path is required' }
+        }
+        if (!apiToken || !apiToken.trim()) {
+          return { success: false, error: 'API token is required' }
+        }
+
+        // Create AbortController for this task
+        const abortController = new AbortController()
+        activeMineruParseTasks.set(filePath, abortController)
+
+        try {
+          // Create MinerU parser instance
+          const parser = new MineruParser(apiToken.trim())
+
+          // Parse file (will poll for up to 5 minutes)
+          const content = await parser.parse(
+            filePath,
+            {
+              fileId: Date.now(), // Temporary ID for this parsing session
+              filename,
+              mimeType,
+            },
+            abortController.signal
+          )
+
+          log.info(`ipcMain: parser:parse-file-with-mineru completed, content length=${content.length}`)
+          return { success: true, content }
+        } finally {
+          // Clean up the task from the map
+          activeMineruParseTasks.delete(filePath)
+        }
+      } catch (error: any) {
+        // Check if this was a cancellation
+        if (error.code === 'CANCELLED' || error.name === 'AbortError') {
+          log.info(`ipcMain: parser:parse-file-with-mineru cancelled, filename=${filename}`)
+          return { success: false, cancelled: true, error: 'Operation cancelled' }
+        }
+
+        log.error('ipcMain: parser:parse-file-with-mineru failed', error)
+        sentry.withScope((scope) => {
+          scope.setTag('component', 'knowledge-base-ipc')
+          scope.setTag('operation', 'parse_file_with_mineru')
+          scope.setExtra('filename', params?.filename)
+          scope.setExtra('mimeType', params?.mimeType)
+          sentry.captureException(error)
+        })
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  // Cancel MinerU parsing task
+  ipcMain.handle('parser:cancel-mineru-parse', async (_event, filePath: string) => {
+    try {
+      log.info(`ipcMain: parser:cancel-mineru-parse, filePath=${filePath}`)
+
+      const controller = activeMineruParseTasks.get(filePath)
+      if (controller) {
+        controller.abort()
+        activeMineruParseTasks.delete(filePath)
+        log.info(`ipcMain: parser:cancel-mineru-parse succeeded, filePath=${filePath}`)
+        return { success: true }
+      }
+
+      log.debug(`ipcMain: parser:cancel-mineru-parse - no active task found for filePath=${filePath}`)
+      return { success: true } // No task to cancel is also success
+    } catch (error: any) {
+      log.error('ipcMain: parser:cancel-mineru-parse failed', error)
       return { success: false, error: error.message }
     }
   })

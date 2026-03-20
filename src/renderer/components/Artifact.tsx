@@ -2,10 +2,10 @@ import NiceModal from '@ebay/nice-modal-react'
 import ReplayOutlinedIcon from '@mui/icons-material/ReplayOutlined'
 import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined'
 import { ButtonGroup, IconButton } from '@mui/material'
+import type { Message } from '@shared/types/session'
 import { debounce } from 'lodash'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Message } from 'src/shared/types/session'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { cn } from '@/lib/utils'
 import { getMessageThreadContext } from '@/stores/sessionActions'
@@ -171,7 +171,7 @@ export function ArtifactWithButtons(props: {
 export function Artifact(props: { htmlCode: string; reloadSign?: number; className?: string }) {
   const { htmlCode, reloadSign, className } = props
   const ref = useRef<HTMLIFrameElement>(null)
-  const iframeOrigin = 'https://artifact-preview.chatboxai.app/preview'
+  const iframeOrigin = 'https://artifact-preview.ai-chatbox.com/preview'
 
   const sendIframeMsg = (type: 'html', code: string) => {
     if (!ref.current) {

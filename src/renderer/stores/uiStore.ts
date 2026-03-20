@@ -1,6 +1,6 @@
+import type { KnowledgeBase, MessagePicture, Toast } from '@shared/types'
 import type { RefObject } from 'react'
 import type { VirtuosoHandle } from 'react-virtuoso'
-import type { KnowledgeBase, MessagePicture, Toast } from 'src/shared/types'
 import { v4 as uuidv4 } from 'uuid'
 import { createStore, useStore } from 'zustand'
 import { combine, persist } from 'zustand/middleware'
@@ -22,8 +22,12 @@ export const uiStore = createStore(
         messageScrollingAtBottom: false,
         showSidebar: platform.type !== 'mobile',
         openSearchDialog: false,
+        searchDialogGlobalOnly: false, // 是否只显示全局搜索（用于对话列表）
         openAboutDialog: false, // 是否展示相关信息的窗口
         inputBoxWebBrowsingMode: false,
+        sessionWebBrowsingMap: {} as Record<string, boolean | undefined>,
+        // Cache for current session's computed web browsing state (for keyboard shortcut)
+        currentWebBrowsingDisplay: { sessionId: '', value: false } as { sessionId: string; value: boolean },
         sessionKnowledgeBaseMap: {} as Record<string, Pick<KnowledgeBase, 'id' | 'name'> | undefined>,
         newSessionState: {} as {
           knowledgeBase?: Pick<KnowledgeBase, 'id' | 'name'>
@@ -65,8 +69,8 @@ export const uiStore = createStore(
           set({ showSidebar })
         },
 
-        setOpenSearchDialog: (openSearchDialog: boolean) => {
-          set({ openSearchDialog })
+        setOpenSearchDialog: (openSearchDialog: boolean, globalOnly = false) => {
+          set({ openSearchDialog, searchDialogGlobalOnly: globalOnly })
         },
 
         setOpenAboutDialog: (openAboutDialog: boolean) => {
@@ -118,6 +122,64 @@ export const uiStore = createStore(
           })
         },
 
+        getSessionWebBrowsing: (sessionId: string) => {
+          return get().sessionWebBrowsingMap[sessionId]
+        },
+
+        setSessionWebBrowsing: (sessionId: string, enabled: boolean) => {
+          set((state) => ({
+            sessionWebBrowsingMap: {
+              ...state.sessionWebBrowsingMap,
+              [sessionId]: enabled,
+            },
+            // Update cache if it's for the current session (avoid race condition with kbd shortcut)
+            currentWebBrowsingDisplay:
+              state.currentWebBrowsingDisplay.sessionId === sessionId
+                ? { sessionId, value: enabled }
+                : state.currentWebBrowsingDisplay,
+          }))
+        },
+
+        clearSessionWebBrowsing: (sessionId: string = 'new') => {
+          set((state) => {
+            const newMap = { ...state.sessionWebBrowsingMap }
+            delete newMap[sessionId]
+            // Clear cache if it's for the cleared session
+            const updates: {
+              sessionWebBrowsingMap: typeof newMap
+              currentWebBrowsingDisplay?: typeof state.currentWebBrowsingDisplay
+            } = { sessionWebBrowsingMap: newMap }
+            if (state.currentWebBrowsingDisplay.sessionId === sessionId) {
+              updates.currentWebBrowsingDisplay = { sessionId: '', value: false }
+            }
+            return updates
+          })
+        },
+
+        // Update the cached display value (for kbd shortcut to work)
+        updateCurrentWebBrowsingDisplay: (sessionId: string, value: boolean) => {
+          set({ currentWebBrowsingDisplay: { sessionId, value } })
+        },
+
+        // Toggle web browsing for a session using the cached display value
+        toggleSessionWebBrowsing: (sessionId: string) => {
+          const { currentWebBrowsingDisplay } = get()
+          // Use cached display value if it matches the session, otherwise fallback to stored value
+          const currentValue =
+            currentWebBrowsingDisplay.sessionId === sessionId
+              ? currentWebBrowsingDisplay.value
+              : (get().sessionWebBrowsingMap[sessionId] ?? false)
+          const newValue = !currentValue
+          set((state) => ({
+            sessionWebBrowsingMap: {
+              ...state.sessionWebBrowsingMap,
+              [sessionId]: newValue,
+            },
+            // Update cache to keep it in sync
+            currentWebBrowsingDisplay: { sessionId, value: newValue },
+          }))
+        },
+
         setNewSessionState: (
           newSessionState:
             | ReturnType<typeof get>['newSessionState']
@@ -144,8 +206,8 @@ export const uiStore = createStore(
       partialize: (state) => ({
         widthFull: state.widthFull,
         showCopilotsInNewSession: state.showCopilotsInNewSession,
-        inputBoxWebBrowsingMode: state.inputBoxWebBrowsingMode,
         sidebarWidth: state.sidebarWidth,
+        sessionWebBrowsingMap: state.sessionWebBrowsingMap,
       }),
       storage: safeStorage,
     }

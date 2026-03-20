@@ -1,30 +1,22 @@
+import { SystemProviders } from '@shared/defaults'
+import { ModelProviderEnum, type ProviderInfo } from '@shared/types'
 import { useCallback, useMemo } from 'react'
-import { SystemProviders } from 'src/shared/defaults'
-import { ModelProviderEnum, type ProviderInfo } from 'src/shared/types'
 import { useSettingsStore } from '@/stores/settingsStore'
-import useChatboxAIModels from './useChatboxAIModels'
 
 export const useProviders = () => {
-  const { chatboxAIModels } = useChatboxAIModels()
   const { setSettings, ...settings } = useSettingsStore((state) => state)
   const providerSettingsMap = settings.providers
 
   const allProviderBaseInfos = useMemo(
-    () => [...SystemProviders, ...(settings.customProviders || [])],
-    [settings.customProviders]
+    () => SystemProviders().filter((provider) => provider.id === ModelProviderEnum.Wanjie),
+    []
   )
   const providers = useMemo(
     () =>
       allProviderBaseInfos
         .map((p) => {
           const providerSettings = providerSettingsMap?.[p.id]
-          if (p.id === ModelProviderEnum.ChatboxAI && settings.licenseKey) {
-            return {
-              ...p,
-              ...providerSettings,
-              models: chatboxAIModels,
-            }
-          } else if (
+          if (
             (!p.isCustom && providerSettings?.apiKey) ||
             ((p.isCustom || p.id === ModelProviderEnum.Ollama || p.id === ModelProviderEnum.LMStudio) &&
               providerSettings?.models?.length)
@@ -40,7 +32,7 @@ export const useProviders = () => {
           }
         })
         .filter((p) => !!p),
-    [providerSettingsMap, allProviderBaseInfos, chatboxAIModels, settings.licenseKey]
+    [providerSettingsMap, allProviderBaseInfos]
   )
 
   const favoritedModels = useMemo(

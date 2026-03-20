@@ -58,7 +58,7 @@ export const defaultSessionsForEN: Session[] = [
     id: 'e22ab364-4681-4e24-aaba-461ed0fccfd3',
     name: 'Travel Guide (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/travel.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/travel.png',
     messages: [
       {
         id: 'a639e972-10b7-4a67-8f3d-bf46e1e94c68',
@@ -87,7 +87,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '55d92e88-02af-4c3b-a378-aa0a1970abb1',
     name: 'Social Media Influencer (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/twitter.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/twitter.png',
     messages: [
       {
         id: 'f8f341f4-9a13-448d-becd-b8d07c31f8dd',
@@ -97,13 +97,13 @@ export const defaultSessionsForEN: Session[] = [
       },
       {
         id: 'e99f80e0-b5a4-4a4d-954e-9ad20c8465e7',
-        content: 'Tweet out to let everyone know: The latest version of Chatbox has been released',
+        content: 'Tweet out to let everyone know: The latest version of this app has been released',
         role: 'user' as const,
       },
       {
         id: 'eb6218ad-439d-4e15-847b-0382f844f96e',
         content:
-          '"Exciting news! The latest version of Chatbox has just been released. Get ready to experience amazing features and seamless AI conversations. Upgrade now and unleash your productivity potential! #Chatbox #MessagingApp #Upgrade"',
+          '"Exciting news! The latest version of this app has just been released. Get ready to experience amazing features and seamless AI conversations. Upgrade now and unleash your productivity potential! #AIApp #MessagingApp #Upgrade"',
         role: 'assistant' as const,
         model: 'unknown',
         generating: false,
@@ -116,7 +116,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '35df5a96-b612-406a-985b-3ab4d2c481ff',
     name: 'Software Developer (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/programmer.png',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/programmer.png',
     messages: [
       {
         id: 'a700be6c-cbdd-43a3-b572-49e7a921c059',
@@ -145,7 +145,7 @@ export const defaultSessionsForEN: Session[] = [
     id: '776eac23-7b4a-40da-91cd-f233bb4742ed',
     name: 'Translator (Example)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/translator.jpeg',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/translator.jpeg',
     messages: [
       {
         id: '4f609d56-5e6a-40b7-8e32-7b3ba8a9a990',
@@ -212,7 +212,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '81cfc426-48b4-4a13-ad42-bfcfc4544299',
     name: '小红书文案生成器 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/xhs.webp',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/xhs.webp',
     messages: [
       {
         id: '7a0de212-2790-49dd-a47a-b1cf67cfb581',
@@ -221,13 +221,13 @@ export const defaultSessionsForCN: Session[] = [
       },
       {
         id: '49deeb2b-db25-462e-9886-ff94efca70d2',
-        content: 'Chatbox 最新版本发布啦',
+        content: '应用最新版本发布啦',
         role: 'user' as const,
       },
       {
         id: '014f9bf6-a164-4866-87d9-558db3acbef9',
         content:
-          '小仙女们，Chatbox 又双叒叕更新啦！这次版本新增了好多好多小细节哦，让我们快来看看吧~✨✨✨\n\n首先，Chatbox 在此次更新中为大家加入了许多优化体验！让聊天变得更加愉快、更加流畅。而且还有一些小搭档的出现，帮助你更高效地完成工作🔥🔥🔥\n\n此外，Chatbox 为大家特别准备了一个新的 AI 服务：Chatbox AI，可以直接使用哦，再也不用折腾 API KEY 和技术术语啦💗💗💗💗\n\n最后，记得分享和转发这篇笔记让更多小伙伴们一起使用，分享快乐哦😁😁😁😁\n\n快来下载最新版的 Chatbox，开启与小伙伴们的新生活吧！\n💬 #Chatbox新版本 #AI神器 #人生苦短我用Chatbox#',
+          '小仙女们，应用又双叒叕更新啦！这次版本新增了好多好多小细节哦，让我们快来看看吧~✨✨✨\n\n首先，应用在此次更新中为大家加入了许多优化体验！让聊天变得更加愉快、更加流畅。而且还有一些小搭档的出现，帮助你更高效地完成工作🔥🔥🔥\n\n此外，应用为大家特别准备了一个新的 AI 服务：托管 AI 服务，可以直接使用哦，再也不用折腾 API KEY 和技术术语啦💗💗💗💗\n\n最后，记得分享和转发这篇笔记让更多小伙伴们一起使用，分享快乐哦😁😁😁😁\n\n快来体验最新版的应用，开启与小伙伴们的新生活吧！\n💬 #应用新版本 #AI神器 #人生苦短我用应用#',
         role: 'assistant' as const,
         model: 'unknown',
         generating: false,
@@ -240,7 +240,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '8732ec08-b23c-4b5e-8f65-d63d808f970f',
     name: '夸夸机 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/9fa8f1eb09e717d110d614d7474cbc591381206547520499117.gif',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/9fa8f1eb09e717d110d614d7474cbc591381206547520499117.gif',
     messages: [
       {
         id: '2045db61-b350-43b1-b3f2-442d68d379aa',
@@ -269,7 +269,7 @@ export const defaultSessionsForCN: Session[] = [
     id: '3e091ac6-ebfa-42c9-b125-c67ac2d45ee1',
     name: '翻译助手 (示例)',
     type: 'chat',
-    picUrl: 'https://static.chatboxai.app/copilot-avatar/translator.jpeg',
+    picUrl: 'https://static.ai-chatbox.com/copilot-avatar/translator.jpeg',
     messages: [
       {
         id: 'ed9b9e74-1715-446e-b3c1-bed565c4878c',
@@ -303,14 +303,14 @@ export const imageCreatorSessionForCN: Session = {
   starred: true,
   settings: {
     dalleStyle: 'vivid',
-    provider: ModelProviderEnum.ChatboxAI,
+    provider: ModelProviderEnum.Wanjie,
     modelId: 'DALL-E-3',
   },
   messages: [
     {
       id: 'chatbox-chat-demo-image-creator-message-id-1',
       role: 'system' as const,
-      content: `Hi！我是 Chatbox Image Creator，“无情”的图片制造机。我可以根据你的描述生成精美图片，只要你能想象得到，我就能创造出来——迷人的风景、生动的角色、App 图标、或者抽象的构思……
+      content: `Hi！我是 Image Creator，“无情”的图片制造机。我可以根据你的描述生成精美图片，只要你能想象得到，我就能创造出来——迷人的风景、生动的角色、App 图标、或者抽象的构思……
 
 (๑•́ ₃ •̀๑) 额…我是一个有点自闭的机器人，所以**请直接告诉我你想要图片的文字描述**，我会集中我所有的像素去实现你的想象。
 
@@ -326,9 +326,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/card1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card3.png' },
       ],
     },
     {
@@ -341,9 +341,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/movie1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie3.png' },
       ],
     },
     {
@@ -356,9 +356,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/comic1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic3.png' },
       ],
     },
     {
@@ -371,9 +371,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/app1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app3.png' },
       ],
     },
     {
@@ -386,9 +386,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/girl1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl3.png' },
       ],
     },
     {
@@ -401,9 +401,9 @@ export const imageCreatorSessionForCN: Session = {
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/cat1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat3.png' },
       ],
     },
   ].map(migrateMessage),
@@ -416,14 +416,14 @@ export const imageCreatorSessionForEN: Session = {
   starred: true,
   settings: {
     dalleStyle: 'vivid',
-    provider: ModelProviderEnum.ChatboxAI,
+    provider: ModelProviderEnum.Wanjie,
     modelId: 'DALL-E-3',
   },
   messages: [
     {
       id: 'chatbox-chat-demo-image-creator-message-id-1',
       role: 'system' as const,
-      content: `Hi! I'm Chatbox Image Creator, your artistic AI companion dedicated to converting your words into striking visuals. If you can dream it, I can create it—from enchanting landscapes, dynamic characters, app icons to the abstract and beyond.
+      content: `Hi! I'm Image Creator, your artistic AI companion dedicated to converting your words into striking visuals. If you can dream it, I can create it—from enchanting landscapes, dynamic characters, app icons to the abstract and beyond.
 
 I'm a quiet robot, just **simply tell me the description of the image you have in mind**, and I'll focus all my pixels into crafting your vision.
 
@@ -439,9 +439,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/card1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/card3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/card3.png' },
       ],
     },
     {
@@ -454,9 +454,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/movie1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/movie3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/movie3.png' },
       ],
     },
     {
@@ -469,9 +469,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/comic1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/comic3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/comic3.png' },
       ],
     },
     {
@@ -484,9 +484,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/app1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/app3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/app3.png' },
       ],
     },
     {
@@ -499,9 +499,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/girl1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/girl3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/girl3.png' },
       ],
     },
     {
@@ -514,9 +514,9 @@ Let's make art!`,
       role: 'assistant' as const,
       content: '',
       pictures: [
-        { url: 'https://download.chatboxai.app/image-demo/cat1.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat2.png' },
-        { url: 'https://download.chatboxai.app/image-demo/cat3.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat1.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat2.png' },
+        { url: 'https://download.ai-chatbox.com/image-demo/cat3.png' },
       ],
     },
   ].map(migrateMessage),
@@ -526,7 +526,7 @@ export const artifactSessionCN: Session = {
   id: 'chatbox-chat-demo-artifact-1-cn',
   name: '贪吃蛇(Artifact Example)',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/snake_game.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/snake_game.png',
   messages: [
     {
       id: '0104fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -554,8 +554,8 @@ export const artifactSessionCN: Session = {
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -577,8 +577,8 @@ export const artifactSessionCN: Session = {
       generating: false,
       wordCount: 1303,
       tokenCount: 2973,
-      aiProvider: 'chatbox-ai',
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie',
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 3165,
     },
@@ -591,7 +591,7 @@ export const artifactSessionEN: Session = {
   id: 'chatbox-chat-demo-artifact-1-en',
   name: 'Snake Game (Artifact Example)',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/snake_game.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/snake_game.png',
   messages: [
     {
       id: '0104fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -619,8 +619,8 @@ export const artifactSessionEN: Session = {
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -642,8 +642,8 @@ export const artifactSessionEN: Session = {
       generating: false,
       wordCount: 1303,
       tokenCount: 2973,
-      aiProvider: 'chatbox-ai',
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie',
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 3165,
     },
@@ -656,7 +656,7 @@ export const mermaidSessionEN: Session = {
   id: 'mermaid-demo-1-en',
   name: 'ChartWhiz',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/chartwhiz.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/chartwhiz.png',
   messages: [
     {
       id: '0001fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -722,8 +722,8 @@ If you need more details on any specific part of the TCP protocol or its practic
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -775,8 +775,8 @@ Understanding the normal distribution is crucial for many statistical techniques
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -831,8 +831,8 @@ By focusing on these key areas and progressively building your skills, you can w
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -845,7 +845,7 @@ export const mermaidSessionCN: Session = {
   id: 'mermaid-demo-1-cn',
   name: '做图表',
   type: 'chat',
-  picUrl: 'https://download.chatboxai.app/image-demo/chartwhiz.png',
+  picUrl: 'https://download.ai-chatbox.com/image-demo/chartwhiz.png',
   messages: [
     {
       id: '0011fabe-564a-4b99-b9e3-24c34a6805b2',
@@ -911,8 +911,8 @@ sequenceDiagram
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -964,8 +964,8 @@ xychart-beta
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },
@@ -1020,8 +1020,8 @@ mindmap
       generating: false,
       wordCount: 559,
       tokenCount: 1119,
-      aiProvider: 'chatbox-ai' as any,
-      model: 'Chatbox AI 4',
+      aiProvider: 'wanjie' as any,
+      model: 'wanjie-demo-model',
       status: [],
       tokensUsed: 1165,
     },

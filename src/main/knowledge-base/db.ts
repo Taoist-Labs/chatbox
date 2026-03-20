@@ -9,10 +9,21 @@ import { getLogger } from '../util'
 const log = getLogger('knowledge-base:db')
 
 // Database file path
-const dbPath = path.join(app.getPath('userData'), 'databases', 'chatbox_kb.db')
+const dbDir = path.join(app.getPath('userData'), 'databases')
+const primaryDbPath = path.join(dbDir, 'knowledge_base.db')
+const legacyDbPath = path.join(dbDir, 'chatbox_kb.db')
+
+function resolveDbPath() {
+  if (fs.existsSync(legacyDbPath) && !fs.existsSync(primaryDbPath)) {
+    log.info('[DB] Using legacy database file path', { legacyDbPath })
+    return legacyDbPath
+  }
+  return primaryDbPath
+}
+
+const dbPath = resolveDbPath()
 
 // Ensure database directory exists
-const dbDir = path.dirname(dbPath)
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
 }
@@ -59,6 +70,20 @@ async function initDB(db: Client) {
       } else {
         // Ignore error if column already exists
         log.info('[DB] Database initialized (total_chunks column already exists)')
+      }
+    })
+
+    // Add document_parser column to knowledge_base table (JSON format, NULL means use global config)
+    await db.batch([`ALTER TABLE knowledge_base ADD COLUMN document_parser TEXT DEFAULT NULL`]).catch((error) => {
+      if (error instanceof Error && !error.message.includes('duplicate column name')) {
+        log.error('[DB] Failed to add document_parser column', error)
+      }
+    })
+
+    // Add parser_type column to kb_file table to record which parser was used
+    await db.batch([`ALTER TABLE kb_file ADD COLUMN parser_type TEXT DEFAULT 'local'`]).catch((error) => {
+      if (error instanceof Error && !error.message.includes('duplicate column name')) {
+        log.error('[DB] Failed to add parser_type column', error)
       }
     })
 

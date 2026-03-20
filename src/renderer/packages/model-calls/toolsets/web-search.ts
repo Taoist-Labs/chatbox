@@ -1,30 +1,49 @@
+import { RemoteAPIError } from '@shared/models/errors'
 import { tool } from 'ai'
-import { ChatboxAIAPIError } from 'src/shared/models/errors'
 import z from 'zod'
-import * as remote from '@/packages/remote'
+import * as localParser from '@/packages/local-parser'
 import { webSearchExecutor } from '@/packages/web-search'
 import platform from '@/platform'
-import * as settingActions from '@/stores/settingActions'
+
+const WEB_SEARCH_LOG_PREFIX = '[WebSearchDebug]'
 
 const toolSetDescription = `
-A set of tools to assist the AI in answering user queries.
+Use these tools to search the web and extract content from URLs.
 
-web_search:
-A search engine. Useful for when you need to answer questions about current events. Input should be a search query. Prefer English query. Query should be short and concise.
+## web_search
+Search the web for current information. Use short, concise queries (English preferred).
 
-parse_link:
-Parses the readable content of a web page. Use this when you need to extract detailed information from a specific URL shared by the user.
-
+## parse_link
+Extract readable content from a URL. Use when you need detailed information from a specific webpage.
 `
 
 export const webSearchTool = tool({
   description:
-    'a search engine. useful for when you need to answer questions about current events. input should be a search query. prefer English query. query should be short and concise',
+    'Search the web for current events and real-time information. Use short, concise queries (English preferred).',
   inputSchema: z.object({
     query: z.string().describe('the search query'),
   }),
   execute: async (input: { query: string }, { abortSignal }: { abortSignal?: AbortSignal }) => {
-    return await webSearchExecutor({ query: input.query }, { abortSignal })
+    const traceId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search called`, {
+      query: input.query,
+      platformType: platform.type,
+      signalAborted: abortSignal?.aborted ?? false,
+    })
+    try {
+      const result = await webSearchExecutor({ query: input.query }, { abortSignal })
+      console.log(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search completed`, {
+        query: result.query,
+        resultCount: result.searchResults.length,
+      })
+      return result
+    } catch (error) {
+      console.error(`${WEB_SEARCH_LOG_PREFIX} [${traceId}] tool web_search failed`, {
+        query: input.query,
+        error,
+      })
+      throw error
+    }
   },
 })
 
@@ -44,13 +63,8 @@ export const parseLinkTool = tool({
       .describe('Optional maximum number of characters to return from the parsed content.'),
   }),
   execute: async (input: { url: string; maxLength?: number }, _context: { abortSignal?: AbortSignal }) => {
-    const licenseKey = settingActions.getLicenseKey()
-    if (!licenseKey) {
-      throw ChatboxAIAPIError.fromCodeName('license_key_required', 'license_key_required')
-    }
-
-    const parsed = await remote.parseUserLinkPro({ licenseKey, url: input.url })
-    const content = ((await platform.getStoreBlob(parsed.storageKey)) || '').trim()
+    const parsed = await localParser.parseUrl(input.url)
+    const content = ((await platform.getStoreBlob(parsed.key)) || '').trim()
 
     const maxLength = input.maxLength ?? DEFAULT_PARSE_LINK_MAX_CHARS
     const normalizedMaxLength = Math.min(Math.max(maxLength, 500), 50_000)

@@ -1,7 +1,7 @@
 import NiceModal, { useModal } from '@ebay/nice-modal-react'
 import { Button, Image, List, Paper, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
-import { Modal } from '@/components/Overlay'
+import { AdaptiveModal } from '@/components/common/AdaptiveModal'
 import icon from '../static/icon.png'
 import { navigateToSettings } from './Settings'
 
@@ -15,7 +15,7 @@ const Welcome = NiceModal.create(() => {
   }
 
   return (
-    <Modal
+    <AdaptiveModal
       opened={modal.visible}
       onClose={onClose}
       withCloseButton={false}
@@ -30,7 +30,7 @@ const Welcome = NiceModal.create(() => {
           <Stack gap="sm" align="center">
             <Image src={icon} w={86} h={86} />
             <Stack gap="3xs" align="center">
-              <Title order={3}>Chatbox</Title>
+              <Title order={3}>Wamo Chat</Title>
               <Text size="md">{t('An easy-to-use AI client app')}</Text>
             </Stack>
           </Stack>
@@ -51,7 +51,7 @@ const Welcome = NiceModal.create(() => {
               radius="md"
               classNames={{ root: '!outline-none', label: 'flex flex-col items-center justify-center' }}
               onClick={() => {
-                navigateToSettings('/provider/chatbox-ai')
+                navigateToSettings('/provider/wanjie')
                 modal.resolve('setup')
                 modal.hide()
               }}
@@ -65,7 +65,7 @@ const Welcome = NiceModal.create(() => {
           {t('Setup later')}
         </Button>
       </Stack>
-    </Modal>
+    </AdaptiveModal>
   )
 })
 

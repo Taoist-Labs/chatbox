@@ -2,12 +2,57 @@ import { CapacitorHttp } from '@capacitor/core'
 import { createNativeReadableStream } from '@/native/stream-http'
 import { ApiError } from '../../shared/models/errors'
 
+type MobileResponseType = 'text' | 'arraybuffer'
+
+function decodeBase64ToUint8Array(base64: string): Uint8Array {
+  if (typeof Buffer !== 'undefined') {
+    return Uint8Array.from(Buffer.from(base64, 'base64'))
+  }
+
+  if (typeof atob === 'function') {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  throw new ApiError('Unable to decode base64 binary response')
+}
+
+function toArrayBufferPayload(data: unknown): ArrayBuffer {
+  if (data instanceof ArrayBuffer) {
+    return data
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    const view = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+    return Uint8Array.from(view).buffer as ArrayBuffer
+  }
+
+  if (Array.isArray(data)) {
+    return Uint8Array.from(data).buffer as ArrayBuffer
+  }
+
+  if (typeof data === 'string') {
+    return decodeBase64ToUint8Array(data).buffer as ArrayBuffer
+  }
+
+  if (data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)) {
+    return Uint8Array.from((data as { data: number[] }).data).buffer as ArrayBuffer
+  }
+
+  throw new ApiError('Invalid arraybuffer response payload')
+}
+
 export async function handleMobileRequest(
   url: string,
   method: string,
   headers: Headers,
   body?: RequestInit['body'],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  responseType: MobileResponseType = 'text'
 ): Promise<Response> {
   // Fix: Convert Headers to plain object without using .entries()
   const headerObj: Record<string, string> = {}
@@ -61,7 +106,7 @@ export async function handleMobileRequest(
     method,
     headers: headerObj,
     data: body,
-    responseType: 'text',
+    responseType,
   })
 
   const rawData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
@@ -69,6 +114,15 @@ export async function handleMobileRequest(
   if (response.status === 0 || response.status < 200 || response.status >= 400) {
     throw new ApiError(`Status Code ${response.status}`, rawData)
   }
+
+  if (responseType === 'arraybuffer') {
+    const binaryBody = toArrayBufferPayload(response.data)
+    return new Response(binaryBody, {
+      status: response.status,
+      headers: response.headers,
+    })
+  }
+
   const responseData = rawData
 
   if (isStreaming) {

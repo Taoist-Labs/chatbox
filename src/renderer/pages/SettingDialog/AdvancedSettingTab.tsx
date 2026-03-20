@@ -10,13 +10,13 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
+import type { Settings } from '@shared/types'
 import { uniqBy } from 'lodash'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings } from 'src/shared/types'
 import { Accordion, AccordionDetails, AccordionSummary } from '@/components/Accordion'
+import TextFieldReset from '@/components/common/TextFieldReset'
 import { ShortcutConfig } from '@/components/Shortcut'
-import TextFieldReset from '@/components/TextFieldReset'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import platform from '@/platform'
 import storage, { StorageKey } from '@/storage'
@@ -188,7 +188,7 @@ function ExportAndImport(props: { onCancel: () => void }) {
     data['__exported_items'] = exportItems
     data['__exported_at'] = date.toISOString()
     const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-    platform.exporter.exportTextFile(`chatbox-exported-data-${dateStr}.json`, JSON.stringify(data))
+    platform.exporter.exportTextFile(`app-exported-data-${dateStr}.json`, JSON.stringify(data))
   }
   const onImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const errTip = t('Import failed, unsupported data format')
@@ -326,7 +326,7 @@ export function AnalyticsSetting() {
       <div>
         <p className="opacity-70">
           {t(
-            'Chatbox respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
+            'This app respects your privacy and only uploads anonymous error data and events when necessary. You can change your preferences at any time in the settings.'
           )}
         </p>
       </div>

@@ -1,4 +1,3 @@
-import { app } from 'electron'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -7,21 +6,13 @@ import type { ApiRequestOptions, ModelDependencies } from '../../shared/types/ad
 import { sentry } from './sentry'
 
 export async function createModelDependencies(): Promise<ModelDependencies> {
-  // Main层的平台信息
-  const platformInfo = {
-    type: 'desktop',
-    platform: process.platform,
-    os: os.platform(),
-    version: app.getVersion(),
-  }
-
-  const afetch = createAfetch(platformInfo)
+  const afetch = createAfetch()
 
   return {
     storage: {
       async saveImage(folder: string, dataUrl: string): Promise<string> {
         // 将图片写入 /tmp 目录下的临时文件
-        const fileName = `chatbox_${folder}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.img`
+        const fileName = `app_${folder}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.img`
         const filePath = path.join(os.tmpdir(), fileName)
         // 支持 data URL 或纯 base64
         let base64Data = dataUrl
@@ -43,7 +34,7 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
       fetchWithOptions: async (
         url: string,
         init?: RequestInit,
-        options?: { retry?: number; parseChatboxRemoteError?: boolean }
+        options?: { retry?: number; parseRemoteAPIError?: boolean }
       ): Promise<Response> => {
         return afetch(url, init, options)
       },

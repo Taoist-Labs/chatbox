@@ -1,7 +1,12 @@
-import { Button, Group, Input, Pill, Radio, Select, Stack, Text } from '@mantine/core'
-import { IconTrash } from '@tabler/icons-react'
+import { Button, Group, Input, PasswordInput, Select, Stack, Text } from '@mantine/core'
+import type { DocumentParserConfig, DocumentParserType } from '@shared/types/settings'
+import { IconCheck, IconTrash, IconX } from '@tabler/icons-react'
 import type React from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import platform from '@/platform'
+import { ScalableIcon } from '../common/ScalableIcon'
 
 interface ModelSelectorsProps {
   embeddingModelList: Array<{ label: string; value: string }>
@@ -69,63 +74,6 @@ export const KnowledgeBaseModelSelectors: React.FC<ModelSelectorsProps> = ({
         comboboxProps={{ withinPortal: false, position: 'bottom' }}
       />
     </>
-  )
-}
-
-interface KnowledgeBaseChatboxAIInfoProps {
-  showModelsLabel?: boolean
-  hasError?: boolean
-}
-
-export const KnowledgeBaseChatboxAIInfo: React.FC<KnowledgeBaseChatboxAIInfoProps> = ({
-  showModelsLabel = false,
-  hasError = false,
-}) => {
-  const { t } = useTranslation()
-
-  return (
-    <Stack gap="sm">
-      {showModelsLabel && (
-        <Group>
-          {t('Models')}: <Pill>Chatbox AI</Pill>
-        </Group>
-      )}
-      <Text size="sm" c="dimmed">
-        {t('Chatbox AI provides all the essential model support required for knowledge base processing')}
-      </Text>
-      {hasError && (
-        <Text size="sm" c="red">
-          {t('Failed to load Chatbox AI models configuration')}
-        </Text>
-      )}
-    </Stack>
-  )
-}
-
-interface KnowledgeBaseProviderModeSelectProps {
-  value: 'chatbox-ai' | 'custom'
-  onChange: (value: 'chatbox-ai' | 'custom') => void
-  isChatboxAIDisabled?: boolean
-}
-
-export const KnowledgeBaseProviderModeSelect: React.FC<KnowledgeBaseProviderModeSelectProps> = ({
-  value,
-  onChange,
-  isChatboxAIDisabled = false,
-}) => {
-  const { t } = useTranslation()
-
-  return (
-    <Radio.Group
-      label={t('Model Provider')}
-      value={value}
-      onChange={(value) => onChange(value as 'chatbox-ai' | 'custom')}
-    >
-      <Group mt="xs">
-        <Radio value="chatbox-ai" label="Chatbox AI" disabled={isChatboxAIDisabled} />
-        <Radio value="custom" label={t('Custom')} />
-      </Group>
-    </Radio.Group>
   )
 }
 
@@ -204,5 +152,184 @@ export const KnowledgeBaseNameInput: React.FC<KnowledgeBaseNameInputProps> = ({
         autoFocus={autoFocus}
       />
     </Input.Wrapper>
+  )
+}
+
+const PARSER_OPTIONS: { value: DocumentParserType; label: string; description: string }[] = [
+  {
+    value: 'local',
+    label: 'Local',
+    description:
+      'Uses built-in document parsing feature, supports common file types. Free usage, no compute points will be consumed.',
+  },
+  {
+    value: 'mineru',
+    label: 'MinerU',
+    description: 'Third-party cloud parsing service, supports PDF and most Office files. Requires API token.',
+  },
+]
+
+interface DocumentParserSelectorProps {
+  parserConfig: DocumentParserConfig
+  onParserConfigChange: (config: DocumentParserConfig) => void
+  disabled?: boolean
+}
+
+export const DocumentParserSelector: React.FC<DocumentParserSelectorProps> = ({
+  parserConfig,
+  onParserConfigChange,
+  disabled = false,
+}) => {
+  const { t } = useTranslation()
+  const [mineruToken, setMineruToken] = useState(parserConfig.mineru?.apiToken || '')
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [connectionResult, setConnectionResult] = useState<{ success: boolean; error?: string } | null>(null)
+  const currentParserType = PARSER_OPTIONS.some((opt) => opt.value === parserConfig.type) ? parserConfig.type : 'local'
+
+  const handleParserTypeChange = useCallback(
+    (value: string | null) => {
+      if (!value) return
+      const newType = value as DocumentParserType
+
+      const newConfig: DocumentParserConfig = { type: newType }
+
+      // Preserve MinerU token if switching to MinerU
+      if (newType === 'mineru' && mineruToken) {
+        newConfig.mineru = { apiToken: mineruToken }
+      }
+
+      onParserConfigChange(newConfig)
+      setConnectionResult(null)
+    },
+    [onParserConfigChange, mineruToken]
+  )
+
+  const handleMineruTokenChange = useCallback(
+    (value: string) => {
+      setMineruToken(value)
+      setConnectionResult(null)
+      onParserConfigChange({
+        type: 'mineru',
+        mineru: { apiToken: value },
+      })
+    },
+    [onParserConfigChange]
+  )
+
+  const handleTestConnection = useCallback(async () => {
+    if (!mineruToken.trim()) {
+      toast.error(t('Please enter an API token'))
+      return
+    }
+
+    setTestingConnection(true)
+    setConnectionResult(null)
+
+    try {
+      const result = await platform.getKnowledgeBaseController().testMineruConnection(mineruToken)
+      setConnectionResult(result)
+
+      if (result.success) {
+        toast.success(t('Connection successful'))
+      } else {
+        toast.error(result.error || t('Connection failed'))
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      setConnectionResult({ success: false, error: errorMessage })
+      toast.error(errorMessage)
+    } finally {
+      setTestingConnection(false)
+    }
+  }, [mineruToken, t])
+
+  const selectedOption = PARSER_OPTIONS.find((opt) => opt.value === currentParserType)
+
+  return (
+    <Stack gap="xs">
+      <Select
+        label={t('Document Parser')}
+        description={t('Parser used to process uploaded documents')}
+        data={PARSER_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: t(opt.label),
+        }))}
+        value={currentParserType}
+        onChange={handleParserTypeChange}
+        allowDeselect={false}
+        disabled={disabled}
+        comboboxProps={{ withinPortal: false }}
+      />
+      {selectedOption && !disabled && (
+        <Text size="xs" c="dimmed">
+          {t(selectedOption.description)}
+        </Text>
+      )}
+
+      {currentParserType === 'mineru' && !disabled && (
+        <Stack gap="xs">
+          <PasswordInput
+            placeholder={t('Enter your MinerU API token') as string}
+            value={mineruToken}
+            onChange={(e) => handleMineruTokenChange(e.target.value)}
+          />
+          <Group gap="xs" align="center">
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleTestConnection}
+              loading={testingConnection}
+              disabled={!mineruToken.trim()}
+            >
+              {t('Test Connection')}
+            </Button>
+            {connectionResult && (
+              <Group gap={4}>
+                {connectionResult.success ? (
+                  <>
+                    <ScalableIcon icon={IconCheck} size={16} color="green" />
+                    <Text size="xs" c="green">
+                      {t('Connected')}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <ScalableIcon icon={IconX} size={16} color="red" />
+                    <Text size="xs" c="red">
+                      {connectionResult.error || t('Failed')}
+                    </Text>
+                  </>
+                )}
+              </Group>
+            )}
+          </Group>
+        </Stack>
+      )}
+    </Stack>
+  )
+}
+
+interface DocumentParserDisplayProps {
+  parserType?: DocumentParserType
+}
+
+export const DocumentParserDisplay: React.FC<DocumentParserDisplayProps> = ({ parserType }) => {
+  const { t } = useTranslation()
+  const currentType: DocumentParserType = PARSER_OPTIONS.some((opt) => opt.value === parserType)
+    ? (parserType as DocumentParserType)
+    : 'local'
+
+  return (
+    <Select
+      label={t('Document Parser')}
+      description={t('Parser used to process uploaded documents')}
+      data={PARSER_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: t(opt.label),
+      }))}
+      value={currentType}
+      disabled
+      comboboxProps={{ withinPortal: false }}
+    />
   )
 }

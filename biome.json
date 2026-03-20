@@ -16,7 +16,8 @@
     "useEditorconfig": true,
     "includes": [
       "src/**",
-      "!src/main/mcp/shell-env.js",
+      "test/integration/**/*.ts",
+      "!src/main/mcp/shell-env.cjs",
       "!src/renderer/components/icons/**",
       "biome.json",
       "*.config.js",
@@ -43,7 +44,7 @@
     },
     "includes": [
       "src/**",
-      "!src/main/mcp/shell-env.js",
+      "!src/main/mcp/shell-env.cjs",
       "!src/renderer/components/icons/**",
       "biome.json",
       "*.config.js",

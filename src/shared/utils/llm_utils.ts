@@ -121,12 +121,10 @@ export function normalizeAzureEndpoint(endpoint: string) {
 }
 
 export function isOpenAICompatible(providerId: string, _modelId: string) {
-  if (providerId === 'chatbox-ai') {
-    return false
-  }
   return (
     [
       ModelProviderEnum.OpenAI,
+      ModelProviderEnum.Wanjie,
       ModelProviderEnum.SiliconFlow,
       ModelProviderEnum.OpenRouter,
       ModelProviderEnum.Ollama,

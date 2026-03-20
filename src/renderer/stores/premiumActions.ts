@@ -2,16 +2,19 @@ import * as Sentry from '@sentry/react'
 import omit from 'lodash/omit'
 import { FetchError } from 'ofetch'
 import { useEffect } from 'react'
+import { getLogger } from '@/lib/utils'
 import { mcpController } from '@/packages/mcp/controller'
 import * as remote from '../packages/remote'
 import platform from '../platform'
 import { settingsStore, useSettingsStore } from './settingsStore'
 
+const log = getLogger('premium-actions')
+
 /**
  * 自动验证当前的 license 是否有效，如果无效则清除相关数据
  * @returns {boolean} whether the user has validated before
  */
-export function useAutoValidate() {
+export function useAutoValidate(): boolean {
   const licenseKey = useSettingsStore((state) => state.licenseKey)
   const licenseInstances = useSettingsStore((state) => state.licenseInstances)
   const clearValidatedData = () => {
@@ -23,7 +26,7 @@ export function useAutoValidate() {
     }))
   }
   useEffect(() => {
-    ;(async () => {
+    void (async () => {
       if (!licenseKey || !licenseInstances) {
         // 这里不清除数据，因为可能是本地数据尚未加载
         return
@@ -37,14 +40,14 @@ export function useAutoValidate() {
         })
         if (result.valid === false) {
           clearValidatedData()
-          platform.appLog('info', `clear license validated data due to invalid result: ${JSON.stringify(result)}`)
+          log.info(`clear license validated data due to invalid result: ${JSON.stringify(result)}`)
           return
         }
       } catch (err) {
         // 如果错误码为 401 或 403，则清除数据
         if (err instanceof FetchError && err.status && [401, 403, 404].includes(err.status)) {
           clearValidatedData()
-          platform.appLog('info', `clear license validated data due to respones status: ${err.status}`)
+          log.info(`clear license validated data due to respones status: ${err.status}`)
         } else {
           // 其余情况可能是联网出现问题，不清除数据
           Sentry.captureException(err)
@@ -112,7 +115,7 @@ export async function activate(licenseKey: string, method: 'login' | 'manual' = 
   if (method === 'manual') {
     const { authInfoStore } = await import('./authInfoStore')
     authInfoStore.getState().clearTokens()
-    console.log('🔓 Cleared login tokens due to manual license activation')
+    log.info('🔓 Cleared login tokens due to manual license activation')
   }
 
   // 取消激活已存在的 license
@@ -130,7 +133,14 @@ export async function activate(licenseKey: string, method: 'login' | 'manual' = 
     return result
   }
   // 获取 license 详情
-  const licenseDetail = await remote.getLicenseDetailRealtime({ licenseKey })
+  const licenseDetailResponse = await remote.getLicenseDetailRealtime({ licenseKey })
+  // 如果获取详情返回错误（如过期、额度用尽），返回错误码
+  if (licenseDetailResponse.error) {
+    return {
+      valid: false,
+      error: licenseDetailResponse.error.code || 'license_error',
+    }
+  }
   // 设置本地的 license 数据
   settingsStore.setState((settings) => ({
     licenseKey,
@@ -139,7 +149,8 @@ export async function activate(licenseKey: string, method: 'login' | 'manual' = 
       ...(settings.licenseInstances || {}),
       [licenseKey]: result.instanceId,
     },
-    licenseDetail: licenseDetail || undefined,
+    licenseDetail: licenseDetailResponse.data || undefined,
   }))
+  log.info(`✅ Activated license key: ${licenseKey.slice(0, 8)}****`)
   return result
 }

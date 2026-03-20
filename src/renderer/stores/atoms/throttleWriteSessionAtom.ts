@@ -1,5 +1,5 @@
+import type { Session } from '@shared/types'
 import { atom, getDefaultStore, type SetStateAction, type WritableAtom } from 'jotai'
-import type { Session } from '@/../shared/types'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 
@@ -88,4 +88,13 @@ export function createSessionAtom(sessionId: string) {
   )
   throttleWriteSessionAtomCache.set(sessionId, throttleWriteSessionAtom)
   return throttleWriteSessionAtom
+}
+
+/**
+ * Clean up session atom caches when a session is deleted to prevent memory leaks.
+ * Should be called from deleteSession in chatStore.
+ */
+export function cleanupSessionAtomCache(sessionId: string) {
+  sessionAtomCache.delete(sessionId)
+  throttleWriteSessionAtomCache.delete(sessionId)
 }

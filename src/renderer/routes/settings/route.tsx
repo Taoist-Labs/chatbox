@@ -7,16 +7,18 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconCircleDottedLetterM,
+  IconFileText,
   IconKeyboard,
   IconMessages,
-  IconWorldWww
+  IconWorldWww,
 } from '@tabler/icons-react'
 import { createFileRoute, Link, Outlet, useCanGoBack, useRouter, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import { Toaster } from 'sonner'
-import Page from '@/components/Page'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import Divider from '@/components/common/Divider'
+import Page from '@/components/layout/Page'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import platform from '@/platform'
 import { featureFlags } from '@/utils/feature-flags'
@@ -55,6 +57,11 @@ const ITEMS = [
         },
       ]
     : []),
+  {
+    key: 'document-parser',
+    label: 'Document Parser',
+    icon: <IconFileText className="w-full h-full" />,
+  },
   {
     key: 'chat',
     label: 'Chat Settings',
@@ -131,13 +138,13 @@ export function SettingsRoot() {
         >
           {ITEMS.map((item) => (
             <Link
-              disabled={routerState.location.pathname.startsWith(`/settings/${item.key}`)}
+              disabled={
+                routerState.location.pathname === `/settings/${item.key}` ||
+                routerState.location.pathname.startsWith(`/settings/${item.key}/`)
+              }
               key={item.key}
               to={`/settings/${item.key}` as any}
-              className={clsx(
-                'no-underline w-full',
-                isSmallScreen ? 'border-solid border-0 border-b border-chatbox-border-primary' : ''
-              )}
+              className={'block no-underline w-full'}
             >
               <Flex
                 component="span"
@@ -168,6 +175,8 @@ export function SettingsRoot() {
                   <ScalableIcon icon={IconChevronRight} size={20} className="!text-chatbox-tint-tertiary" />
                 )}
               </Flex>
+
+              {isSmallScreen && <Divider />}
             </Link>
           ))}
         </Stack>

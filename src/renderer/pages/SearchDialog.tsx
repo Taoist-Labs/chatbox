@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, useTheme } from '@mui/material'
+import type { Session } from '@shared/types'
 import { useAtomValue } from 'jotai'
 import { Loader2, ScanSearch } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session } from 'src/shared/types'
-import Mark from '@/components/Mark'
+import Message from '@/components/chat/Message'
+import Mark from '@/components/common/Mark'
 import { BlockCodeCollapsedStateProvider } from '@/components/Markdown'
-import Message from '@/components/Message'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ export default function SearchDialog(props: Props) {
   const isSmallScreen = useIsSmallScreen()
   const open = useUIStore((s) => s.openSearchDialog)
   const setOpen = useUIStore((s) => s.setOpenSearchDialog)
+  const globalOnly = useUIStore((s) => s.searchDialogGlobalOnly)
   const [mode, setMode] = useState<'command' | 'search-result'>('command')
   const [loading, setLoading] = useState<boolean>(false)
   const [searchInput, _setSearchInput] = useState('')
@@ -48,19 +49,26 @@ export default function SearchDialog(props: Props) {
     _setSearchInput(input)
   }
   const onSearchClick = (flag: 'current-session' | 'global') => {
+    if (!searchInput.trim()) return
     setMode('search-result')
     setSearchResult([])
     setLoading(true)
-    if (!currentSessionId) {
+    if (flag === 'current-session' && !currentSessionId) {
       setLoading(false)
       return
     }
-    searchSessions(searchInput, flag === 'current-session' ? currentSessionId : undefined, (batches) => {
+    searchSessions(searchInput, flag === 'current-session' ? (currentSessionId ?? undefined) : undefined, (batches) => {
       setSearchResult((prev) => [...prev, ...batches])
     })
     setSearchResultMarks([searchInput])
     setLoading(false)
     ref.current?.select() // 搜索后全选输入框，方便删除回退
+  }
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (globalOnly && e.key === 'Enter' && searchInput.trim()) {
+      e.preventDefault()
+      onSearchClick('global')
+    }
   }
   return (
     // 通过显隐的方式控制组件，避免组件重复卸载挂载导致的状态丢失，主要是希望保持搜索结果的选中状态，这样用户体验会好很多
@@ -78,14 +86,16 @@ export default function SearchDialog(props: Props) {
             autoFocus={!isSmallScreen}
             value={searchInput}
             onInput={onSearchInput}
+            onKeyDown={onKeyDown}
             className={cn('border-none', 'shadow-none', theme.palette.mode === 'dark' ? 'text-white' : 'text-black')}
-            placeholder={t('Type a command or search') + '...'}
+            placeholder={globalOnly ? t('Search conversations') + '...' : t('Type a command or search') + '...'}
           />
-          {mode === 'command' && (
+          {mode === 'command' && !globalOnly && (
             <CommandList>
               <CommandEmpty>{t('No results found')}</CommandEmpty>
               <CommandGroup heading={t('Search')}>
                 <CommandItem
+                  value="search-current-session"
                   className={cn(
                     theme.palette.mode === 'dark' ? 'aria-selected:bg-slate-500' : 'aria-selected:bg-slate-100'
                   )}
@@ -98,6 +108,7 @@ export default function SearchDialog(props: Props) {
                   </span>
                 </CommandItem>
                 <CommandItem
+                  value="search-global"
                   className={cn(
                     theme.palette.mode === 'dark' ? 'aria-selected:bg-slate-500' : 'aria-selected:bg-slate-100'
                   )}
@@ -159,6 +170,7 @@ export default function SearchDialog(props: Props) {
                       {result.messages.map((message, j) => (
                         <CommandItem
                           key={`${i}-${j}`}
+                          value={`result-${i}-${j}`}
                           className={cn(
                             theme.palette.mode === 'dark' ? 'bg-slate-600' : 'bg-slate-50',
                             theme.palette.mode === 'dark' ? 'aria-selected:bg-slate-500' : 'aria-selected:bg-slate-200',
@@ -167,11 +179,29 @@ export default function SearchDialog(props: Props) {
                             'bg-opacity-50'
                           )}
                           onSelect={() => {
-                            switchCurrentSession(result.id)
-                            setTimeout(() => {
-                              scrollActions.scrollToMessage(result.id, message.id)
-                            }, 200)
+                            const targetSessionId = result.id
+                            const targetMessageId = message.id
+                            const needsSwitch = currentSessionId !== targetSessionId
+
+                            if (needsSwitch) {
+                              switchCurrentSession(targetSessionId)
+                            }
+
                             setOpen(false)
+
+                            // Scroll with retry mechanism to ensure message is visible
+                            const tryScroll = async (attempt = 0, maxAttempts = 10) => {
+                              const delay = needsSwitch ? (attempt === 0 ? 300 : 200) : 100
+                              await new Promise((resolve) => setTimeout(resolve, delay))
+
+                              const success = await scrollActions.scrollToMessage(targetSessionId, targetMessageId)
+
+                              if (!success && attempt < maxAttempts) {
+                                tryScroll(attempt + 1, maxAttempts)
+                              }
+                            }
+
+                            tryScroll()
                           }}
                         >
                           {/* 下面这个隐藏元素，是为了避免这个问题：

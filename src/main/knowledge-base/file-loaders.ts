@@ -1,79 +1,68 @@
-import fs from 'node:fs'
 import { setTimeout } from 'node:timers/promises'
 import { MDocument } from '@mastra/rag'
-import { embedMany, type ModelMessage } from 'ai'
-import { isEpubFilePath, isOfficeFilePath, isTextFilePath } from '../../shared/file-extensions'
+import { embedMany } from 'ai'
+import type { DocumentParserConfig } from '../../shared/types/settings'
 import { rerank } from '../../shared/models/rerank'
 import { sentry } from '../adapters/sentry'
-import { parseFile } from '../file-parser'
 import { getLogger } from '../util'
 import { checkProcessingTimeouts, getDatabase, getVectorStore } from './db'
-import { getEmbeddingProvider, getRerankProvider, getVisionProvider } from './model-providers'
+import { getEmbeddingProvider, getRerankProvider } from './model-providers'
+import { getEffectiveParserConfig, parseFileWithRouter, type ParserFileMeta } from './parsers'
 
 const log = getLogger('knowledge-base:file-loaders')
 
-// Parse file to MDocument based on file type
-async function parseFileToDocument(
-  filePath: string,
-  fileMeta: { fileId: number; filename: string; mimeType: string },
-  kbId: number
-): Promise<MDocument> {
-  if (isOfficeFilePath(filePath)) {
-    const content = await parseFile(filePath)
-    return MDocument.fromText(content)
-  } else if (fileMeta.mimeType.startsWith('image/')) {
-    const vision = await getVisionProvider(kbId)
-    if (!vision) {
-      throw new Error('visionModel not set')
+/**
+ * Parse error message to extract user-friendly message
+ * Handles JSON error responses from parser providers
+ */
+function parseErrorMessage(errorMessage: string): string {
+  try {
+    const jsonMatch = errorMessage.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const jsonStr = jsonMatch[0]
+      const parsed = JSON.parse(jsonStr)
+      if (parsed.error?.detail) {
+        return parsed.error.detail
+      }
+      if (parsed.error?.title) {
+        return parsed.error.title
+      }
     }
-
-    const { model: visionModel } = vision
-
-    // Save image content to dependent storage for later retrieval during chat message conversion
-    const imageBase64 = fs.readFileSync(filePath, { encoding: 'base64' })
-    const dataUrl = `data:${fileMeta.mimeType};base64,${imageBase64}`
-
-    // Assemble chat message (with image)
-    const msg: ModelMessage = {
-      role: 'user',
-      content: [
-        {
-          type: 'text',
-          text: 'OCR the following image into Markdown. Do not sorround your output with triple backticks.',
-        },
-        { type: 'image', image: dataUrl, mediaType: fileMeta.mimeType },
-      ],
-    }
-
-    const chatResult = await visionModel.chat([msg], {})
-    const text = chatResult.contentParts
-      .filter((p) => p.type === 'text')
-      .map((p: any) => p.text)
-      .join('')
-
-    return MDocument.fromMarkdown(text)
-  } else if (isEpubFilePath(filePath)) {
-    const content = await parseFile(filePath)
-    return MDocument.fromText(content)
-  } else if (isTextFilePath(filePath)) {
-    const content = await parseFile(filePath)
-    return new MDocument({
-      docs: [{ text: content }],
-      type: fileMeta.mimeType,
-    })
-  } else {
-    throw new Error(`Unsupported file type: ${fileMeta.mimeType}`)
+  } catch {
+    // JSON parsing failed, return original message
   }
+  return errorMessage
 }
 
-// Use mastra to parse, chunk, embed, and store files, embeddingProvider parameter is required
+// Parse file to MDocument using the parser router
+async function parseFileToDocumentWithRouter(
+  filePath: string,
+  fileMeta: ParserFileMeta,
+  kbId: number,
+  parserConfig: DocumentParserConfig
+): Promise<{ document: MDocument; parserUsed: string }> {
+  log.info(`[FILE] Parsing ${fileMeta.filename} with ${parserConfig.type} parser`)
+
+  const result = await parseFileWithRouter(filePath, fileMeta, parserConfig, kbId)
+
+  log.info(`[FILE] Parse completed for ${fileMeta.filename}, parser used: ${result.parserUsed}`)
+
+  // Convert content to MDocument based on content type
+  const document = MDocument.fromText(result.content)
+  return { document, parserUsed: result.parserUsed }
+}
+
+// Use mastra to parse, chunk, embed, and store files
 export async function processFileWithMastra(
   filePath: string,
   fileMeta: { fileId: number; filename: string; mimeType: string },
-  kbId: number
+  kbId: number,
+  parserConfig: DocumentParserConfig
 ) {
   const startTime = Date.now()
-  log.debug(`[FILE] Starting file processing: ${fileMeta.filename} (id=${fileMeta.fileId})`)
+  log.debug(
+    `[FILE] Starting file processing: ${fileMeta.filename} (id=${fileMeta.fileId}, parser=${parserConfig.type})`
+  )
 
   try {
     const db = getDatabase()
@@ -85,8 +74,16 @@ export async function processFileWithMastra(
     const currentChunkCount = (fileRecord.rows[0]?.chunk_count as number) || 0
     const currentTotalChunks = (fileRecord.rows[0]?.total_chunks as number) || 0
 
-    // 1. Parse file to get all chunks
-    const doc = await parseFileToDocument(filePath, fileMeta, kbId)
+    // 1. Parse file using the parser router
+    const parseResult = await parseFileToDocumentWithRouter(filePath, fileMeta, kbId, parserConfig)
+    const doc = parseResult.document
+    const parserUsed = parseResult.parserUsed
+
+    // Update parser_type in database
+    await db.execute({
+      sql: 'UPDATE kb_file SET parser_type = ? WHERE id = ?',
+      args: [parserUsed, fileMeta.fileId],
+    })
 
     // 2. Chunking
     const allChunks = await doc.chunk({
@@ -96,11 +93,15 @@ export async function processFileWithMastra(
     })
 
     if (!allChunks || allChunks.length === 0) {
-      // throw new Error('No chunks generated from document')
-      await db.execute({
-        sql: 'UPDATE kb_file SET chunk_count = 0, status = ? WHERE id = ?',
-        args: ['done', fileMeta.fileId],
-      })
+      // Third-party cloud parsing may return empty content for truly empty files.
+      if (parserUsed === 'mineru') {
+        await db.execute({
+          sql: 'UPDATE kb_file SET chunk_count = 0, status = ? WHERE id = ?',
+          args: ['done', fileMeta.fileId],
+        })
+      } else {
+        throw new Error('No content extracted from file')
+      }
       return
     }
 
@@ -251,8 +252,16 @@ async function processPendingFiles() {
     await checkProcessingTimeouts()
 
     const db = getDatabase()
-    // Query pending files (includes files that were interrupted and reset by cleanup)
-    const rs = await db.execute('SELECT * FROM kb_file WHERE status = ?', ['pending'])
+    // Query pending files with their KB's parser config
+    const rs = await db.execute(
+      `
+      SELECT f.*, kb.document_parser as kb_document_parser
+      FROM kb_file f
+      JOIN knowledge_base kb ON f.kb_id = kb.id
+      WHERE f.status = ?
+    `,
+      ['pending']
+    )
 
     if (rs.rows.length === 0) {
       return
@@ -261,27 +270,45 @@ async function processPendingFiles() {
     log.debug(`[FILE] Processing ${rs.rows.length} pending files`)
 
     for (const file of rs.rows) {
-      try {
-        log.debug(`[FILE] Processing file: ${file.filename} (id=${file.id})`)
+      // Parse KB parser config
+      let kbParserConfig: DocumentParserConfig | undefined
+      if (file.kb_document_parser) {
+        try {
+          kbParserConfig = JSON.parse(file.kb_document_parser as string)
+        } catch {
+          log.warn(`[FILE] Failed to parse KB document_parser config for file ${file.id}`)
+        }
+      }
 
-        // Mark as processing and record the processing start time
+      const effectiveParserConfig: DocumentParserConfig = getEffectiveParserConfig(kbParserConfig)
+
+      try {
+        log.debug(
+          `[FILE] Processing file: ${file.filename} (id=${file.id}, parser=${effectiveParserConfig.type})`
+        )
+
+        // Mark as processing, record the processing start time, and save parser_type.
+        // We set parser_type here at the start so that if parsing fails, the error message will correctly show which parser was used
         await db.execute({
-          sql: 'UPDATE kb_file SET status = ?, processing_started_at = CURRENT_TIMESTAMP WHERE id = ?',
-          args: ['processing', file.id],
+          sql: 'UPDATE kb_file SET status = ?, processing_started_at = CURRENT_TIMESTAMP, parser_type = ? WHERE id = ?',
+          args: ['processing', effectiveParserConfig.type, file.id],
         })
 
         // Use mastra to parse, chunk, embed, and store (supports resuming from chunk_count)
         await processFileWithMastra(
           file.filepath as string,
           { fileId: file.id as number, filename: file.filename as string, mimeType: file.mime_type as string },
-          file.kb_id as number
+          file.kb_id as number,
+          effectiveParserConfig
         )
       } catch (err: any) {
         log.error(`[FILE] File processing failed: ${file.filename} (id=${file.id})`, err)
-        // Mark as failed
+        // Mark as failed - parse error message to extract user-friendly message
+        const rawErrorMessage = err instanceof Error ? err.message : String(err)
+        const errorMessage = parseErrorMessage(rawErrorMessage)
         await db.execute({
           sql: 'UPDATE kb_file SET status = ?, error = ?, processing_started_at = NULL WHERE id = ?',
-          args: ['failed', String(err), file.id],
+          args: ['failed', errorMessage, file.id],
         })
 
         // Report individual file processing failures
@@ -291,6 +318,7 @@ async function processPendingFiles() {
           scope.setExtra('fileId', file.id)
           scope.setExtra('filename', file.filename)
           scope.setExtra('kbId', file.kb_id)
+          scope.setExtra('parserType', effectiveParserConfig.type)
           sentry.captureException(err)
         })
       }

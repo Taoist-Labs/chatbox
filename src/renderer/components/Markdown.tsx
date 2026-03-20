@@ -63,7 +63,7 @@ import * as toastActions from '../stores/toastActions'
 import IconDart from './icons/Dart'
 import IconJava from './icons/Java'
 import { MessageMermaid, SVGPreview } from './Mermaid'
-import { ScalableIcon } from './ScalableIcon'
+import { ScalableIcon } from './common/ScalableIcon'
 
 const CODE_BLOCK_COLLAPSE_LINE_THRESHOLD = 7
 
@@ -87,6 +87,7 @@ function Markdown(props: {
   hiddenCodeCopyButton?: boolean
   className?: string
   generating?: boolean
+  forceColorScheme?: 'light' | 'dark'
 }) {
   const {
     children,
@@ -96,6 +97,7 @@ function Markdown(props: {
     hiddenCodeCopyButton,
     className,
     generating,
+    forceColorScheme,
   } = props
 
   const codeFences = useMemo(() => (children.match(/```/g) || []).length, [children])
@@ -125,6 +127,7 @@ function Markdown(props: {
                 hiddenCodeCopyButton={hiddenCodeCopyButton}
                 enableMermaidRendering={enableMermaidRendering}
                 generating={generating && generatingCodeIndex === codeIndex}
+                forceColorScheme={forceColorScheme}
               />
             )
           },
@@ -139,7 +142,7 @@ function Markdown(props: {
             />
           ),
         }),
-        [uniqueId, hiddenCodeCopyButton, enableMermaidRendering, generating, generatingCodeIndex]
+        [uniqueId, hiddenCodeCopyButton, enableMermaidRendering, generating, generatingCodeIndex, forceColorScheme]
       )}
     >
       {enableLaTeXRendering ? latex.processLaTeX(children) : children}
@@ -157,9 +160,10 @@ export const CodeRenderer = memo(
     hiddenCodeCopyButton?: boolean
     generating?: boolean
     enableMermaidRendering?: boolean
+    forceColorScheme?: 'light' | 'dark'
   }) => {
     const theme = useTheme()
-    const { children, className, hiddenCodeCopyButton, generating, enableMermaidRendering } = props
+    const { children, className, hiddenCodeCopyButton, generating, enableMermaidRendering, forceColorScheme } = props
     const language = /language-(\w+)/.exec(className || '')?.[1] || 'text'
     if (!String(children).includes('\n')) {
       return <InlineCode className={className}>{children}</InlineCode>
@@ -175,6 +179,7 @@ export const CodeRenderer = memo(
           hiddenCodeCopyButton={hiddenCodeCopyButton}
           language={language}
           generating={generating}
+          forceColorScheme={forceColorScheme}
         >
           {children}
         </BlockCode>
@@ -297,6 +302,7 @@ type BlockCodeProps = {
   uniqueId?: string
   hiddenCodeCopyButton?: boolean
   generating?: boolean
+  forceColorScheme?: 'light' | 'dark'
 }
 
 const CodeIcons: { [key: string]: ElementType<IconProps> } = {
@@ -337,175 +343,181 @@ const CodeIcons: { [key: string]: ElementType<IconProps> } = {
   DART: IconDart,
 }
 
-const BlockCode = memo(({ children, uniqueId, hiddenCodeCopyButton, language, generating }: BlockCodeProps) => {
-  const { t } = useTranslation()
-  const colorScheme = useComputedColorScheme()
-  const languageName = useMemo(() => language.toUpperCase(), [language])
-  const isRenderableCode = useMemo(() => isRenderableCodeLanguage(language), [language])
-  const [deploying, setDeploying] = useState(false)
-  const canDeploy = useMemo(() => isRenderableCode && String(children).trim().length > 0, [children, isRenderableCode])
+const BlockCode = memo(
+  ({ children, uniqueId, hiddenCodeCopyButton, language, generating, forceColorScheme }: BlockCodeProps) => {
+    const { t } = useTranslation()
+    const computedColorScheme = useComputedColorScheme()
+    const colorScheme = forceColorScheme || computedColorScheme
+    const languageName = useMemo(() => language.toUpperCase(), [language])
+    const isRenderableCode = useMemo(() => isRenderableCodeLanguage(language), [language])
+    const [deploying, setDeploying] = useState(false)
+    const canDeploy = useMemo(
+      () => isRenderableCode && String(children).trim().length > 0,
+      [children, isRenderableCode]
+    )
 
-  const icon = useMemo(() => CodeIcons[languageName] || IconCode, [languageName])
+    const icon = useMemo(() => CodeIcons[languageName] || IconCode, [languageName])
 
-  const { copied, copy } = useCopied(String(children))
-  const onClickCopy = useCallback(
-    (event: React.MouseEvent) => {
+    const { copied, copy } = useCopied(String(children))
+    const onClickCopy = useCallback(
+      (event: React.MouseEvent) => {
+        event.stopPropagation() // Avoid triggering parent select behavior in search window
+        event.preventDefault()
+        copy()
+      },
+      [copy]
+    )
+    const onClickArtifact = useCallback(
+      (event: React.MouseEvent) => {
+        event.stopPropagation() // Avoid triggering parent select behavior in search window
+        event.preventDefault()
+        NiceModal.show('artifact-preview', {
+          htmlCode: String(children),
+        }).catch(() => null)
+      },
+      [children]
+    )
+
+    const onClickDeploy = useCallback(
+      async (event: React.MouseEvent) => {
+        event.stopPropagation()
+        event.preventDefault()
+        if (!canDeploy) {
+          return
+        }
+        setDeploying(true)
+        try {
+          const url = await deployHtmlToEdgeOne(String(children))
+          await NiceModal.show('edgeone-deploy-success', { url })
+        } catch (error) {
+          toastActions.add((error as Error)?.message || t('Publish failed'))
+        } finally {
+          setDeploying(false)
+        }
+      },
+      [canDeploy, children, t]
+    )
+
+    const needCollapse = useMemo(
+      () => !!uniqueId && children.split('\n').length > CODE_BLOCK_COLLAPSE_LINE_THRESHOLD,
+      [uniqueId, children]
+    )
+    const { collapsed, toggleCollapsed } = useBlockCodeCollapsedState(uniqueId || '')
+    const onClickCollapse = (event: React.MouseEvent) => {
       event.stopPropagation() // Avoid triggering parent select behavior in search window
       event.preventDefault()
-      copy()
-    },
-    [copy]
-  )
-  const onClickArtifact = useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation() // Avoid triggering parent select behavior in search window
-      event.preventDefault()
-      NiceModal.show('artifact-preview', {
-        htmlCode: String(children),
-      }).catch(() => null)
-    },
-    [children]
-  )
+      toggleCollapsed()
+    }
 
-  const onClickDeploy = useCallback(
-    async (event: React.MouseEvent) => {
-      event.stopPropagation()
-      event.preventDefault()
-      if (!canDeploy) {
-        return
-      }
-      setDeploying(true)
-      try {
-        const url = await deployHtmlToEdgeOne(String(children))
-        await NiceModal.show('edgeone-deploy-success', { url })
-      } catch (error) {
-        toastActions.add((error as Error)?.message || t('Publish failed'))
-      } finally {
-        setDeploying(false)
-      }
-    },
-    [canDeploy, children, t]
-  )
-
-  const needCollapse = useMemo(
-    () => !!uniqueId && children.split('\n').length > CODE_BLOCK_COLLAPSE_LINE_THRESHOLD,
-    [uniqueId, children]
-  )
-  const { collapsed, toggleCollapsed } = useBlockCodeCollapsedState(uniqueId || '')
-  const onClickCollapse = (event: React.MouseEvent) => {
-    event.stopPropagation() // Avoid triggering parent select behavior in search window
-    event.preventDefault()
-    toggleCollapsed()
-  }
-
-  return (
-    <Stack gap={0}>
-      <Flex
-        justify="space-between"
-        className={clsx(
-          'p-xs bg-chatbox-background-secondary rounded-t-md border border-solid border-[var(--chatbox-border-primary)]',
-          !needCollapse || !collapsed ? 'sticky top-0 z-10' : ''
-        )}
-      >
-        <Flex align="center" gap="xs">
-          {generating ? (
-            <Loader size={10} />
-          ) : (
-            <ScalableIcon size={16} icon={icon} color="var(--chatbox-tint-tertiary)" />
+    return (
+      <Stack gap={0}>
+        <Flex
+          justify="space-between"
+          className={clsx(
+            'p-xs bg-chatbox-background-secondary rounded-t-md border border-solid border-[var(--chatbox-border-primary)]',
+            !needCollapse || !collapsed ? 'sticky top-0 z-10' : ''
           )}
-          <Text span c="chatbox-tertiary" fw="600" className="font-mono">
-            {languageName}
-          </Text>
-        </Flex>
-
-        <Flex gap="xs" align="center">
-          {!hiddenCodeCopyButton && (
-            <Tooltip label={t('copy')} withArrow openDelay={1000}>
-              <ActionIcon
-                variant="transparent"
-                color={copied ? 'chatbox-success' : 'chatbox-tertiary'}
-                size={20}
-                onClick={onClickCopy}
-              >
-                {copied ? <IconCheck /> : <IconCopy />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {isRenderableCode && (
-            <Tooltip label={t('Preview')} withArrow openDelay={1000}>
-              <ActionIcon variant="transparent" color="chatbox-tertiary" size={20} onClick={onClickArtifact}>
-                <IconPlayerPlayFilled />
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {canDeploy && (
-            <Tooltip label={t('Publish Webpage')} withArrow openDelay={1000}>
-              <ActionIcon
-                variant="transparent"
-                color="chatbox-tertiary"
-                size={20}
-                onClick={onClickDeploy}
-                disabled={deploying}
-              >
-                {deploying ? <Loader size={12} /> : <IconWorldUpload />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {needCollapse && (
-            <Tooltip label={collapsed ? t('Expand') : t('Collapse')} withArrow openDelay={1000}>
-              <ActionIcon
-                variant="transparent"
-                color="chatbox-tertiary"
-                size={20}
-                onClick={onClickCollapse}
-                className={clsx('transition-transform ease-linear', !collapsed ? 'rotate-90' : '')}
-              >
-                <IconChevronRight />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Flex>
-      </Flex>
-
-      <Stack
-        className={clsx(
-          'border border-t-0 border-solid border-[var(--chatbox-border-primary)] rounded-b-md',
-          needCollapse && collapsed ? 'h-[10rem]' : ''
-        )}
-      >
-        <SyntaxHighlighter
-          style={colorScheme !== 'light' ? oneDark : oneLight}
-          language={language}
-          PreTag="div"
-          showLineNumbers
-          customStyle={{
-            marginTop: '0',
-            margin: '0',
-            borderTopLeftRadius: '0',
-            borderTopRightRadius: '0',
-            borderBottomLeftRadius: 'var(--chatbox-radius-md)',
-            borderBottomRightRadius: 'var(--chatbox-radius-md)',
-            border: 'none',
-            background: 'transparent !important',
-            ...(generating && needCollapse && collapsed
-              ? {
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }
-              : {}),
-          }}
-          codeTagProps={{
-            className: '!bg-transparent',
-          }}
         >
-          {children}
-        </SyntaxHighlighter>
+          <Flex align="center" gap="xs">
+            {generating ? (
+              <Loader size={10} />
+            ) : (
+              <ScalableIcon size={16} icon={icon} color="var(--chatbox-tint-tertiary)" />
+            )}
+            <Text span c="chatbox-tertiary" fw="600" className="font-mono">
+              {languageName}
+            </Text>
+          </Flex>
+
+          <Flex gap="xs" align="center">
+            {!hiddenCodeCopyButton && (
+              <Tooltip label={t('copy')} withArrow openDelay={1000}>
+                <ActionIcon
+                  variant="transparent"
+                  color={copied ? 'chatbox-success' : 'chatbox-tertiary'}
+                  size={20}
+                  onClick={onClickCopy}
+                >
+                  {copied ? <IconCheck /> : <IconCopy />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {isRenderableCode && (
+              <Tooltip label={t('Preview')} withArrow openDelay={1000}>
+                <ActionIcon variant="transparent" color="chatbox-tertiary" size={20} onClick={onClickArtifact}>
+                  <IconPlayerPlayFilled />
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {canDeploy && (
+              <Tooltip label={t('Publish Webpage')} withArrow openDelay={1000}>
+                <ActionIcon
+                  variant="transparent"
+                  color="chatbox-tertiary"
+                  size={20}
+                  onClick={onClickDeploy}
+                  disabled={deploying}
+                >
+                  {deploying ? <Loader size={12} /> : <IconWorldUpload />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {needCollapse && (
+              <Tooltip label={collapsed ? t('Expand') : t('Collapse')} withArrow openDelay={1000}>
+                <ActionIcon
+                  variant="transparent"
+                  color="chatbox-tertiary"
+                  size={20}
+                  onClick={onClickCollapse}
+                  className={clsx('transition-transform ease-linear', !collapsed ? 'rotate-90' : '')}
+                >
+                  <IconChevronRight />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Flex>
+        </Flex>
+
+        <Stack
+          className={clsx(
+            'border border-t-0 border-solid border-[var(--chatbox-border-primary)] rounded-b-md',
+            needCollapse && collapsed ? 'h-[10rem]' : ''
+          )}
+        >
+          <SyntaxHighlighter
+            style={colorScheme !== 'light' ? oneDark : oneLight}
+            language={language}
+            PreTag="div"
+            showLineNumbers
+            customStyle={{
+              marginTop: '0',
+              margin: '0',
+              borderTopLeftRadius: '0',
+              borderTopRightRadius: '0',
+              borderBottomLeftRadius: 'var(--chatbox-radius-md)',
+              borderBottomRightRadius: 'var(--chatbox-radius-md)',
+              border: 'none',
+              background: 'transparent !important',
+              ...(generating && needCollapse && collapsed
+                ? {
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                  }
+                : {}),
+            }}
+            codeTagProps={{
+              className: '!bg-transparent',
+            }}
+          >
+            {children}
+          </SyntaxHighlighter>
+        </Stack>
       </Stack>
-    </Stack>
-  )
-})
+    )
+  }
+)

@@ -1,7 +1,8 @@
 import type { ComboboxProps } from '@mantine/core'
+import type { ModelProvider, ProviderModelInfo } from '@shared/types'
 import { forwardRef, type PropsWithChildren, useMemo, useState } from 'react'
-import type { ModelProvider, ProviderModelInfo } from 'src/shared/types'
 import { useProviders } from '@/hooks/useProviders'
+import { isImageOnlyModel } from '@/packages/image-generation-models'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
 import { DesktopModelSelector } from './DesktopModelSelector'
 import { MobileModelSelector } from './MobileModelSelector'
@@ -48,6 +49,7 @@ export const ModelSelector = forwardRef<HTMLDivElement, ModelSelectorProps>(
         const models = provider.models?.filter(
           (model) =>
             (!model.type || model.type === 'chat') &&
+            !isImageOnlyModel(model) &&
             (provider.id.toLowerCase().includes(search.toLowerCase()) ||
               provider.name.toLowerCase().includes(search.toLowerCase()) ||
               model.nickname?.toLowerCase().includes(search.toLowerCase()) ||
@@ -59,16 +61,6 @@ export const ModelSelector = forwardRef<HTMLDivElement, ModelSelectorProps>(
           models,
         }
       })
-
-      // If showing only favorites, filter providers to only those with favorited models
-      if (activeTab === 'favorite') {
-        return filtered
-          .map((provider) => ({
-            ...provider,
-            models: provider.models?.filter((model) => isFavoritedModel(provider.id, model.modelId)),
-          }))
-          .filter((provider) => provider.models && provider.models.length > 0)
-      }
 
       return filtered
     }, [providers, search, modelFilter, activeTab, isFavoritedModel])

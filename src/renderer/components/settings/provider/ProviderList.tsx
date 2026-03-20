@@ -1,31 +1,37 @@
-import { Button, Flex, Image, Indicator, ScrollArea, Stack, Text } from '@mantine/core'
-import { IconChevronRight, IconFileImport, IconPlus } from '@tabler/icons-react'
+/// <reference types="vite/client" />
+
+import { Flex, Image, Indicator, ScrollArea, Stack, Text } from '@mantine/core'
+import { ModelProviderEnum, type ProviderBaseInfo } from '@shared/types'
+import { IconChevronRight } from '@tabler/icons-react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ProviderBaseInfo } from 'src/shared/types'
 import CustomProviderIcon from '@/components/CustomProviderIcon'
-import { ScalableIcon } from '@/components/ScalableIcon'
+import Divider from '@/components/common/Divider'
+import { ScalableIcon } from '@/components/common/ScalableIcon'
 import { useProviders } from '@/hooks/useProviders'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
-import platform from '@/platform'
 
-// @ts-ignore - Webpack require.context
-const iconContext = require.context('../../../static/icons/providers', false, /\.png$/)
-const icons: { name: string; src: string }[] = iconContext.keys().map((key: string) => ({
-  name: key.replace('./', '').replace('.png', ''),
-  src: iconContext(key),
-}))
+// Use Vite's import.meta.glob to dynamically import all PNG files
+// Vite handles import.meta.glob at build time, even though TypeScript doesn't recognize it with commonjs module setting
+// @ts-ignore - import.meta.glob is a Vite feature
+const iconsModules = import.meta.glob<{ default: string }>('../../../static/icons/providers/*.png', { eager: true })
+
+const icons: { name: string; src: string }[] = Object.entries(iconsModules).map(([path, module]) => {
+  const filename = path.split('/').pop() || ''
+  const name = filename.replace('.png', '') // 获取图片名称（不含扩展名）
+  return {
+    name,
+    src: (module as { default: string }).default, // 获取图片路径
+  }
+})
 
 interface ProviderListProps {
   providers: ProviderBaseInfo[]
-  onAddProvider: () => void
-  onImportProvider: () => void
-  isImporting: boolean
 }
 
-export function ProviderList({ providers, onAddProvider, onImportProvider, isImporting }: ProviderListProps) {
+export function ProviderList({ providers }: ProviderListProps) {
   const { t } = useTranslation()
   const isSmallScreen = useIsSmallScreen()
   const routerState = useRouterState()
@@ -52,12 +58,13 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
           {providers.map((provider) => (
             <Link
               key={provider.id}
-              to={provider.id === 'chatbox-ai' ? `/settings/provider/chatbox-ai` : `/settings/provider/$providerId`}
+              to={
+                provider.id === ModelProviderEnum.Wanjie
+                  ? '/settings/provider/wanjie'
+                  : '/settings/provider/$providerId'
+              }
               params={{ providerId: provider.id }}
-              className={clsx(
-                'no-underline',
-                isSmallScreen ? 'border-solid border-0 border-b border-chatbox-border-primary' : ''
-              )}
+              className={'block no-underline'}
             >
               <Flex
                 component="span"
@@ -105,25 +112,12 @@ export function ProviderList({ providers, onAddProvider, onImportProvider, isImp
                   <ScalableIcon icon={IconChevronRight} size={20} className="!text-chatbox-tint-tertiary ml-2" />
                 )}
               </Flex>
+
+              {isSmallScreen && <Divider />}
             </Link>
           ))}
         </Stack>
       </ScrollArea>
-      <Stack gap="xs" mx="md" my="sm">
-        <Button variant="outline" leftSection={<ScalableIcon icon={IconPlus} />} onClick={onAddProvider}>
-          {t('Add')}
-        </Button>
-        {platform.type !== 'mobile' && (
-          <Button
-            variant="light"
-            leftSection={<ScalableIcon icon={IconFileImport} />}
-            onClick={onImportProvider}
-            loading={isImporting}
-          >
-            {t('Import from clipboard')}
-          </Button>
-        )}
-      </Stack>
     </Stack>
   )
 }

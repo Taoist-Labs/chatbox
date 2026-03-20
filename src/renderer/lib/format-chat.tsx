@@ -188,12 +188,7 @@ export function formatChatAsMarkdown(sessionName: string, threads: SessionThread
     content += '\n\n'
   }
   content += '--------------------\n\n'
-  content += `
-<a href="https://chatboxai.app" style="display: flex; align-items: center;">
-<img src='https://chatboxai.app/icon.png' style='width: 40px; height: 40px; padding-right: 6px'>
-<b style='font-size:30px'>Chatbox AI</b>
-</a>
-`
+  content += 'Exported from AI Chat\n'
   return content
 }
 
@@ -258,7 +253,7 @@ export function formatChatAsTxt(sessionName: string, threads: SessionThread[]) {
     content += '\n\n\n\n'
   }
   content += `========================================================================\n\n`
-  content += `Chatbox AI (https://chatboxai.app)`
+  content += 'Exported from AI Chat'
   return content
 }
 
@@ -294,7 +289,10 @@ export async function formatChatAsHtml(sessionName: string, threads: SessionThre
           content += ReactDOMServer.renderToStaticMarkup(
             <MantineProvider>
               <BlockCodeCollapsedStateProvider defaultCollapsed={false}>
-                <Markdown hiddenCodeCopyButton>{p.text}</Markdown>
+                {/* 导出页面没有 theme，代码块应该总是使用 dark 否则 color scheme 看不清 */}
+                <Markdown hiddenCodeCopyButton forceColorScheme="dark">
+                  {p.text}
+                </Markdown>
               </BlockCodeCollapsedStateProvider>
             </MantineProvider>
           )
@@ -344,24 +342,14 @@ export async function formatChatAsHtml(sessionName: string, threads: SessionThre
         }
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <link rel="shortcut icon" href="https://chatboxai.app/icon.png">
 </head>
 <body class='bg-slate-100'>
     <div class='mx-auto max-w-5xl shadow-md prose bg-white px-2 py-4'>
-        <h1 class='flex flex-row justify-between items-center my-4 h-8'>
-            <span>${sessionName}</span>
-            <a href="https://chatboxai.app" target="_blank" >
-                <img src='https://chatboxai.app/icon.png' class="w-12">
-            </a>
-        </h1>
+        <h1 class='my-4 h-8'>${sessionName}</h1>
         <hr />
         ${content}
         <hr />
-        <a href="https://chatboxai.app" style="display: flex; align-items: center;" class="text-sky-500" target="_blank">
-            <img src='https://chatboxai.app/icon.png' class="w-12 pr-2">
-            <b style='font-size:30px'>Chatbox AI</b>
-        </a>
-        <p><a a href="https://chatboxai.app" target="_blank">https://chatboxai.app</a></p>
+        <p class="text-sm text-slate-500">Exported from AI Chat</p>
     </div>
 </body>
 </html>

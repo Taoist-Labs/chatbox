@@ -1,19 +1,26 @@
-productName: Chatbox
-appId: xyz.chatboxapp.app
+productName: Wamo Chat
+appId: com.taoistlabs.chat
 asar: true
-asarUnpack: "**\\*.{node,dll}"
+asarUnpack:
+  - "**\\*.{node,dll}"
+  - "**/node_modules/libsql/**"
 files:
-  - dist
-  - node_modules
-  - package.json
+  - "dist"
+  # - "!dist/**/*.map"
+  # - "!dist/**/stats.html"
+  - "node_modules"
+  - "package.json"
 
 afterSign: .erb/scripts/notarize.js
+afterPack: .erb/scripts/patch-libsql.cjs
 
 # releaseInfo:
 #   releaseNotes: See the changelog for details
 
 mac:
   notarize: false
+  bundleShortVersion: "1.0"
+  icon: assets/icon-1024.png
   category: public.app-category.developer-tools
   target:
     target: default
@@ -78,4 +85,4 @@ publish:
     bucket: chatbox
     endpoint: https://208624959c9d215edea0720162a740c1.r2.cloudflarestorage.com
     path: /releases
-    channel: dev
+    channel: ${env.UPDATE_CHANNEL}

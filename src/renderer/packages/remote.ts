@@ -1,26 +1,20 @@
+import { getLogger } from '@/lib/utils'
 import platform from '@/platform'
 import { authInfoStore } from '@/stores/authInfoStore'
-import { USE_BETA_API, USE_LOCAL_API } from '@/variables'
-import { ofetch } from 'ofetch'
-import { z } from 'zod'
-import * as cache from 'src/shared/utils/cache'
-import * as chatboxaiAPI from '../../shared/request/chatboxai_pool'
-import { createAfetch, createAuthenticatedAfetch, uploadFile } from '../../shared/request/request'
+import { USE_BETA_WEB, USE_LOCAL_WEB } from '@/variables'
+import { createAfetch, createAuthenticatedAfetch } from '../../shared/request/request'
 import {
-  type ChatboxAILicenseDetail,
+  type RemoteLicenseDetail,
   type Config,
   type CopilotDetail,
   type ModelProvider,
-  ProviderModelInfoSchema,
+  type ProviderModelInfo,
   type RemoteConfig,
   type Settings,
 } from '../../shared/types'
 import { getOS } from './navigator'
 
-interface AuthTokens {
-  accessToken: string
-  refreshToken: string
-}
+const log = getLogger('remote-api')
 
 let _afetch: ReturnType<typeof createAfetch> | null = null
 let afetchPromise: Promise<ReturnType<typeof createAfetch>> | null = null
@@ -29,12 +23,7 @@ async function initAfetch(): Promise<ReturnType<typeof createAfetch>> {
   if (afetchPromise) return afetchPromise
 
   afetchPromise = (async () => {
-    _afetch = createAfetch({
-      type: platform.type,
-      platform: await platform.getPlatform(),
-      os: getOS(),
-      version: await platform.getVersion(),
-    })
+    _afetch = createAfetch()
     return _afetch
   })()
 
@@ -58,12 +47,6 @@ async function initAuthenticatedAfetch(): Promise<ReturnType<typeof createAuthen
 
   authenticatedAfetchPromise = (async () => {
     _authenticatedAfetch = createAuthenticatedAfetch({
-      platformInfo: {
-        type: platform.type,
-        platform: await platform.getPlatform(),
-        os: getOS(),
-        version: await platform.getVersion(),
-      },
       getTokens: async () => {
         const tokens = authInfoStore.getState().getTokens()
         return tokens
@@ -90,18 +73,19 @@ async function getAuthenticatedAfetch() {
   return _authenticatedAfetch
 }
 
-// ========== API ORIGIN 根据可用性维护 ==========
+// ========== WEB ORIGIN ==========
 
-// const RELEASE_ORIGIN = 'https://releases.chatboxai.app'
-function getAPIOrigin() {
-  if (USE_LOCAL_API) {
-    return 'http://localhost:8002'
+export function getWebOrigin() {
+  if (USE_LOCAL_WEB) {
+    return 'http://localhost:3002'
+  } else if (USE_BETA_WEB) {
+    return 'https://beta.ai-chatbox.com'
   } else {
-    return chatboxaiAPI.getChatboxAPIOrigin()
+    return 'https://ai-chatbox.com'
   }
 }
 
-const getChatboxHeaders = async () => {
+const getRemoteHeaders = async () => {
   return {
     'CHATBOX-PLATFORM': await platform.getPlatform(),
     'CHATBOX-PLATFORM-TYPE': platform.type,
@@ -110,30 +94,25 @@ const getChatboxHeaders = async () => {
   }
 }
 
+const PRUNED_REMOTE_CONFIG: RemoteConfig = {
+  current_version: '',
+  product_ids: [],
+}
+
+function toPrunedUrlTitle(url: string) {
+  return url.replace(/^https?:\/\//, '')
+}
+
 // ========== 各个接口方法 ==========
 
 export async function checkNeedUpdate(version: string, os: string, config: Config, settings: Settings) {
-  type Response = {
-    need_update?: boolean
-  }
-  // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/chatbox_need_update/${version}`, {
-  const res = await ofetch<Response>(`${getAPIOrigin()}/chatbox_need_update/${version}`, {
-    method: 'POST',
-    retry: 3,
-    body: {
-      uuid: config.uuid,
-      os: os,
-      allowReportingAndTracking: settings.allowReportingAndTracking ? 1 : 0,
-    },
-  })
-  return !!res.need_update
+  return false
 }
 
 // export async function getSponsorAd(): Promise<null | SponsorAd> {
 //     type Response = {
 //         data: null | SponsorAd
 //     }
-//     // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/sponsor_ad`, {
 //     const res = await ofetch<Response>(`${API_ORIGIN}/sponsor_ad`, {
 //         retry: 3,
 //     })
@@ -144,7 +123,6 @@ export async function checkNeedUpdate(version: string, os: string, config: Confi
 //     type Response = {
 //         data: SponsorAboutBanner[]
 //     }
-//     // const res = await ofetch<Response>(`${RELEASE_ORIGIN}/sponsor_about_banner`, {
 //     const res = await ofetch<Response>(`${API_ORIGIN}/sponsor_ad`, {
 //         retry: 3,
 //     })
@@ -152,49 +130,25 @@ export async function checkNeedUpdate(version: string, os: string, config: Confi
 // }
 
 export async function listCopilots(lang: string) {
-  type Response = {
-    data: CopilotDetail[]
-  }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/copilots/list`, {
-    method: 'POST',
-    retry: 3,
-    body: { lang },
-  })
-  return res.data
+  return []
 }
 
 export async function recordCopilotShare(detail: CopilotDetail) {
-  await ofetch(`${getAPIOrigin()}/api/copilots/share-record`, {
-    method: 'POST',
-    body: {
-      detail: detail,
-    },
-  })
+  return
 }
 
 export async function getPremiumPrice() {
-  type Response = {
-    data: {
-      price: number
-      discount: number
-      discountLabel: string
-    }
+  return {
+    price: 0,
+    discount: 0,
+    discountLabel: '',
   }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/premium/price`, {
-    retry: 3,
-  })
-  return res.data
 }
 
 export async function getRemoteConfig(config: keyof RemoteConfig) {
-  type Response = {
-    data: Pick<RemoteConfig, typeof config>
-  }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/remote_config/${config}`, {
-    retry: 3,
-    headers: await getChatboxHeaders(),
-  })
-  return res['data']
+  return {
+    [config]: PRUNED_REMOTE_CONFIG[config],
+  } as Pick<RemoteConfig, typeof config>
 }
 
 export interface DialogConfig {
@@ -203,69 +157,36 @@ export interface DialogConfig {
 }
 
 export async function getDialogConfig(params: { uuid: string; language: string; version: string }) {
-  type Response = {
-    data: null | DialogConfig
-  }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/dialog_config`, {
-    method: 'POST',
-    retry: 3,
-    body: params,
-    headers: await getChatboxHeaders(),
-  })
-  return res['data'] || null
+  return null
 }
 
 export async function getLicenseDetail(params: { licenseKey: string }) {
-  type Response = {
-    data: ChatboxAILicenseDetail | null
-  }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/license/detail`, {
-    retry: 3,
-    headers: {
-      Authorization: params.licenseKey,
-      ...(await getChatboxHeaders()),
-    },
-  })
-  return res['data'] || null
+  return null
 }
 
-export async function getLicenseDetailRealtime(params: { licenseKey: string }) {
-  type Response = {
-    data: ChatboxAILicenseDetail | null
+export interface LicenseDetailError {
+  code: string
+  detail: string
+  status: number
+  title: string
+}
+
+export interface LicenseDetailResponse {
+  data: RemoteLicenseDetail | null
+  error?: LicenseDetailError
+}
+
+export async function getLicenseDetailRealtime(params: { licenseKey: string }): Promise<LicenseDetailResponse> {
+  return {
+    data: null,
   }
-  const res = await ofetch<Response>(`${getAPIOrigin()}/api/license/detail/realtime`, {
-    retry: 5,
-    headers: {
-      Authorization: params.licenseKey,
-      ...(await getChatboxHeaders()),
-    },
-  })
-  return res['data'] || null
 }
 
 export async function generateUploadUrl(params: { licenseKey: string; filename: string }) {
-  type Response = {
-    data: {
-      url: string
-      filename: string
-    }
+  return {
+    url: '',
+    filename: params.filename,
   }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/files/generate-upload-url`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: params.licenseKey,
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    { parseChatboxRemoteError: true }
-  )
-  const json: Response = await res.json()
-  return json['data']
 }
 
 export async function createUserFile<T extends boolean>(params: {
@@ -274,293 +195,83 @@ export async function createUserFile<T extends boolean>(params: {
   filetype: string
   returnContent: T
 }) {
-  type Response = {
-    data: {
-      uuid: string
-      content: T extends true ? string : undefined
-    }
+  const content = (params.returnContent ? '' : undefined) as T extends true ? string : undefined
+  return {
+    uuid: `pruned-${Date.now()}`,
+    content,
   }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/files/create`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: params.licenseKey,
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    { parseChatboxRemoteError: true }
-  )
-  const json: Response = await res.json()
-  return json['data']
 }
 
 export async function uploadAndCreateUserFile(licenseKey: string, file: File) {
-  const { url, filename } = await generateUploadUrl({
-    licenseKey,
-    filename: file.name,
-  })
-  await uploadFile(file, url)
-  const result = await createUserFile({
-    licenseKey,
-    filename,
-    filetype: file.type,
-    returnContent: true,
-  })
-  const storageKey = `parseFile-${file.name}_${result.uuid}.${file.type.split('/')[1]}.txt`
-
-  await platform.setStoreBlob(storageKey, result.content)
+  let content = ''
+  try {
+    content = await file.text()
+  } catch (e) {
+    content = ''
+  }
+  const ext = file.type.split('/')[1] || 'txt'
+  const storageKey = `parseFile-${file.name}_pruned.${ext}.txt`
+  await platform.setStoreBlob(storageKey, content)
   return storageKey
 }
 
 export async function parseUserLinkPro(params: { licenseKey: string; url: string }) {
-  type Response = {
-    data: {
-      uuid: string
-      title: string
-      content: string
-    }
-  }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/links/parse`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: params.licenseKey,
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify({
-        ...params,
-        returnContent: true,
-      }),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 2,
-    }
-  )
-  const json: Response = await res.json()
-  const storageKey = `parseUrl-${params.url}_${json['data']['uuid']}.txt`
-  if (json['data']['content']) {
-    await platform.setStoreBlob(storageKey, json['data']['content'])
-  }
+  const key = `pruned-${Date.now()}`
+  const title = toPrunedUrlTitle(params.url)
+  const storageKey = `parseUrl-${params.url}_${key}.txt`
+  await platform.setStoreBlob(storageKey, '')
   return {
-    key: json['data']['uuid'],
-    title: json['data']['title'],
+    key,
+    title,
     storageKey,
   }
 }
 
 export async function parseUserLinkFree(params: { url: string }) {
-  type Response = {
-    title: string
-    text: string
+  return {
+    title: toPrunedUrlTitle(params.url),
+    text: '',
   }
-  const afetch = await getAfetch()
-  const res = await afetch(`https://cors-proxy.chatboxai.app/api/fetch-webpage`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(params),
-  })
-  const json: Response = await res.json()
-  return json
 }
 
 export async function webBrowsing(params: { licenseKey: string; query: string }) {
-  type Response = {
-    data: {
-      uuid?: string
-      query: string
-      links: {
-        title: string
-        url: string
-        content: string
-      }[]
-    }
+  return {
+    query: params.query,
+    links: [],
   }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/tool/web-search`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: params.licenseKey,
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 2,
-    }
-  )
-  const json: Response = await res.json()
-  return json['data']
 }
 
 export async function activateLicense(params: { licenseKey: string; instanceName: string }) {
-  type Response = {
-    data: {
-      valid: boolean
-      instanceId: string
-      error: string
-    }
+  return {
+    valid: false,
+    instanceId: '',
+    error: 'not_found',
   }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/license/activate`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 5,
-    }
-  )
-  const json: Response = await res.json()
-  return json['data']
 }
 
 export async function deactivateLicense(params: { licenseKey: string; instanceId: string }) {
-  const afetch = await getAfetch()
-  await afetch(
-    `${getAPIOrigin()}/api/license/deactivate`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 5,
-    }
-  )
+  return
 }
 
 export async function validateLicense(params: { licenseKey: string; instanceId: string }) {
-  type Response = {
-    data: {
-      valid: boolean
-    }
+  return {
+    valid: false,
   }
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/license/validate`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 5,
-    }
-  )
-  const json: Response = await res.json()
-  return json['data']
 }
 
-const RemoteModelInfoSchema = z.object({
-  modelId: z.string(),
-  modelName: z.string(),
-  labels: z.array(z.string()).optional(),
-  type: z.enum(['chat', 'embedding', 'rerank']).optional(),
-  apiStyle: z.enum(['google', 'openai', 'anthropic']).optional(),
-  contextWindow: z.number().optional(),
-  capabilities: z.array(z.enum(['vision', 'tool_use', 'reasoning'])).optional(),
-})
-
-const ModelManifestResponseSchema = z.object({
-  success: z.boolean().optional(),
-  data: z.object({
-    groupName: z.string(),
-    models: z.array(RemoteModelInfoSchema),
-  }),
-})
-
 export async function getModelManifest(params: { aiProvider: ModelProvider; licenseKey?: string; language?: string }) {
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/model_manifest`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify({
-        aiProvider: params.aiProvider,
-        licenseKey: params.licenseKey,
-        language: params.language,
-      }),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 2,
-    }
-  )
-  const { success, data, error } = ModelManifestResponseSchema.safeParse(await res.json())
-  if (!success) {
-    console.log('getModelManifest error', error)
-    return []
+  return {
+    groupName: '',
+    models: [] as ProviderModelInfo[],
   }
-  return data.data
 }
 
 export async function reportContent(params: { id: string; type: string; details: string }) {
-  const afetch = await getAfetch()
-  await afetch(`${getAPIOrigin()}/api/report_content`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(await getChatboxHeaders()),
-    },
-    body: JSON.stringify(params),
-  })
+  return
 }
 
-const ProviderInfoResponseSchema = z.object({
-  success: z.boolean(),
-  data: z.record(z.string(), ProviderModelInfoSchema.nullable()),
-})
-
-export async function getProviderModelsInfo(params: { modelIds: string[] }) {
-  const afetch = await getAfetch()
-  const res = await afetch(
-    `${getAPIOrigin()}/api/provider_models_info`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
-      },
-      body: JSON.stringify(params),
-    },
-    {
-      parseChatboxRemoteError: true,
-      retry: 2,
-    }
-  )
-  const json = ProviderInfoResponseSchema.parse(await res.json())
-  return json.data
+export async function getProviderModelsInfo(params: { modelIds: string[] }): Promise<Record<string, ProviderModelInfo | null>> {
+  return {}
 }
 
 export async function requestLoginTicketId() {
@@ -584,13 +295,14 @@ export async function requestLoginTicketId() {
   const appVersion = await platform.getVersion()
   const deviceName = await platform.getDeviceName()
 
+  console.log('getWebOrigin()', getWebOrigin())
   const res = await afetch(
-    `https://chatboxai.app/api/auth/request_login_ticket`,
+    `${getWebOrigin()}/api/auth/request_login_ticket`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({
         device_type: deviceType,
@@ -599,7 +311,7 @@ export async function requestLoginTicketId() {
       }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 3,
     }
   )
@@ -618,17 +330,17 @@ export async function checkLoginStatus(ticketId: string) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `https://chatboxai.app/api/auth/login_status`,
+    `${getWebOrigin()}/api/auth/login_status`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
       body: JSON.stringify({ ticket_id: ticketId }),
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -659,27 +371,27 @@ export async function refreshAccessToken(params: { refreshToken: string }) {
   }
   const afetch = await getAfetch()
   const res = await afetch(
-    `https://chatboxai.app/api/auth/token_refresh`,
+    `${getWebOrigin()}/api/auth/token_refresh`,
     {
       method: 'POST',
       headers: {
         'x-chatbox-refresh-token': params.refreshToken,
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
   const json: Response = await res.json()
-  // console.log('✅ refreshAccessToken response', json)
+  // log.info('✅ refreshAccessToken response', json)
 
   const accessToken = res.headers.get('x-chatbox-access-token')
   const refreshToken = res.headers.get('x-chatbox-refresh-token')
 
   if (!accessToken || !refreshToken) {
-    console.error('❌ Missing tokens in response headers:', {
+    log.error('❌ Missing tokens in response headers:', {
       accessToken: accessToken ? 'present' : 'missing',
       refreshToken: refreshToken ? 'present' : 'missing',
     })
@@ -702,16 +414,16 @@ export async function getUserProfile() {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    'https://chatboxai.app/api/user/profile',
+    `${getWebOrigin()}/api/user/profile`,
     {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )
@@ -748,16 +460,16 @@ export async function listLicensesByUser(): Promise<UserLicense[]> {
   }
   const afetch = await getAuthenticatedAfetch()
   const res = await afetch(
-    'https://chatboxai.app/api/license/list_by_user',
+    `${getWebOrigin()}/api/license/list_by_user`,
     {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(await getChatboxHeaders()),
+        ...(await getRemoteHeaders()),
       },
     },
     {
-      parseChatboxRemoteError: true,
+      parseRemoteAPIError: true,
       retry: 2,
     }
   )

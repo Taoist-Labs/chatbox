@@ -1,10 +1,12 @@
 import { Button, Flex, PasswordInput, Select, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { ofetch } from 'ofetch'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import platform from '@/platform'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getWebSearchProviderOptions, normalizeWebSearchProviderForPlatform } from './-web-search-options'
 
 export const Route = createFileRoute('/settings/web-search')({
   component: RouteComponent,
@@ -17,6 +19,27 @@ export function RouteComponent() {
 
   const [checkingTavily, setCheckingTavily] = useState(false)
   const [tavilyAvaliable, setTavilyAvaliable] = useState<boolean>()
+  const selectedProvider = normalizeWebSearchProviderForPlatform(extension.webSearch.provider, platform.type)
+  const providerOptions = getWebSearchProviderOptions(platform.type)
+
+  useEffect(() => {
+    if (platform.type !== 'mobile') {
+      return
+    }
+    if (extension.webSearch.provider === selectedProvider) {
+      return
+    }
+    setSettings({
+      extension: {
+        ...extension,
+        webSearch: {
+          ...extension.webSearch,
+          provider: selectedProvider,
+        },
+      },
+    })
+  }, [extension, selectedProvider, setSettings])
+
   const checkTavily = async () => {
     if (extension.webSearch.tavilyApiKey) {
       setCheckingTavily(true)
@@ -29,7 +52,7 @@ export function RouteComponent() {
             Authorization: `Bearer ${extension.webSearch.tavilyApiKey}`,
           },
           body: {
-            query: 'Chatbox',
+            query: 'AI client',
             search_depth: 'basic',
             include_domains: [],
             exclude_domains: [],
@@ -48,14 +71,10 @@ export function RouteComponent() {
     <Stack p="md" gap="xxl">
       <Title order={5}>{t('Web Search')}</Title>
 
-      <Select
+      <AdaptiveSelect
         comboboxProps={{ withinPortal: true, withArrow: true }}
-        data={[
-          { value: 'build-in', label: 'Chatbox Search (Pro)' },
-          { value: 'bing', label: 'Bing Search (Free)' },
-          { value: 'tavily', label: 'Tavily' },
-        ]}
-        value={extension.webSearch.provider}
+        data={providerOptions}
+        value={selectedProvider}
         onChange={(e) =>
           e &&
           setSettings({
@@ -71,16 +90,16 @@ export function RouteComponent() {
         label={t('Search Provider')}
         maw={320}
       />
-      {extension.webSearch.provider === 'build-in' && (
-        <Text size="xs" c="chatbox-gray">
-          {t('Chatbox Search is a paid feature with advanced capabilities and better performance.')}
-        </Text>
-      )}
-      {extension.webSearch.provider === 'bing' && (
+      {selectedProvider === 'bing' && (
         <Text size="xs" c="chatbox-gray">
           {t(
             'Bing Search is provided for free use, but it may have limitations and is subject to change by Microsoft.'
           )}
+        </Text>
+      )}
+      {selectedProvider === 'baidu' && (
+        <Text size="xs" c="chatbox-gray">
+          {t('Baidu Search is provided for free use, but it may have limitations and is subject to change by Baidu.')}
         </Text>
       )}
       {/* Tavily API Key */}
@@ -106,7 +125,13 @@ export function RouteComponent() {
               }}
               error={tavilyAvaliable === false}
             />
-            <Button color="chatbox-gray" variant="light" onClick={checkTavily} loading={checkingTavily}>
+            <Button
+              color="blue"
+              variant="light"
+              onClick={checkTavily}
+              loading={checkingTavily}
+              disabled={!extension.webSearch.tavilyApiKey?.trim()}
+            >
               {t('Check')}
             </Button>
           </Flex>
@@ -128,7 +153,7 @@ export function RouteComponent() {
             size="compact-xs"
             px={0}
             className="self-start"
-            onClick={() => platform.openLink('https://app.tavily.com?utm_source=chatbox')}
+            onClick={() => platform.openLink('https://app.tavily.com?utm_source=app')}
           >
             {t('Get API Key')}
           </Button>

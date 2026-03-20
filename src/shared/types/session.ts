@@ -7,16 +7,28 @@ import { ModelProviderEnum } from './provider'
 export { ModelProviderEnum } from './provider'
 
 // Token cache key schema
-export const TokenCacheKeySchema = z.enum(['default', 'deepseek'])
+export const TokenCacheKeySchema = z.enum(['default', 'deepseek', 'default_preview', 'deepseek_preview'])
 export type TokenCacheKey = z.infer<typeof TokenCacheKeySchema>
 
 // Export the enum values directly for easy access
 export const TOKEN_CACHE_KEYS = TokenCacheKeySchema.enum
 
-// Token count map schema
-export const TokenCountMapSchema = z.record(TokenCacheKeySchema, z.number())
+// Token count map schema - use passthrough to allow any string keys for backward compatibility
+export const TokenCountMapSchema = z.record(z.string(), z.number())
 
 export type TokenCountMap = z.infer<typeof TokenCountMapSchema>
+
+// Token calculated at schema - timestamp for each tokenizer type
+export const TokenCalculatedAtSchema = z
+  .object({
+    default: z.number().optional(),
+    deepseek: z.number().optional(),
+    default_preview: z.number().optional(),
+    deepseek_preview: z.number().optional(),
+  })
+  .optional()
+
+export type TokenCalculatedAt = z.infer<typeof TokenCalculatedAtSchema>
 
 // Search result schemas
 export const SearchResultItemSchema = z.object({
@@ -30,25 +42,67 @@ export const SearchResultSchema = z.object({
   items: z.array(SearchResultItemSchema),
 })
 
-// Message file schemas
-export const MessageFileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  fileType: z.string(),
-  url: z.string().optional(),
-  storageKey: z.string().optional(),
-  chatboxAIFileUUID: z.string().optional(),
-  tokenCountMap: TokenCountMapSchema.optional().catch(undefined),
-})
+function normalizeLegacyAttachmentUUID(
+  raw: unknown,
+  targetKey: 'remoteFileUUID' | 'remoteLinkUUID',
+  legacySuffix: 'FileUUID' | 'LinkUUID'
+) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return raw
+  }
 
-export const MessageLinkSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  title: z.string(),
-  storageKey: z.string().optional(),
-  chatboxAILinkUUID: z.string().optional(),
-  tokenCountMap: TokenCountMapSchema.optional(),
-})
+  const record = raw as Record<string, unknown>
+  if (record[targetKey] !== undefined) {
+    return record
+  }
+
+  const legacyKey = Object.keys(record).find((key) => key.endsWith(legacySuffix))
+  if (!legacyKey) {
+    return record
+  }
+
+  const legacyValue = record[legacyKey]
+  if (legacyValue === undefined) {
+    return record
+  }
+
+  return {
+    ...record,
+    [targetKey]: legacyValue,
+  }
+}
+
+// Message file schemas
+export const MessageFileSchema = z.preprocess(
+  (raw) => normalizeLegacyAttachmentUUID(raw, 'remoteFileUUID', 'FileUUID'),
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    fileType: z.string(),
+    url: z.string().optional(),
+    storageKey: z.string().optional(),
+    remoteFileUUID: z.string().optional(),
+    tokenCountMap: TokenCountMapSchema.optional().catch(undefined),
+    tokenCalculatedAt: TokenCalculatedAtSchema,
+    lineCount: z.number().optional(),
+    byteLength: z.number().optional(),
+  })
+)
+
+export const MessageLinkSchema = z.preprocess(
+  (raw) => normalizeLegacyAttachmentUUID(raw, 'remoteLinkUUID', 'LinkUUID'),
+  z.object({
+    id: z.string(),
+    url: z.string(),
+    title: z.string(),
+    storageKey: z.string().optional(),
+    remoteLinkUUID: z.string().optional(),
+    tokenCountMap: TokenCountMapSchema.optional(),
+    tokenCalculatedAt: TokenCalculatedAtSchema,
+    lineCount: z.number().optional(),
+    byteLength: z.number().optional(),
+  })
+)
 
 export const MessagePictureSchema = z.object({
   url: z.string().optional(),
@@ -117,7 +171,7 @@ export const StreamTextResultSchema = z.object({
 })
 
 // Tool and provider schemas
-export const ToolUseScopeSchema = z.enum(['web-browsing', 'knowledge-base'])
+export const ToolUseScopeSchema = z.enum(['web-browsing', 'knowledge-base', 'read-file'])
 
 export const ModelProviderSchema = z.union([z.nativeEnum(ModelProviderEnum), z.string()])
 
@@ -130,6 +184,12 @@ export const MessageStatusSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('loading_webpage'),
     mode: z.enum(['local', 'advanced']).optional(),
+  }),
+  z.object({
+    type: z.literal('retrying'),
+    attempt: z.number(),
+    maxAttempts: z.number(),
+    error: z.string().optional(),
   }),
 ])
 
@@ -188,6 +248,16 @@ export const MessageSchema = z.object({
   firstTokenLatency: z.number().optional(),
   finishReason: z.string().optional(),
   tokenCountMap: TokenCountMapSchema.optional(), // estimate token count as input
+  tokenCalculatedAt: TokenCalculatedAtSchema,
+  updatedAt: z.number().optional(),
+  isSummary: z.boolean().optional(), // Marks message as a compaction summary
+})
+
+// Compaction point schema (for context management)
+export const CompactionPointSchema = z.object({
+  summaryMessageId: z.string(),
+  boundaryMessageId: z.string(),
+  createdAt: z.number(),
 })
 
 // Session schemas
@@ -209,6 +279,7 @@ export const SessionThreadSchema = z.object({
   name: z.string(),
   messages: z.array(MessageSchema),
   createdAt: z.number(),
+  compactionPoints: z.array(CompactionPointSchema).optional(),
 })
 
 export const SessionSchema = z.object({
@@ -218,18 +289,21 @@ export const SessionSchema = z.object({
   picUrl: z.string().optional(),
   messages: z.array(MessageSchema),
   starred: z.boolean().optional(),
+  hidden: z.boolean().optional(), // Hidden from session list (e.g., migrated picture sessions)
   copilotId: z.string().optional(),
   assistantAvatarKey: z.string().optional(),
   settings: SessionSettingsSchema.optional(),
   threads: z.array(SessionThreadSchema).optional(),
   threadName: z.string().optional(),
   messageForksHash: z.record(z.string(), MessageForkSchema).optional(),
+  compactionPoints: z.array(CompactionPointSchema).optional(),
 })
 
 export const SessionMetaSchema = SessionSchema.pick({
   id: true,
   name: true,
   starred: true,
+  hidden: true,
   assistantAvatarKey: true,
   picUrl: true,
   type: true,
@@ -262,8 +336,10 @@ export type MessageContentParts = z.infer<typeof MessageContentPartsSchema>
 export type StreamTextResult = z.infer<typeof StreamTextResultSchema>
 export type ToolUseScope = z.infer<typeof ToolUseScopeSchema>
 export type ModelProvider = z.infer<typeof ModelProviderSchema>
+export type MessageStatus = z.infer<typeof MessageStatusSchema>
 export type Message = z.infer<typeof MessageSchema>
 export type SessionType = z.infer<typeof SessionTypeSchema>
+export type CompactionPoint = z.infer<typeof CompactionPointSchema>
 export type Session = z.infer<typeof SessionSchema>
 export type SessionMeta = z.infer<typeof SessionMetaSchema>
 export type SessionThread = z.infer<typeof SessionThreadSchema>

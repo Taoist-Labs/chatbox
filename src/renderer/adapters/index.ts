@@ -1,23 +1,15 @@
-import { createAfetch } from 'src/shared/request/request'
-import type { ApiRequestOptions, ModelDependencies } from 'src/shared/types/adapters'
-import { getOS } from '@/packages/navigator'
+import { createAfetch } from '@shared/request/request'
+import type { ApiRequestOptions, ModelDependencies } from '@shared/types/adapters'
 import platform from '@/platform'
 import storage from '@/storage'
 import { StorageKeyGenerator } from '@/storage/StoreStorage'
 import * as settingActions from '@/stores/settingActions'
 import { apiRequest } from '@/utils/request'
+import { handleMobileRequest } from '@/utils/mobile-request'
 import { RendererSentryAdapter } from './sentry'
 
 export async function createModelDependencies(): Promise<ModelDependencies> {
-  // 获取平台信息
-  const platformInfo = {
-    type: platform.type,
-    platform: await platform.getPlatform(),
-    os: getOS(),
-    version: (await platform.getVersion()) || 'unknown',
-  }
-
-  const afetch = createAfetch(platformInfo)
+  const afetch = createAfetch()
 
   return {
     storage: {
@@ -28,15 +20,27 @@ export async function createModelDependencies(): Promise<ModelDependencies> {
       },
       async getImage(storageKey: string): Promise<string> {
         const blob = await storage.getBlob(storageKey)
-        return blob || ''
+        if (!blob) return ''
+        return blob.startsWith('data:') ? blob : `data:image/png;base64,${blob}`
       },
     },
     request: {
       fetchWithOptions: async (
         url: string,
         init?: RequestInit,
-        options?: { retry?: number; parseChatboxRemoteError?: boolean }
+        options?: { retry?: number; parseRemoteAPIError?: boolean }
       ): Promise<Response> => {
+        if (platform.type === 'mobile') {
+          return handleMobileRequest(
+            url,
+            init?.method || 'GET',
+            new Headers(init?.headers),
+            init?.body,
+            init?.signal || undefined,
+            'arraybuffer'
+          )
+        }
+
         // 支持自定义选项的 fetch
         return afetch(url, init, options || {})
       },

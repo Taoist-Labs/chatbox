@@ -1,0 +1,13 @@
+{
+  "appId": "com.taoistlabs.chat",
+  "appName": "Wamo Chat",
+  "webDir": "release/app/dist/renderer",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "Keyboard": {
+      "resizeOnFullScreen": true
+    }
+  }
+}
